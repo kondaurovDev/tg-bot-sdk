@@ -3,15 +3,21 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "build": "pnpm run --parallel -r build",
+    "codegen": "pnpm --filter ./packages/codegen gen",
+    "build": "pnpm codegen && pnpm -r build",
     "format:fix": "prettier --write .",
-    "typecheck": "pnpm run --parallel -r typecheck"
+    "typecheck": "pnpm run --parallel -r typecheck",
+    "test": "pnpm run --parallel -r test",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release": "pnpm codegen && pnpm build && changeset publish"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.29.8",
     "@eslint/js": "^9.39.1",
     "@types/node": "^22.10.1",
     "dotenv": "17.2.3",
-    "effect": "3.12.0",
+    "effect": "3.19.13",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "3.6.2",

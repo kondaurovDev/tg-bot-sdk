@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "client": "tsx ./src/client.ts",
+    "simple-bot": "tsx ./src/bots/simple-bot.ts",
     "echo-bot": "tsx ./src/bots/echo-bot.ts",
     "batch-bot": "tsx ./src/bots/batch-bot.ts",
     "reload-bot": "tsx ./src/bots/reload-bot.ts",
@@ -17,6 +18,7 @@
     "@effect-ak/tg-bot": "workspace:*"
   },
   "devDependencies": {
-    "@vercel/node": "^5.5.16"
+    "@vercel/node": "^5.5.16",
+    "typescript": "^5.9.3"
   }
 }

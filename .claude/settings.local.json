@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(pnpm --filter @effect-ak/tg-bot build:*)",
-      "Bash(pnpm --filter example typecheck:*)"
-    ]
-  }
-}

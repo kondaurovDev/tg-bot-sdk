@@ -1,6 +1,5 @@
-import { runTgChatBot, defineBot } from "@effect-ak/tg-bot"
+import { runTgChatBot } from "@effect-ak/tg-bot"
 import { MESSAGE_EFFECTS } from "@effect-ak/tg-bot-client"
-import { Effect } from "effect"
 
 import { loadConfig } from "../config"
 const config = await loadConfig()
@@ -15,6 +14,27 @@ runTgChatBot({
   },
   on_message: [
     {
+      match: ({ ctx }) => ctx.command === "/echo",
+      handle: ({ update, ctx }) =>
+        ctx.reply(
+          `<pre language="json">${JSON.stringify(update, undefined, 2)}</pre>`,
+          { parse_mode: "HTML" }
+        )
+    },
+    {
+      match: ({ ctx }) => ctx.command === "/bye",
+      handle: ({ ctx }) =>
+        ctx.reply("See you later!", {
+          message_effect_id: MESSAGE_EFFECTS["❤️"]
+        })
+    },
+    {
+      match: ({ ctx }) => ctx.command === "/error",
+      handle: () => {
+        throw new Error("boom")
+      }
+    },
+    {
       match: ({ update }) => update.text?.includes("+") ?? false,
       handle: ({ update, ctx }) => {
         const result = update.text!.split("+").reduce((sum, n) => sum + parseInt(n), 0)
@@ -25,29 +45,6 @@ runTgChatBot({
           },
           { caption: "sum result" }
         )
-      }
-    },
-    {
-      match: ({ ctx }) => ctx.command === "/bye",
-      handle: async ({ ctx }) => {
-        await Effect.sleep("5 seconds").pipe(Effect.runPromise)
-        return ctx.reply("See you later!", {
-          message_effect_id: MESSAGE_EFFECTS["❤️"]
-        })
-      }
-    },
-    {
-      match: ({ ctx }) => ctx.command === "/echo",
-      handle: ({ update, ctx }) =>
-        ctx.reply(
-          `<pre language="json">${JSON.stringify(update, undefined, 2)}</pre>`,
-          { parse_mode: "HTML" }
-        )
-    },
-    {
-      match: ({ ctx }) => ctx.command === "/error",
-      handle: () => {
-        throw new Error("boom")
       }
     },
     {
