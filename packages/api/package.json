@@ -15,7 +15,11 @@
   },
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "gen": "pnpm run gen:bot:api && pnpm run gen:webapp:api",
+    "gen:bot:api": "MODULE_NAME=bot_api tsx ./codegen/main.ts",
+    "gen:webapp:api": "MODULE_NAME=webapp tsx ./codegen/main.ts",
+    "test": "vitest run"
   },
   "repository": {
     "type": "git",
@@ -41,5 +45,9 @@
     "dist/*.js",
     "dist/*.cjs",
     "dist/*.d.ts"
-  ]
+  ],
+  "devDependencies": {
+    "node-html-parser": "^7.0.1",
+    "ts-morph": "^27.0.2"
+  }
 }
