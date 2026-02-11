@@ -3,12 +3,12 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "codegen": "pnpm --filter ./packages/codegen gen",
+    "codegen": "pnpm --filter @effect-ak/tg-bot-api gen",
     "build": "pnpm codegen && pnpm -r build",
     "format:fix": "prettier --write .",
     "typecheck": "pnpm run --parallel -r typecheck",
     "test": "pnpm run --parallel -r test",
-    "changeset": "changeset",
+"changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm codegen && pnpm build && changeset publish"
   },
