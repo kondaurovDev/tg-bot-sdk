@@ -1,6 +1,6 @@
 {
   "name": "@effect-ak/tg-bot",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "type": "module",
   "description": "Telegram Bot runner",
   "license": "MIT",

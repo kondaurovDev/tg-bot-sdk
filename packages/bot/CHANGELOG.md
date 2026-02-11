@@ -1,5 +1,14 @@
 # @effect-ak/tg-bot
 
+## 1.2.4
+
+### Patch Changes
+
+- 94774a9: chore: release packages
+- Updated dependencies [94774a9]
+  - @effect-ak/tg-bot-api@1.3.0
+  - @effect-ak/tg-bot-client@1.3.4
+
 ## 1.2.3
 
 ### Patch Changes

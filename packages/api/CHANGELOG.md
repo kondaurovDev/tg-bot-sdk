@@ -1,5 +1,11 @@
 # @effect-ak/tg-bot-api
 
+## 1.3.0
+
+### Minor Changes
+
+- 94774a9: chore: release packages
+
 ## 1.2.0
 
 ### Minor Changes
