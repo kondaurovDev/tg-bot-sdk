@@ -100,13 +100,25 @@ Try it in your browser: **[Telegram Bot Playground](https://effect-ak.github.io/
 
 ## 🛠️ Development
 
+### Setup
+
 ```bash
-# Install dependencies
 pnpm install
-
-# Build all packages
 pnpm build
-
-# Format code
-pnpm format:fix
 ```
+
+### CI/CD
+
+Push to `main` triggers two GitHub Actions workflows:
+
+1. **Build** — runs `pnpm build`, `pnpm typecheck`, and `pnpm test`
+2. **Release** — runs after a successful Build, uses [changesets](https://github.com/changesets/changesets) to version and publish packages to npm
+
+To release a new version:
+
+1. Create a changeset: `pnpm changeset`
+2. Commit the generated changeset file and merge to `main`
+3. The Release workflow will open a "Release" PR that bumps versions
+4. Merge the PR — packages are automatically published to npm
+
+Packages are published with [npm provenance](https://docs.npmjs.com/generating-provenance-statements) via OIDC between GitHub Actions and npm, so every published version is cryptographically signed and linked back to its source commit and workflow run.
