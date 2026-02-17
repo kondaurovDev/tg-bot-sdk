@@ -1,5 +1,11 @@
 # @effect-ak/tg-bot-client
 
+## 1.4.0
+
+### Minor Changes
+
+- c5b9674: Replace thrown `TgBotClientError` with `ClientResult<T>` return type for all client methods
+
 ## 1.3.4
 
 ### Patch Changes

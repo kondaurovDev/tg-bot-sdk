@@ -1,5 +1,16 @@
 # @effect-ak/tg-bot
 
+## 1.3.0
+
+### Minor Changes
+
+- c5b9674: Add `createBot()` fluent API for defining bot handlers
+
+### Patch Changes
+
+- Updated dependencies [c5b9674]
+  - @effect-ak/tg-bot-client@1.4.0
+
 ## 1.2.4
 
 ### Patch Changes
