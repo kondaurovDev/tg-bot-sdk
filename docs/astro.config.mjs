@@ -33,6 +33,7 @@ export default defineConfig({
       },
       components: {
         SocialIcons: "./src/components/SocialIcons.astro",
+        PageTitle: "./src/components/PageTitle.astro",
       },
       head: [
         {

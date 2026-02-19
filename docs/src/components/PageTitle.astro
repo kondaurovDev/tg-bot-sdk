@@ -1,0 +1,18 @@
+---
+const fullTitle = Astro.locals.starlightRoute.entry.data.title;
+const displayTitle = fullTitle
+  .replace(/ – Telegram Bot API Type$/, "")
+  .replace(/ – Telegram Bot API$/, "");
+---
+
+<h1 id="_top">{displayTitle}</h1>
+
+<style>
+  h1 {
+    margin-top: 1rem;
+    font-size: var(--sl-text-h1);
+    line-height: var(--sl-line-height-headings);
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+</style>

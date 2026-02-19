@@ -80,8 +80,6 @@ const makeUsageExample = (method: ExtractedMethodShape): string[] => {
 
   if (requiredFields.length === 0) {
     return [
-      "## Usage",
-      "",
       "```typescript",
       ...usagePreamble,
       `const result = await client.execute("${snakeName}")`,
@@ -95,8 +93,6 @@ const makeUsageExample = (method: ExtractedMethodShape): string[] => {
   )
 
   return [
-    "## Usage",
-    "",
     "```typescript",
     ...usagePreamble,
     `const result = await client.execute("${snakeName}", {`,
@@ -204,10 +200,9 @@ const makeApiRunnerBlock = (method: ExtractedMethodShape): string[] => {
     `<div class="not-content" x-data="apiRunner(${config})">`,
     `<div style="margin-top:1.5rem;border:1px solid var(--sl-color-gray-5);border-radius:8px;overflow:hidden;">`,
 
-    // Header
-    `<div style="padding:10px 14px;background:var(--sl-color-gray-6);border-bottom:1px solid var(--sl-color-gray-5);display:flex;align-items:center;justify-content:space-between;">`,
-    `<span style="font-weight:600;font-size:14px;">Try it</span>`,
-    `<span x-show="token" x-cloak style="font-size:12px;color:var(--sl-color-gray-3);">`,
+    // Token status
+    `<div x-show="token" x-cloak style="padding:8px 14px;background:var(--sl-color-gray-6);border-bottom:1px solid var(--sl-color-gray-5);display:flex;align-items:center;justify-content:flex-end;">`,
+    `<span style="font-size:12px;color:var(--sl-color-gray-3);">`,
     `Token saved`,
     `<button @click="clearToken()" style="margin-left:6px;color:var(--sl-color-text-accent);cursor:pointer;background:none;border:none;font-size:12px;">Change</button>`,
     `</span>`,
@@ -247,12 +242,14 @@ const makeApiRunnerBlock = (method: ExtractedMethodShape): string[] => {
 
   // Actions
   lines.push(
-    `<div style="display:flex;gap:8px;margin-top:12px;">`,
-    `<button @click="run()" :disabled="loading || !token" style="${btnPrimary}">`,
+    `<div x-show="token" x-cloak style="display:flex;gap:8px;margin-top:12px;">`,
+    `<button @click="run()" :disabled="loading" style="${btnPrimary}">`,
     `<span x-show="!loading">Run</span>`,
     `<span x-show="loading">Running...</span>`,
     `</button>`,
-    `<button @click="reset()" style="${btnSecondary}">Reset</button>`,
+    ...(fields.length > 0
+      ? [`<button @click="reset()" style="${btnSecondary}">Reset</button>`]
+      : []),
     `</div>`,
 
     // Response
@@ -274,27 +271,221 @@ const makeApiRunnerBlock = (method: ExtractedMethodShape): string[] => {
   return lines
 }
 
+// ── Meta description ──
+
+const makeMethodMetaDescription = (method: ExtractedMethodShape): string => {
+  const desc = method.methodDescription.map(removeHtmlTags).join(" ").replace(/\.+$/, "")
+  const fields = method.parameters?.fields ?? []
+  const required = fields.filter((f) => f.required).map((f) => f.name)
+
+  let meta = `${method.methodName} – Telegram Bot API. ${desc}.`
+
+  if (fields.length > 0) {
+    meta += ` ${fields.length} parameters`
+    if (required.length > 0) {
+      meta += ` (${required.join(", ")} required)`
+    }
+    meta += "."
+  }
+
+  if (meta.length > 160) {
+    meta = meta.slice(0, 157) + "..."
+  }
+
+  return meta
+}
+
+const makeTypeMetaDescription = (extracted: ExtractedTypeShape): string => {
+  const desc = extracted.description.map(removeHtmlTags).join(" ").replace(/\.+$/, "")
+
+  let meta = `${extracted.typeName} – Telegram Bot API type. ${desc}.`
+
+  if (extracted.type instanceof EntityFields) {
+    const total = extracted.type.fields.length
+    const required = extracted.type.fields.filter((f) => f.required).length
+    meta += ` ${total} fields`
+    if (required > 0) meta += `, ${required} required`
+    meta += "."
+  }
+
+  if (meta.length > 160) {
+    meta = meta.slice(0, 157) + "..."
+  }
+
+  return meta
+}
+
+// ── Method summary ──
+
+const limitPatterns = [
+  /(\d[\d,]*[\-–]\d[\d,]*\s+characters)/i,
+  /(at most \d[\d,]*\s*(?:MB|KB|characters|bytes))/i,
+  /(must not exceed \d[\d,]*)/i,
+  /(up to \d[\d,]*\s*(?:MB|KB|characters|bytes|messages))/i,
+  /(\d[\d,]*\s*(?:MB|KB)\s+in size)/i
+]
+
+const extractLimits = (fields: EntityField[]): string[] => {
+  const limits: string[] = []
+
+  for (const field of fields) {
+    const text = field.description.map(removeHtmlTags).join(" ")
+    for (const pattern of limitPatterns) {
+      const match = text.match(pattern)
+      if (match) {
+        limits.push(`${field.name}: ${match[1]}`)
+        break
+      }
+    }
+  }
+
+  return limits
+}
+
+const makeMethodSummary = (method: ExtractedMethodShape): string[] => {
+  const fields = method.parameters?.fields ?? []
+  if (fields.length === 0) return []
+
+  const required = fields.filter((f) => f.required)
+  const optional = fields.filter((f) => !f.required)
+  const limits = extractLimits(fields)
+
+  const lines: string[] = []
+
+  const parts: string[] = []
+  if (required.length > 0) {
+    parts.push(`**Required**: ${required.map((f) => `\`${f.name}\``).join(", ")}`)
+  }
+  if (optional.length > 0) {
+    parts.push(`**Optional**: ${optional.length} parameters`)
+  }
+
+  lines.push(parts.join(" · "), "")
+
+  if (limits.length > 0) {
+    lines.push("**Limits**:", "")
+    for (const limit of limits) {
+      lines.push(`- ${limit}`)
+    }
+    lines.push("")
+  }
+
+  return lines
+}
+
+// ── Method group map ──
+
+type MethodGroupMap = Map<string, ExtractedMethodShape[]>
+
+const getMethodPrefix = (name: string): string | undefined => {
+  const match = name.match(/^(send|get|set|delete|edit|create|answer|ban|unban|pin|unpin|forward|copy|upload|add|remove|close|reopen|hide|unhide|export|revoke|restrict|promote|approve|decline|stop|leave|verify|transfer|upgrade|convert|read|post|repost)/)
+  return match?.[1]
+}
+
+const buildMethodGroupMap = (methods: ExtractedMethodShape[]): MethodGroupMap => {
+  const map: MethodGroupMap = new Map()
+  for (const method of methods) {
+    const prefix = getMethodPrefix(method.methodName)
+    if (!prefix) continue
+    if (!map.has(prefix)) map.set(prefix, [])
+    map.get(prefix)!.push(method)
+  }
+  return map
+}
+
+// ── Structured data ──
+
+const siteUrl = "https://tg-bot-sdk.website"
+
+const makeMethodJsonLd = (method: ExtractedMethodShape): string => {
+  const slug = toKebab(method.methodName)
+  const desc = method.methodDescription.map(removeHtmlTags).join(" ")
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    headline: `${method.methodName} – Telegram Bot API`,
+    description: desc,
+    url: `${siteUrl}/api/methods/${slug}/`,
+    proficiencyLevel: "Beginner",
+    about: {
+      "@type": "SoftwareApplication",
+      name: "Telegram Bot API",
+      applicationCategory: "DeveloperApplication"
+    },
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Telegram Bot SDK",
+      url: siteUrl
+    }
+  }
+  return `<script type="application/ld+json">${JSON.stringify(data)}</script>`
+}
+
+const makeTypeJsonLd = (extracted: ExtractedTypeShape): string => {
+  const slug = toKebab(extracted.typeName)
+  const desc = extracted.description.map(removeHtmlTags).join(" ")
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    headline: `${extracted.typeName} – Telegram Bot API Type`,
+    description: desc,
+    url: `${siteUrl}/api/types/${slug}/`,
+    proficiencyLevel: "Beginner",
+    about: {
+      "@type": "SoftwareApplication",
+      name: "Telegram Bot API",
+      applicationCategory: "DeveloperApplication"
+    },
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Telegram Bot SDK",
+      url: siteUrl
+    }
+  }
+  return `<script type="application/ld+json">${JSON.stringify(data)}</script>`
+}
+
 // ── Method page ──
 
-const makeMethodPage = (method: ExtractedMethodShape): string => {
+const makeMethodPage = (
+  method: ExtractedMethodShape,
+  groupMap: MethodGroupMap
+): string => {
   const description = joinSentences(method.methodDescription)
+  const metaDescription = makeMethodMetaDescription(method)
   const tgLink = `[↗](https://core.telegram.org/bots/api#${method.methodName.toLowerCase()})`
   const lines: string[] = [
     "---",
-    `title: "${escapeYaml(method.methodName)}"`,
+    `title: "${escapeYaml(method.methodName)} – Telegram Bot API"`,
+    `description: "${escapeYaml(metaDescription)}"`,
     "---",
+    "",
+    makeMethodJsonLd(method),
     "",
     `<style>.sl-markdown-content a{text-decoration:none;color:var(--sl-color-text-accent)}.sl-markdown-content a code{color:var(--sl-color-text-accent)}</style>`,
     "",
     `**Returns** ${renderLinkedType(method.returnType)} ${tgLink}`,
     "",
     description,
-    ""
+    "",
+    ...makeMethodSummary(method)
   ]
 
+  lines.push(
+    `<details>`,
+    `<summary style="cursor:pointer;font-weight:600;font-size:14px;padding:8px 0;">Try it</summary>`,
+    ""
+  )
   lines.push(...makeApiRunnerBlock(method))
+  lines.push(`</details>`, "")
 
+  lines.push(
+    `<details>`,
+    `<summary style="cursor:pointer;font-weight:600;font-size:14px;padding:8px 0;">TypeScript example · @effect-ak/tg-bot-client</summary>`,
+    ""
+  )
   lines.push(...makeUsageExample(method))
+  lines.push(`</details>`, "")
 
   if (method.parameters && method.parameters.fields.length > 0) {
     lines.push("## Parameters", "")
@@ -306,6 +497,17 @@ const makeMethodPage = (method: ExtractedMethodShape): string => {
       lines.push(`**${field.name}** ${type}${req}\\`)
       lines.push(desc, "")
     }
+  }
+
+  const prefix = getMethodPrefix(method.methodName)
+  const related = prefix
+    ? (groupMap.get(prefix) ?? []).filter((m) => m.methodName !== method.methodName)
+    : []
+  if (related.length > 0) {
+    const links = related
+      .map((m) => `[${m.methodName}](/api/methods/${toKebab(m.methodName)}/)`)
+      .join(" · ")
+    lines.push("## Related methods", "", links, "")
   }
 
   return lines.join("\n")
@@ -350,11 +552,15 @@ const makeTypePage = (
   usageMap: TypeUsageMap
 ): string => {
   const description = joinSentences(extracted.description)
+  const metaDescription = makeTypeMetaDescription(extracted)
   const tgLink = `[↗](https://core.telegram.org/bots/api#${extracted.typeName.toLowerCase()})`
   const lines: string[] = [
     "---",
-    `title: "${escapeYaml(extracted.typeName)}"`,
+    `title: "${escapeYaml(extracted.typeName)} – Telegram Bot API Type"`,
+    `description: "${escapeYaml(metaDescription)}"`,
     "---",
+    "",
+    makeTypeJsonLd(extracted),
     "",
     `<style>.sl-markdown-content a{text-decoration:none;color:var(--sl-color-text-accent)}.sl-markdown-content a code{color:var(--sl-color-text-accent)}</style>`,
     "",
@@ -511,11 +717,13 @@ export class MarkdownWriterService extends Effect.Service<MarkdownWriterService>
             mkdir(typesDir, { recursive: true })
           )
 
+          const groupMap = buildMethodGroupMap(input.methods)
+
           yield* Effect.forEach(
             input.methods,
             (method) => {
               const fileName = `${toKebab(method.methodName)}.md`
-              const content = makeMethodPage(method)
+              const content = makeMethodPage(method, groupMap)
               return Effect.tryPromise(() =>
                 writeFile(Path.join(methodsDir, fileName), content)
               )
