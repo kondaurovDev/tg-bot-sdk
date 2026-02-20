@@ -1,5 +1,11 @@
 # @effect-ak/tg-bot-api
 
+## 1.3.2
+
+### Patch Changes
+
+- a0202e0: Add Telegram Login Widget support: `TelegramLoginData` interface, `TelegramLoginService` types for `window.Telegram.Login`, and `verifyLoginData` function using Web Crypto API
+
 ## 1.3.1
 
 ### Patch Changes
