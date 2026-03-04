@@ -16,12 +16,11 @@
     "alpinejs": "^3.15.8"
   },
   "devDependencies": {
-    "@astrojs/sitemap": "^3.7.0",
     "@astrojs/starlight": "^0.32.0",
     "@tailwindcss/vite": "^4.1.11",
     "@types/alpinejs": "^3.13.11",
     "astro": "^5.0.0",
-    "effortless-aws": "^0.16.2",
+    "effortless-aws": "^0.20.0",
     "monaco-editor": "^0.54.0",
     "sharp": "^0.33.0",
     "tailwindcss": "^4.1.11",
