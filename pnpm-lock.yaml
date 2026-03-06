@@ -52,10 +52,13 @@ importers:
         version: 3.1.1(@edge-runtime/vm@3.2.0)(@types/debug@4.1.12)(@types/node@22.10.2)(lightningcss@1.30.2)
 
   docs:
-    dependencies:
+    devDependencies:
       '@astrojs/alpinejs':
         specifier: ^0.4.9
         version: 0.4.9(@types/alpinejs@3.13.11)(alpinejs@3.15.8)
+      '@astrojs/starlight':
+        specifier: ^0.32.0
+        version: 0.32.6(astro@5.17.2(@types/node@22.10.2)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.41.1)(tsx@4.19.3)(typescript@5.9.3))
       '@effect-ak/tg-bot':
         specifier: workspace:^
         version: link:../packages/bot
@@ -68,25 +71,21 @@ importers:
       '@monaco-editor/loader':
         specifier: ^1.6.1
         version: 1.7.0
-      alpinejs:
-        specifier: ^3.15.8
-        version: 3.15.8
-    devDependencies:
-      '@astrojs/starlight':
-        specifier: ^0.32.0
-        version: 0.32.6(astro@5.17.2(@types/node@22.10.2)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.41.1)(tsx@4.19.3)(typescript@5.9.3))
       '@tailwindcss/vite':
         specifier: ^4.1.11
         version: 4.1.18(vite@6.4.1(@types/node@22.10.2)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.19.3))
       '@types/alpinejs':
         specifier: ^3.13.11
         version: 3.13.11
+      alpinejs:
+        specifier: ^3.15.8
+        version: 3.15.8
       astro:
         specifier: ^5.0.0
         version: 5.17.2(@types/node@22.10.2)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.41.1)(tsx@4.19.3)(typescript@5.9.3)
       effortless-aws:
-        specifier: ^0.20.0
-        version: 0.20.0
+        specifier: ^0.22.0
+        version: 0.22.0
       monaco-editor:
         specifier: ^0.54.0
         version: 0.54.0
@@ -2149,8 +2148,8 @@ packages:
   effect@3.19.13:
     resolution: {integrity: sha512-8MZ783YuHRwHZX2Mmm+bpGxq+7XPd88sWwYAz2Ysry80sEKpftDZXs2Hg9ZyjESi1IBTNHF0oDKe0zJRkUlyew==}
 
-  effortless-aws@0.20.0:
-    resolution: {integrity: sha512-wpTuwxTscta3UhYrLITuOpkU0uTVc3h+ayy8ljUMy89cgAzMrbnBrTxCuYmCZJ8wFYCFQagBZ3kXJ6fk690aAg==}
+  effortless-aws@0.22.0:
+    resolution: {integrity: sha512-t6yMDroL8nkNi22wk+VhBuJ7ejFlTG0gENSTdSA8Z5drKqZKvXW3O1PI2aGiAeJByrCIPTE1mTILz47RB9iOpA==}
 
   emoji-regex-xs@1.0.0:
     resolution: {integrity: sha512-LRlerrMYoIDrT6jgpeZ2YYl/L8EulRTt5hQcYjy5AInh7HWXKimpqx68aknBFpGL2+/IcogTcaydJEgaTmOpDg==}
@@ -6236,7 +6235,7 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       fast-check: 3.23.2
 
-  effortless-aws@0.20.0: {}
+  effortless-aws@0.22.0: {}
 
   emoji-regex-xs@1.0.0: {}
 

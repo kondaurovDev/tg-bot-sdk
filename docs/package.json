@@ -7,20 +7,18 @@
     "build": "astro build",
     "preview": "astro preview"
   },
-  "dependencies": {
+  "devDependencies": {
     "@astrojs/alpinejs": "^0.4.9",
     "@effect-ak/tg-bot": "workspace:^",
     "@effect-ak/tg-bot-api": "workspace:^",
     "@effect-ak/tg-bot-client": "workspace:^",
     "@monaco-editor/loader": "^1.6.1",
-    "alpinejs": "^3.15.8"
-  },
-  "devDependencies": {
+    "alpinejs": "^3.15.8",
     "@astrojs/starlight": "^0.32.0",
     "@tailwindcss/vite": "^4.1.11",
     "@types/alpinejs": "^3.13.11",
     "astro": "^5.0.0",
-    "effortless-aws": "^0.20.0",
+    "effortless-aws": "^0.22.0",
     "monaco-editor": "^0.54.0",
     "sharp": "^0.33.0",
     "tailwindcss": "^4.1.11",
