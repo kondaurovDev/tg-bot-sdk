@@ -86,4 +86,4 @@ Output a summary:
 - Number of new types and methods
 - List of key changes (new types, methods, fields)
 - Build/typecheck/test status
-- Remind the user to create a changeset (`pnpm changeset`) and commit
+- Remind the user to create a changeset (minor on `@effect-ak/tg-bot-api` is enough — `fixed` versioning in `.changeset/config.json` will bump all three packages together)
