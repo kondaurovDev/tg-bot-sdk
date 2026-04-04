@@ -1,6 +1,6 @@
 {
   "name": "@effect-ak/tg-bot",
-  "version": "1.3.2",
+  "version": "1.5.0",
   "type": "module",
   "description": "Telegram bot framework with long polling, webhooks, and fluent builder API",
   "license": "MIT",
