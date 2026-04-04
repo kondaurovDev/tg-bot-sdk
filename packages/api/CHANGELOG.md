@@ -1,5 +1,11 @@
 # @effect-ak/tg-bot-api
 
+## 1.5.0
+
+### Minor Changes
+
+- 6edcf09: Update to Telegram Bot API 9.6: managed bots support, enhanced polls with revoting and user-added options
+
 ## 1.3.3
 
 ### Patch Changes
