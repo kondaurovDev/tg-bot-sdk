@@ -11,12 +11,14 @@ import { Config, Effect, Logger, LogLevel } from "effect"
 import { extractBotApiEntities, ExtractedWebApp } from "./scrape/entities"
 import {
   BotApiCodeWriterService,
+  GoCodeWriterService,
   PageProviderService,
   WebAppCodeWriterService
 } from "./service/index"
 import { MarkdownWriterService } from "./service/markdown"
 import { BotApiCodegenRuntime, WebAppCodegenRuntime } from "./runtime"
 import { TsMorpthWriter } from "./service/code-writers"
+import { writeGoUnmarshal } from "./go/write-go-unmarshal"
 
 const rootDir = path.resolve(import.meta.dirname, "..", "..", "..")
 const pkgDir = path.resolve(import.meta.dirname, "..")
@@ -44,6 +46,23 @@ const generateBotApi = Effect.fn("generate bot api")(function* () {
 
   codeWriter.writeTypes(entities.types)
   codeWriter.writeMethods(entities.methods)
+
+  // Go code generation
+  const goWriter = yield* GoCodeWriterService
+  const unions = goWriter.writeTypes(entities.types)
+  goWriter.writeMethods(entities.methods, entities.types)
+
+  // Write unmarshal file directly (depends on unions from writeTypes)
+  const unmarshalSource = writeGoUnmarshal(unions)
+  if (unmarshalSource) {
+    const goOutDir = yield* Config.string("go-out-dir")
+    fs.writeFileSync(
+      path.resolve(goOutDir, "unmarshal_generated.go"),
+      unmarshalSource
+    )
+  }
+
+  yield* goWriter.saveFiles
 
   yield* markdownWriter.writeSpecification({
     ...entities,

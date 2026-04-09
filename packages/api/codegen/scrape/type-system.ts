@@ -65,6 +65,7 @@ export interface NormalTypeShape {
   typeNames: Array.NonEmptyReadonlyArray<string>
   isEnum?: boolean
   isOverridden?: boolean
+  pseudoTypes?: string[]
 }
 
 // ── Enum extraction ──
@@ -138,10 +139,11 @@ export const makeNormalTypeFromPseudoTypes = (
   pseudoType: string
 ): Either.Either<NormalTypeShape, NormalTypeError> => {
   if (pseudoType.includes(" or ")) {
-    const typeNames = pseudoType.split(" or ").map(mapPseudoTypeToTsType)
+    const parts = pseudoType.split(" or ")
+    const typeNames = parts.map(mapPseudoTypeToTsType)
 
     if (Array.isNonEmptyArray(typeNames) && typeNames[0].length > 0) {
-      return Either.right({ typeNames })
+      return Either.right({ typeNames, pseudoTypes: parts })
     }
 
     return NormalTypeError.left("EmptyType", { typeName: pseudoType })
@@ -149,7 +151,7 @@ export const makeNormalTypeFromPseudoTypes = (
     const typeName = mapPseudoTypeToTsType(makeArray(pseudoType))
 
     if (typeName.length > 0) {
-      return Either.right({ typeNames: [typeName] })
+      return Either.right({ typeNames: [typeName], pseudoTypes: [pseudoType] })
     }
 
     return NormalTypeError.left("EmptyType", { typeName: pseudoType })
@@ -160,7 +162,7 @@ export const makeNormalTypeFromPseudoTypes = (
       return NormalTypeError.left("EmptyType", { typeName: pseudoType })
     }
 
-    return Either.right({ typeNames })
+    return Either.right({ typeNames, pseudoTypes: [pseudoType] })
   }
 }
 

@@ -7,6 +7,7 @@
 import { ConfigProvider, Layer, Logger, ManagedRuntime } from "effect"
 import {
   BotApiCodeWriterService,
+  GoCodeWriterService,
   PageProviderService,
   WebAppCodeWriterService
 } from "./service"
@@ -15,13 +16,15 @@ import { TsMorpthWriter } from "./service/code-writers"
 
 const configProvider = ConfigProvider.fromJson({
   "scrapper-out-dir": ["."],
-  "markdown-out-dir": ["..", "..", "docs", "src", "content", "docs", "api"]
+  "markdown-out-dir": ["..", "..", "docs", "src", "content", "docs", "api"],
+  "go-out-dir": "../../go-api"
 })
 
 export const BotApiCodegenRuntime = ManagedRuntime.make(
   Layer.mergeAll(
     PageProviderService.Default,
     BotApiCodeWriterService.Default,
+    GoCodeWriterService.Default,
     MarkdownWriterService.Default
   ).pipe(
     Layer.provideMerge(TsMorpthWriter.Default),
