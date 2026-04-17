@@ -1,5 +1,16 @@
 # @effect-ak/tg-bot
 
+## 1.5.1
+
+### Patch Changes
+
+- dae0ed4: - Generated TypeScript types now carry JSDoc comments with field/method descriptions and `@see` links to the documentation site, improving IDE hover tooltips.
+  - Publish a language-agnostic JSON spec (`bot-api.json`, `mini-app.json`) at the docs site for third-party codegen, with structured types (`primitive`/`ref`/`array`/`union`/`enum`/`object`) and auto-detected discriminators for tagged unions.
+  - Internal codegen refactor: replaced `ts-morph` with a string-based emitter + Prettier; extracted a structured `SpecType` model; cleaned up overrides; various scraper bug fixes.
+- Updated dependencies [dae0ed4]
+  - @effect-ak/tg-bot-api@1.5.1
+  - @effect-ak/tg-bot-client@1.5.1
+
 ## 1.5.0
 
 ### Patch Changes
