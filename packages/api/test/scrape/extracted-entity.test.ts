@@ -1,6 +1,10 @@
 import { describe, expect, assert } from "vitest"
 
 import { fixture } from "~test/fixture/codegen-main"
+import { renderTypeToTs, type SpecType } from "~/scrape/type"
+
+const returnAs = (spec: SpecType | undefined): string | undefined =>
+  spec ? renderTypeToTs(spec) : undefined
 
 describe("extracted-entity", () => {
   fixture("getUpdates", ({ apiPage }) => {
@@ -31,7 +35,9 @@ describe("extracted-entity", () => {
 
     const field1 = entity.right.type.fields.find((_) => _.name == "emoji")
 
-    expect(field1?.type.typeNames[0]).equals('"❤"')
+    const spec = field1?.type.toSpec()
+    assert(spec?.kind === "enum", "expected enum")
+    expect(spec.values[0]).toEqual("❤")
   })
 
   fixture("answerCallbackQuery", ({ apiPage }) => {
@@ -63,14 +69,14 @@ describe("extracted-entity", () => {
 
     assert(entity._tag == "Right")
     expect(entity.right.entityName).toEqual("sendMediaGroup")
-    expect(entity.right.entityDescription.returns?.typeNames).toEqual([
+    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
       "Message[]"
-    ])
+    )
 
     assert(entity.right.type._tag == "EntityFields")
     const field1 = entity.right.type.fields.find((_) => _.name == "media")
 
-    expect(field1?.type.getTsType()).toEqual(
+    expect(field1?.type.getTsType("T")).toEqual(
       "(T.InputMediaAudio | T.InputMediaDocument | T.InputMediaPhoto | T.InputMediaVideo)[]"
     )
   })
@@ -82,10 +88,9 @@ describe("extracted-entity", () => {
 
     assert(entity._tag == "Right")
     expect(entity.right.entityName).toEqual("setGameScore")
-    expect(entity.right.entityDescription.returns?.typeNames).toEqual([
-      "Message",
-      "boolean"
-    ])
+    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
+      "Message | boolean"
+    )
   })
 
   fixture("getStarTransactions", ({ apiPage }) => {
@@ -95,9 +100,9 @@ describe("extracted-entity", () => {
 
     assert(entity._tag == "Right")
     expect(entity.right.entityName).toEqual("getStarTransactions")
-    expect(entity.right.entityDescription.returns?.typeNames).toEqual([
+    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
       "StarTransactions"
-    ])
+    )
   })
 
   fixture("deleteMessage", ({ apiPage }) => {
@@ -107,9 +112,7 @@ describe("extracted-entity", () => {
 
     assert(entity._tag == "Right")
     expect(entity.right.entityName).toEqual("deleteMessage")
-    expect(entity.right.entityDescription.returns?.typeNames).toEqual([
-      "boolean"
-    ])
+    expect(returnAs(entity.right.entityDescription.returns)).toEqual("boolean")
   })
 
   fixture("getWebhookInfo", ({ apiPage }) => {
@@ -119,9 +122,9 @@ describe("extracted-entity", () => {
 
     assert(entity._tag == "Right")
     expect(entity.right.entityName).toEqual("getWebhookInfo")
-    expect(entity.right.entityDescription.returns?.typeNames).toEqual([
+    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
       "WebhookInfo"
-    ])
+    )
   })
 
   fixture("ReplyKeyboardMarkup", ({ apiPage }) => {
@@ -162,9 +165,9 @@ describe("extracted-entity", () => {
 
     assert(entity._tag == "Right")
     expect(entity.right.entityName).toEqual("forwardMessages")
-    expect(entity.right.entityDescription.returns?.typeNames).toEqual([
+    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
       "MessageId[]"
-    ])
+    )
   })
 
   fixture("Chat", ({ apiPage }) => {
@@ -224,9 +227,9 @@ describe("extracted-entity", () => {
     assert(entity.right.type._tag == "EntityFields")
 
     expect(entity.right.type.fields).toHaveLength(2)
-    expect(entity.right.entityDescription.returns?.typeNames).toEqual([
+    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
       "BotCommand[]"
-    ])
+    )
   })
 
   fixture("logOut", ({ apiPage }) => {
@@ -238,9 +241,7 @@ describe("extracted-entity", () => {
     assert(entity.right.type._tag == "NormalType")
 
     expect(entity.right.type.getTsType()).toEqual("never")
-    expect(entity.right.entityDescription.returns?.typeNames).toEqual([
-      "boolean"
-    ])
+    expect(returnAs(entity.right.entityDescription.returns)).toEqual("boolean")
   })
 
   fixture("getMe", ({ apiPage }) => {
@@ -271,10 +272,6 @@ describe("extracted-entity", () => {
     assert(entity.right.type._tag == "NormalType")
 
     expect(entity.right.type.getTsType()).toEqual("never")
-
-    // expect(entity.right.entityName).toEqual("forumTopicClosed");
-    // expect(entity.right.type.type).toEqual("fields");
-    // expect(entity.right.entityDescription).not.toEqual([]);
   })
 
   fixture("ChatFullInfo", ({ apiPage }) => {

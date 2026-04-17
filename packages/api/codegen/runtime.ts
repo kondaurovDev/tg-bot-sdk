@@ -11,7 +11,6 @@ import {
   WebAppCodeWriterService
 } from "./service"
 import { MarkdownWriterService } from "./service/markdown"
-import { TsMorpthWriter } from "./service/code-writers"
 
 const configProvider = ConfigProvider.fromJson({
   "scrapper-out-dir": ["."],
@@ -24,7 +23,6 @@ export const BotApiCodegenRuntime = ManagedRuntime.make(
     BotApiCodeWriterService.Default,
     MarkdownWriterService.Default
   ).pipe(
-    Layer.provideMerge(TsMorpthWriter.Default),
     Layer.provide(Layer.setConfigProvider(configProvider)),
     Layer.provide(Logger.pretty)
   )
@@ -35,7 +33,6 @@ export const WebAppCodegenRuntime = ManagedRuntime.make(
     PageProviderService.Default,
     WebAppCodeWriterService.Default
   ).pipe(
-    Layer.provideMerge(TsMorpthWriter.Default),
     Layer.provide(Layer.setConfigProvider(configProvider)),
     Layer.provide(Logger.pretty)
   )

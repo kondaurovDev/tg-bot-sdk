@@ -1,36 +1,55 @@
-import { describe, expect, it, assert } from "vitest"
+import { describe, expect, it } from "vitest"
 
-import {
-  makeNormalTypeFromPseudoTypes,
-  extractEnumFromTypeDescription
-} from "~/scrape/type-system"
+import { extractEnumFromTypeDescription } from "~/scrape/type-system"
+import { parsePseudoType, renderTypeToTs, type SpecType } from "~/scrape/type"
 
-describe("normal type", () => {
-  it("make normal type from pseudo types", async () => {
-    const check = (pseudo: string, expected: string[]) => {
-      const t = makeNormalTypeFromPseudoTypes(pseudo)
-      assert(t._tag == "Right")
-      expect(t.right.typeNames).toEqual(expected)
-    }
+describe("parsePseudoType", () => {
+  const check = (pseudo: string, expectedTs: string) => {
+    const parsed = parsePseudoType(pseudo)
+    expect(parsed).not.toBeNull()
+    expect(renderTypeToTs(parsed as SpecType)).toEqual(expectedTs)
+  }
 
-    check("String or Integer", ["string", "number"])
-    check("Boolean", ["boolean"])
-    check("True", ["boolean"])
-    check("Array of String", ["string[]"])
-    check("Array of Integer", ["number[]"])
-    check("Array of ChatObject", ["ChatObject[]"])
+  it("maps primitives", () => {
+    check("String", "string")
+    check("Integer", "number")
+    check("Int", "number")
+    check("Float", "number")
+    check("Boolean", "boolean")
+    check("True", "boolean")
+    check("False", "boolean")
   })
 
-  it("extract enum from type description", () => {
-    const check = (description: string[], expected: string[]) => {
-      const actual = extractEnumFromTypeDescription(description)
-      expect(actual).toEqual(expected)
-    }
+  it("preserves complex types as refs", () => {
+    check("Chat", "Chat")
+    check("User", "User")
+  })
 
+  it("parses unions", () => {
+    check("String or Integer", "string | number")
+  })
+
+  it("parses single and nested arrays", () => {
+    check("Array of String", "string[]")
+    check("Array of Integer", "number[]")
+    check("Array of ChatObject", "ChatObject[]")
+    check("Array of Array of PhotoSize", "PhotoSize[][]")
+  })
+})
+
+describe("extractEnumFromTypeDescription", () => {
+  const check = (description: string[], expected: string[]) => {
+    const actual = extractEnumFromTypeDescription(description)
+    expect(actual).toEqual(expected)
+  }
+
+  it("pulls literals from 'always X' / 'must be X' sentences", () => {
     check(["Type of the reaction, always \u201Cpaid\u201D"], ["paid"])
 
     check(
-      ["Format of the sticker, must be one of \u201Cstatic\u201D, \u201Canimated\u201D, \u201Cvideo\u201D"],
+      [
+        "Format of the sticker, must be one of \u201Cstatic\u201D, \u201Canimated\u201D, \u201Cvideo\u201D"
+      ],
       ["static", "animated", "video"]
     )
 
@@ -50,13 +69,26 @@ describe("normal type", () => {
 
     check(["Nothing"], [])
 
-    check([`Currently, it can be one of "\u{1F44D}", "\u{1F44E}", "\u2764"`], ["\u{1F44D}", "\u{1F44E}", "\u2764"])
+    check(
+      [`Currently, it can be one of "\u{1F44D}", "\u{1F44E}", "\u2764"`],
+      ["\u{1F44D}", "\u{1F44E}", "\u2764"]
+    )
 
     check(
       [
         `Type of the chat, can be either \u201Cprivate\u201D, \u201Cgroup\u201D, \u201Csupergroup\u201D or \u201Cchannel\u201D`
       ],
       ["private", "group", "supergroup", "channel"]
+    )
+  })
+
+  it("handles multi-line description with enum only on the second line", () => {
+    check(
+      [
+        "Regular text without any enum.",
+        "Type must be \u201Calpha\u201D, \u201Cbeta\u201D"
+      ],
+      ["alpha", "beta"]
     )
   })
 })

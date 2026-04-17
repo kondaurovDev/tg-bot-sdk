@@ -8,10 +8,10 @@
  * {@link WebAppPage} represents the Mini Apps docs page
  * (`https://core.telegram.org/bots/webapps`).
  *
- * Both expose `getEntity`, `getType`, and `getMethod` for locating
+ * Both expose `getEntity`, `getType`, and `getLatestVersion` for locating
  * entities by anchor name in the parsed HTML tree.
  */
-import { Data, Either, pipe } from "effect"
+import { Either, pipe } from "effect"
 
 import { HtmlElement, parseStringToHtml, HtmlPageDocumentation } from "~/types"
 import {
@@ -21,12 +21,12 @@ import {
   ExtractEntityError
 } from "~/scrape/entity"
 
-// ── Shared helpers ──
+type ToAnchor = (name: string) => string
 
 const findEntityByAnchor = (
   node: HtmlElement,
   name: string,
-  toAnchor: (name: string) => string
+  toAnchor: ToAnchor
 ) =>
   pipe(
     Either.fromNullable(
@@ -39,16 +39,6 @@ const findEntityByAnchor = (
     Either.andThen((_) => ExtractedEntity.makeFrom(_.parentNode))
   )
 
-const getTypeFromEntity = (
-  node: HtmlElement,
-  name: string,
-  toAnchor: (name: string) => string
-) =>
-  pipe(
-    findEntityByAnchor(node, name, toAnchor),
-    Either.andThen(ExtractedType.makeFrom)
-  )
-
 const getLatestVersion = (node: HtmlElement) =>
   Either.fromNullable(
     node
@@ -59,86 +49,62 @@ const getLatestVersion = (node: HtmlElement) =>
     () => new Error("Html node with latest API version not found")
   )
 
-// ── DocPageError ──
+abstract class BasePage implements HtmlPageDocumentation {
+  constructor(
+    readonly node: HtmlElement,
+    private readonly toAnchor: ToAnchor
+  ) {}
 
-type DocPageErrorCode = "EntityNoFound"
+  getEntity(name: string) {
+    return findEntityByAnchor(this.node, name, this.toAnchor)
+  }
 
-interface DocPageErrorDetails {
-  entityName?: string
-}
+  getType(name: string) {
+    return pipe(this.getEntity(name), Either.andThen(ExtractedType.makeFrom))
+  }
 
-export class DocPageError extends Data.TaggedError("DocPageError")<{
-  error: DocPageErrorCode
-  details?: DocPageErrorDetails | undefined
-}> {
-  static make(error: DocPageErrorCode, details?: DocPageErrorDetails) {
-    return new DocPageError({ error, details })
+  getLatestVersion() {
+    return getLatestVersion(this.node)
   }
 }
 
 // ── DocPage ──
 
-const botApiAnchor = (name: string) => name.toLowerCase()
+const botApiAnchor: ToAnchor = (name) => name.toLowerCase()
 
-export class DocPage
-  extends Data.Class<{
-    node: HtmlElement
-  }>
-  implements HtmlPageDocumentation
-{
+export class DocPage extends BasePage {
   static fromHtmlString(html: string) {
     return parseStringToHtml(html).pipe(
-      Either.andThen((node) => new DocPage({ node }))
+      Either.andThen((node) => new DocPage(node))
     )
   }
 
-  getEntity(name: string) {
-    return findEntityByAnchor(this.node, name, botApiAnchor)
-  }
-
-  getType(name: string) {
-    return getTypeFromEntity(this.node, name, botApiAnchor)
+  private constructor(node: HtmlElement) {
+    super(node, botApiAnchor)
   }
 
   getMethod(name: string) {
     return pipe(this.getEntity(name), Either.andThen(ExtractedMethod.makeFrom))
   }
-
-  getLatestVersion() {
-    return getLatestVersion(this.node)
-  }
 }
 
 // ── WebAppPage ──
 
-const webAppAnchor = (name: string) =>
+const webAppAnchor: ToAnchor = (name) =>
   name.toLowerCase().replaceAll(" ", "-")
 
-export class WebAppPage
-  extends Data.Class<{
-    node: HtmlElement
-  }>
-  implements HtmlPageDocumentation
-{
+export class WebAppPage extends BasePage {
   static fromHtmlString(html: string) {
     return parseStringToHtml(html).pipe(
-      Either.andThen((node) => new WebAppPage({ node }))
+      Either.andThen((node) => new WebAppPage(node))
     )
   }
 
-  getEntity(name: string) {
-    return findEntityByAnchor(this.node, name, webAppAnchor)
-  }
-
-  getType(name: string) {
-    return getTypeFromEntity(this.node, name, webAppAnchor)
+  private constructor(node: HtmlElement) {
+    super(node, webAppAnchor)
   }
 
   getWebApp() {
     return this.getEntity("initializing mini apps")
-  }
-
-  getLatestVersion() {
-    return getLatestVersion(this.node)
   }
 }

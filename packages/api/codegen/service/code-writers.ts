@@ -3,172 +3,100 @@
  *
  * TypeScript code generation services.
  *
- * Uses ts-morph to programmatically create `.ts` source files:
+ * Pure string-based emitter + prettier. No AST, no compiler dependency.
  * - {@link BotApiCodeWriterService} writes `types.ts` and `api.ts`
  *   (all Bot API interfaces and method signatures)
  * - {@link WebAppCodeWriterService} writes `webapp.ts`
  *   (Mini Apps WebApp interface and related types)
- * - {@link TsMorpthWriter} manages the ts-morph Project instance
  */
-import { Config, Effect, Either, pipe, String } from "effect"
+import { Config, Effect, String } from "effect"
+import { writeFile, mkdir } from "node:fs/promises"
 import * as Path from "path"
-import * as TsMorph from "ts-morph"
-import type {
-  MethodSignatureStructure,
-  PropertySignatureStructure
-} from "ts-morph"
 
-import type { TsSourceFile } from "~/types"
-import type { ExtractedMethodShape } from "~/scrape/entity"
-import type { ExtractedTypeShape } from "~/scrape/entity"
+import type { ExtractedMethodShape, ExtractedTypeShape } from "~/scrape/entity"
 import { ExtractedWebApp } from "~/scrape/entities"
+import {
+  assembleFile,
+  emitExtractedType,
+  emitInterface,
+  emitNamespaceImport,
+  emitTypeAlias,
+  formatTsSource
+} from "./emitter"
 
-// ── TsMorpthWriter ──
+// ── Shared ──
 
-export class TsMorpthWriter extends Effect.Service<TsMorpthWriter>()(
-  "TsMorpthWriter",
-  {
-    scoped: Effect.gen(function* () {
-      const writeToDir = yield* Config.array(
-        Config.nonEmptyString(),
-        "scrapper-out-dir"
-      )
-
-      yield* Effect.logInfo("Initializing TsMorphWriter")
-
-      yield* Effect.addFinalizer(() => Effect.logInfo("Closing TsMorpthWriter"))
-
-      const project = new TsMorph.Project({
-        manipulationSettings: {
-          indentationText: TsMorph.IndentationText.TwoSpaces
-        }
-      })
-
-      const saveFiles = pipe(
-        Effect.tryPromise(() => project.save()),
-        Effect.andThen((result) =>
-          Effect.logInfo("Morph project closed", result)
-        )
-      )
-
-      const createTsFile = (name: string, ...dir: string[]) =>
-        Either.try(() => {
-          const to = Path.join(...writeToDir, ...dir, name + ".ts")
-          console.log("Creating morph source file", to)
-          return project.createSourceFile(to, "", { overwrite: true })
-        })
-
-      return { createTsFile, saveFiles }
-    }),
-    dependencies: []
-  }
-) {}
-
-// ── Shared type/interface writer ──
-
-const addTypeOrInterface = (
-  src: TsSourceFile,
-  type: ExtractedTypeShape,
-  typeNamespace?: string
-) => {
-  if (type.type._tag == "EntityFields") {
-    return src.addInterface({
-      name: type.typeName,
-      isExported: true,
-      properties: type.type.fields.map(
-        (field) =>
-          ({
-            name: field.name,
-            type: field.type.getTsType(typeNamespace),
-            hasQuestionToken: !field.required
-          }) as PropertySignatureStructure
-      )
-    })
-  } else {
-    return src.addTypeAlias({
-      name: type.typeName,
-      isExported: true,
-      type: type.type.getTsType(typeNamespace)
-    })
-  }
+const writeTsFile = async (outPath: string, source: string) => {
+  const formatted = await formatTsSource(source)
+  await mkdir(Path.dirname(outPath), { recursive: true })
+  await writeFile(outPath, formatted)
+  console.log("Wrote", outPath)
 }
 
-// ── writeTypes ──
+const specPath = (outDir: string, fileName: string) =>
+  Path.join(outDir, "src", "specification", `${fileName}.ts`)
 
-const writeTypes =
-  (src: TsSourceFile) => (types: ExtractedTypeShape[]) => {
-    src.addStatements("// GENERATED CODE ")
+// ── Doc site links ──
 
-    src.addTypeAlias({
-      name: "AllowedUpdateName",
-      type: `Exclude<keyof Update, "update_id">`,
-      isExported: true
+const SITE_BASE = "https://tg-bot-sdk.website"
+
+const toKebab = (name: string): string =>
+  String.snakeToKebab(String.camelToSnake(name)).replace(/^-/, "")
+
+const typeDocUrl = (name: string) => `${SITE_BASE}/api/types/${toKebab(name)}/`
+const methodDocUrl = (name: string) =>
+  `${SITE_BASE}/api/methods/${toKebab(name)}/`
+
+// ── Bot API types.ts ──
+
+const TYPE_NAMESPACE = "T"
+
+export const renderTypes = (types: ExtractedTypeShape[]): string => {
+  const parts = [
+    emitTypeAlias("AllowedUpdateName", `Exclude<keyof Update, "update_id">`),
+    ...types.map((t) =>
+      emitExtractedType(t, { seeUrl: typeDocUrl(t.typeName) })
+    )
+  ]
+  return assembleFile(parts)
+}
+
+// ── Bot API api.ts ──
+
+const makeMethodInputName = (methodName: string) =>
+  `${String.snakeToPascal(methodName)}Input`
+
+export const renderMethods = (methods: ExtractedMethodShape[]): string => {
+  const apiInterface = emitInterface("Api", {
+    methods: methods.map((m) => ({
+      name: String.camelToSnake(m.methodName),
+      returnType: m.returnType.getTsType(TYPE_NAMESPACE),
+      parameters: [{ name: "_", type: makeMethodInputName(m.methodName) }],
+      description: m.methodDescription,
+      seeUrl: methodDocUrl(m.methodName)
+    }))
+  })
+
+  const inputInterfaces = methods.map((m) =>
+    emitInterface(makeMethodInputName(m.methodName), {
+      description: m.methodDescription,
+      seeUrl: methodDocUrl(m.methodName),
+      properties:
+        m.parameters?.fields.map((f) => ({
+          name: f.name,
+          type: f.type.getTsType(TYPE_NAMESPACE),
+          optional: !f.required,
+          description: f.description
+        })) ?? []
     })
+  )
 
-    for (const type of types) {
-      addTypeOrInterface(src, type)
-    }
-  }
-
-// ── writeMethods ──
-
-const writeMethods =
-  (src: TsSourceFile) => (methods: ExtractedMethodShape[]) => {
-    src.addStatements("// GENERATED CODE ")
-
-    const makeMethodInterfaceInputName = (_: string) =>
-      `${String.snakeToPascal(_)}Input`
-
-    const typeNamespace = "T"
-
-    src.addImportDeclaration({
-      moduleSpecifier: "./types",
-      namespaceImport: typeNamespace
-    })
-
-    src
-      .addInterface({
-        name: "Api",
-        isExported: true,
-        methods: methods.map(
-          (method) =>
-            ({
-              name: String.camelToSnake(method.methodName),
-              returnType: method.returnType.getTsType(typeNamespace),
-              parameters: [
-                {
-                  name: "_",
-                  type: makeMethodInterfaceInputName(method.methodName)
-                }
-              ]
-            }) as MethodSignatureStructure
-        )
-      })
-      .formatText()
-
-    for (const method of methods) {
-      const interfaceName = makeMethodInterfaceInputName(method.methodName)
-
-      src
-        .addInterface({
-          name: interfaceName,
-          isExported: true,
-          ...(method.parameters == null
-            ? undefined
-            : {
-                properties: method.parameters.fields.map(
-                  (field) =>
-                    ({
-                      name: field.name,
-                      type: field.type.getTsType(typeNamespace),
-                      hasQuestionToken: !field.required
-                    }) as PropertySignatureStructure
-                )
-              })
-        })
-        .formatText()
-    }
-  }
+  return assembleFile([
+    emitNamespaceImport(TYPE_NAMESPACE, "./types"),
+    apiInterface,
+    ...inputInterfaces
+  ])
+}
 
 // ── BotApiCodeWriterService ──
 
@@ -176,15 +104,21 @@ export class BotApiCodeWriterService extends Effect.Service<BotApiCodeWriterServ
   "BotApiCodeWriterService",
   {
     effect: Effect.gen(function* () {
-      const { createTsFile } = yield* TsMorpthWriter
-
-      const typeSrcFile = yield* createTsFile("types", "src", "specification")
-
-      const apiSrcFile = yield* createTsFile("api", "src", "specification")
+      const outDirParts = yield* Config.array(
+        Config.nonEmptyString(),
+        "scrapper-out-dir"
+      )
+      const outDir = Path.join(...outDirParts)
 
       return {
-        writeTypes: writeTypes(typeSrcFile),
-        writeMethods: writeMethods(apiSrcFile)
+        writeTypes: (types: ExtractedTypeShape[]) =>
+          Effect.tryPromise(() =>
+            writeTsFile(specPath(outDir, "types"), renderTypes(types))
+          ),
+        writeMethods: (methods: ExtractedMethodShape[]) =>
+          Effect.tryPromise(() =>
+            writeTsFile(specPath(outDir, "api"), renderMethods(methods))
+          )
       } as const
     })
   }
@@ -192,44 +126,35 @@ export class BotApiCodeWriterService extends Effect.Service<BotApiCodeWriterServ
 
 // ── WebAppCodeWriterService ──
 
+export const renderWebApp = (extractedWebApp: ExtractedWebApp): string =>
+  assembleFile([
+    emitNamespaceImport("T", "../event-handlers", true),
+    emitInterface(
+      "WebApp",
+      extractedWebApp.fields.map((field) => ({
+        name: field.name,
+        type: field.type.getTsType()
+      }))
+    ),
+    ...extractedWebApp.types.map((t) => emitExtractedType(t))
+  ])
+
 export class WebAppCodeWriterService extends Effect.Service<WebAppCodeWriterService>()(
   "WebAppCodeWriterService",
   {
     effect: Effect.gen(function* () {
-      const { createTsFile } = yield* TsMorpthWriter
-      const srcFile = yield* createTsFile("webapp", "src", "specification")
+      const outDirParts = yield* Config.array(
+        Config.nonEmptyString(),
+        "scrapper-out-dir"
+      )
+      const outDir = Path.join(...outDirParts)
 
       return {
-        writeWebApp: writeWebApp(srcFile)
+        writeWebApp: (extractedWebApp: ExtractedWebApp) =>
+          Effect.tryPromise(() =>
+            writeTsFile(specPath(outDir, "webapp"), renderWebApp(extractedWebApp))
+          )
       } as const
     })
   }
 ) {}
-
-const writeWebApp =
-  (src: TsSourceFile) => (extractedWebApp: ExtractedWebApp) => {
-    const eventHandlerNamespaceAlias = "T"
-
-    src.addStatements("// GENERATED CODE ")
-
-    src.addImportDeclaration({
-      moduleSpecifier: "../event-handlers",
-      namespaceImport: eventHandlerNamespaceAlias,
-      isTypeOnly: true
-    })
-
-    src
-      .addInterface({
-        name: "WebApp",
-        isExported: true,
-        properties: extractedWebApp.fields.map((field) => ({
-          name: field.name,
-          type: field.type.getTsType()
-        }))
-      })
-      .formatText()
-
-    for (const type of extractedWebApp.types) {
-      addTypeOrInterface(src, type).formatText()
-    }
-  }

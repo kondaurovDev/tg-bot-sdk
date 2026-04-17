@@ -16,11 +16,17 @@ import {
 } from "./service/index"
 import { MarkdownWriterService } from "./service/markdown"
 import { BotApiCodegenRuntime, WebAppCodegenRuntime } from "./runtime"
-import { TsMorpthWriter } from "./service/code-writers"
+import { consumeWarnings, formatWarnings } from "./warnings"
+import {
+  buildBotApiSpec,
+  buildMiniAppSpec,
+  writeSpecJson
+} from "./service/spec"
 
 const rootDir = path.resolve(import.meta.dirname, "..", "..", "..")
 const pkgDir = path.resolve(import.meta.dirname, "..")
 const docsDataDir = path.resolve(rootDir, "docs", "src", "data")
+const docsPublicDir = path.resolve(rootDir, "docs", "public")
 
 const updateReadmeBadge = (pattern: RegExp, replacement: string) => {
   for (const dir of [pkgDir, rootDir]) {
@@ -37,20 +43,24 @@ const generateBotApi = Effect.fn("generate bot api")(function* () {
 
   const apiVersion = yield* apiPage.getLatestVersion()
 
-  const tsMorph = yield* TsMorpthWriter
   const codeWriter = yield* BotApiCodeWriterService
   const markdownWriter = yield* MarkdownWriterService
   const entities = yield* extractBotApiEntities(apiPage)
 
-  codeWriter.writeTypes(entities.types)
-  codeWriter.writeMethods(entities.methods)
+  yield* codeWriter.writeTypes(entities.types)
+  yield* codeWriter.writeMethods(entities.methods)
+
+  yield* Effect.tryPromise(() =>
+    writeSpecJson(
+      path.resolve(docsPublicDir, "bot-api.json"),
+      buildBotApiSpec(entities, apiVersion)
+    )
+  )
 
   yield* markdownWriter.writeSpecification({
     ...entities,
     apiVersion
   })
-
-  yield* tsMorph.saveFiles
 
   fs.writeFileSync(
     path.resolve(pkgDir, "bot-api-version.json"),
@@ -82,23 +92,28 @@ const generateWebApp = Effect.fn("generate web app")(function* () {
   const pageProvider = yield* PageProviderService
   const webappPage = yield* pageProvider.webapp
 
-  const webAppVersion = yield* webappPage.getLatestVersion()
+  // Mini Apps HTML marks "Bot API X.Y" — Telegram versions Mini Apps in lockstep with Bot API.
+  const botApiVersion = yield* webappPage.getLatestVersion()
 
-  const tsMorph = yield* TsMorpthWriter
   const { writeWebApp } = yield* WebAppCodeWriterService
 
   const extractedWebApp = yield* ExtractedWebApp.make(webappPage)
 
-  writeWebApp(extractedWebApp)
+  yield* writeWebApp(extractedWebApp)
 
-  yield* tsMorph.saveFiles
+  yield* Effect.tryPromise(() =>
+    writeSpecJson(
+      path.resolve(docsPublicDir, "mini-app.json"),
+      buildMiniAppSpec(extractedWebApp, botApiVersion)
+    )
+  )
 
   fs.writeFileSync(
     path.resolve(pkgDir, "mini-app-version.json"),
-    JSON.stringify({ version: webAppVersion }, null, 2) + "\n"
+    JSON.stringify({ version: botApiVersion }, null, 2) + "\n"
   )
 
-  updateReadmeBadge(/Telegram\.WebApp-[\w.]+/, `Telegram.WebApp-${webAppVersion}`)
+  updateReadmeBadge(/Telegram\.WebApp-[\w.]+/, `Telegram.WebApp-${botApiVersion}`)
 })
 
 const gen = Effect.fn("Generate")(function* () {
@@ -112,4 +127,8 @@ const gen = Effect.fn("Generate")(function* () {
 
 gen()
   .pipe(Logger.withMinimumLogLevel(LogLevel.Debug), Effect.runPromise)
-  .then(() => console.log("done generating"))
+  .then(() => {
+    const warnings = consumeWarnings()
+    if (warnings.length > 0) console.warn(formatWarnings(warnings))
+    console.log("done generating")
+  })

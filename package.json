@@ -10,7 +10,7 @@
     "test": "pnpm run --parallel -r test",
     "docs:dev": "pnpm --filter tg-bot-docs dev",
     "docs:build": "pnpm --filter tg-bot-docs build",
-"changeset": "changeset",
+    "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "pnpm codegen && pnpm build && changeset publish"
   },

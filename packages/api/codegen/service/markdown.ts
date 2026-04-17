@@ -17,9 +17,10 @@ import type { ExtractedTypeShape } from "~/scrape/entity"
 import {
   EntityFields,
   isComplexType,
-  type EntityField,
-  type NormalType
+  NormalType,
+  type EntityField
 } from "~/scrape/type-system"
+import type { SpecType } from "~/scrape/type"
 
 // ── Helpers ──
 
@@ -43,11 +44,43 @@ const linkSingleType = (name: string): string => {
   return `[\`${baseName}\`](/api/types/${toKebab(baseName)}/)${suffix}`
 }
 
+/** Collect every referenced type name from a SpecType tree. */
+const collectRefNames = (t: SpecType, out: Set<string> = new Set()): Set<string> => {
+  switch (t.kind) {
+    case "ref":
+      out.add(t.name)
+      break
+    case "array":
+      collectRefNames(t.element, out)
+      break
+    case "union":
+      for (const m of t.members) collectRefNames(m, out)
+      break
+    case "object":
+      for (const f of t.fields) collectRefNames(f.type, out)
+      break
+    case "primitive":
+    case "enum":
+    case "raw":
+      break
+  }
+  return out
+}
+
 const renderLinkedType = (type: NormalType): string => {
-  if (type.isOverridden || type.isEnum) return `\`${type.getTsType()}\``
-  return type.typeNames
-    .map((name) => linkSingleType(name))
-    .join(" \\| ")
+  const spec = type.toSpec()
+  if (spec.kind === "raw" || spec.kind === "enum")
+    return `\`${type.getTsType()}\``
+  if (spec.kind === "union") {
+    return spec.members
+      .map((m) => renderLinkedType(NormalType.fromSpec(m)))
+      .join(" \\| ")
+  }
+  if (spec.kind === "array") {
+    return `${renderLinkedType(NormalType.fromSpec(spec.element))}[]`
+  }
+  // primitive | ref | object
+  return linkSingleType(type.getTsType())
 }
 
 // ── Usage example ──
@@ -55,15 +88,16 @@ const renderLinkedType = (type: NormalType): string => {
 const toSnakeCase = (name: string) => Str.camelToSnake(name)
 
 const placeholderForField = (name: string, type: NormalType): string => {
+  const spec = type.toSpec()
   const tsType = type.getTsType()
   if (name === "chat_id") return `"YOUR_CHAT_ID"`
   if (name === "text" || name === "caption") return `"Hello!"`
   if (name === "parse_mode") return `"HTML"`
-  if (type.isEnum) return type.typeNames[0]
+  if (spec.kind === "enum") return `"${spec.values[0]}"`
   if (tsType === "string") return `"..."`
   if (tsType === "number") return `0`
   if (tsType === "boolean") return `true`
-  if (tsType.endsWith("[]")) return `[]`
+  if (spec.kind === "array") return `[]`
   return `{ /* ${tsType} */ }`
 }
 
@@ -106,15 +140,20 @@ const makeUsageExample = (method: ExtractedMethodShape): string[] => {
 // ── API Runner block ──
 
 const resolveInputType = (field: EntityField): string => {
+  const spec = field.type.toSpec()
   const tsType = field.type.getTsType()
   if (tsType === "boolean") return "boolean"
   if (tsType === "number") return "number"
-  if (tsType === "string" || field.type.isEnum || field.type.isOverridden) return "string"
-  if (
-    field.type.typeNames.length <= 2 &&
-    field.type.typeNames.every((n) => n === "string" || n === "number")
-  )
-    return "string"
+  if (tsType === "string") return "string"
+  if (spec.kind === "enum" || spec.kind === "raw") return "string"
+  if (spec.kind === "union") {
+    const allStringOrNumber = spec.members.every(
+      (m) =>
+        m.kind === "primitive" &&
+        (m.name === "string" || m.name === "integer" || m.name === "float")
+    )
+    if (allStringOrNumber && spec.members.length <= 2) return "string"
+  }
   return "json"
 }
 
@@ -527,9 +566,8 @@ const buildTypeUsageMap = (methods: ExtractedMethodShape[]): TypeUsageMap => {
   }
 
   const collectFromType = (type: NormalType, method: ExtractedMethodShape) => {
-    for (const name of type.typeNames) {
-      const baseName = name.replace(/\[\]+$/, "")
-      if (isComplexType(baseName)) addUsage(baseName, method)
+    for (const name of collectRefNames(type.toSpec())) {
+      if (isComplexType(name)) addUsage(name, method)
     }
   }
 
@@ -599,10 +637,16 @@ const makeTypePage = (
       lines.push(desc, "")
     }
   } else {
-    const typeNames = extracted.type.typeNames
-    if (typeNames.length > 1) {
+    const spec = extracted.type.toSpec()
+    const variantNames =
+      spec.kind === "union"
+        ? spec.members.flatMap((m) =>
+            m.kind === "ref" ? [m.name] : []
+          )
+        : []
+    if (variantNames.length > 1) {
       lines.push("## Variants", "")
-      for (const name of typeNames) {
+      for (const name of variantNames) {
         lines.push(`- ${linkSingleType(name)}`)
       }
       lines.push("")

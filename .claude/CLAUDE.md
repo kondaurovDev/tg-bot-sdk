@@ -6,7 +6,7 @@ Do not run `changeset version` or `changeset publish` locally. CI/CD handles bui
 
 Monorepo (`pnpm workspaces`) with three npm packages under `@effect-ak/` scope:
 
-- **`packages/api`** — Auto-generated TypeScript types for Telegram Bot API. Codegen scrapes official Telegram docs (node-html-parser + ts-morph), runs via Effect-ts. Two modules: `bot_api` and `webapp` (Mini Apps).
+- **`packages/api`** — Auto-generated TypeScript types for Telegram Bot API. Codegen scrapes official Telegram docs (node-html-parser) and emits `.ts` via a string-based emitter + prettier. Runs via Effect-ts. Two modules: `bot_api` and `webapp` (Mini Apps).
 - **`packages/client`** — Lightweight HTTP client (`makeTgBotClient()`). Uses native `fetch`, zero runtime deps. Discriminated union results (`ok: true/false`), automatic FormData serialization, message effect emoji mapping.
 - **`packages/bot`** — High-level bot framework. Fluent builder API (`createBot().onMessage(...).run()`), guarded handler pattern, long polling with offset management, webhook support.
 - **`docs/`** — Astro + Starlight documentation site (https://tg-bot-sdk.website). Interactive playground (Alpine.js + Monaco Editor).

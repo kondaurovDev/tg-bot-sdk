@@ -17,7 +17,7 @@ import {
   ExtractedType,
   type ExtractedMethod
 } from "~/scrape/entity"
-import { type DocPageError, DocPage, WebAppPage } from "~/scrape/page"
+import { DocPage, WebAppPage } from "~/scrape/page"
 
 // ── ExtractedEntitiesError ──
 
@@ -36,7 +36,7 @@ export class ExtractedEntitiesError extends Data.TaggedError("NodesNotFound")<{
 
 const method_type_name_regex = /^\w+$/
 
-type ExtractError = ExtractEntityError | ExtractedEntitiesError | DocPageError
+type ExtractError = ExtractEntityError | ExtractedEntitiesError
 
 type TitleExtractor = (node: import("~/types").HtmlElement) => string | undefined
 

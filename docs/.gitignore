@@ -6,3 +6,7 @@ dist/
 src/content/docs/api/methods/
 src/content/docs/api/types/
 src/content/docs/api/index.md
+
+# Auto-generated language-agnostic spec JSON (codegen)
+public/bot-api.json
+public/mini-app.json

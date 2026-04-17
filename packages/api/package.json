@@ -49,7 +49,8 @@
     "dist/*.d.ts"
   ],
   "devDependencies": {
-    "node-html-parser": "^7.0.1",
-    "ts-morph": "^27.0.2"
+    "@types/he": "^1.2.3",
+    "he": "^1.2.0",
+    "node-html-parser": "^7.0.1"
   }
 }

@@ -1,20 +1,26 @@
 /**
  * @module type-system
  *
- * Type representation and conversion layer.
- *
- * Defines how Telegram API types (primitives, unions, arrays, objects) are
- * represented internally and converted to TypeScript types.
+ * Bridges the HTML-derived pseudo-types to the structured {@link SpecType}
+ * algebra defined in `~/scrape/type`.
  *
  * Key exports:
- * - {@link NormalType} — a single type (primitive, union, or complex reference)
- * - {@link EntityFields} — an object type with named fields
- * - {@link mapPseudoTypeToTsType} — conversion helper
- * - {@link fieldOverrides} constants for types that can't be inferred from HTML (in `overrides.ts`)
+ * - {@link NormalType} — thin wrapper around a {@link SpecType} that knows
+ *   how to render itself to TS.
+ * - {@link EntityFields} — object type with named fields (collected from
+ *   HTML tables).
+ * - {@link extractEnumFromTypeDescription} — picks string-literal enums out
+ *   of the docs prose.
  */
-import { Array, Data, Either, Match, pipe } from "effect"
+import { Array, Data, Either } from "effect"
 
-import { fieldOverrides } from "~/scrape/overrides"
+import { fieldOverrides, globalFieldOverrides } from "~/scrape/overrides"
+import {
+  enumOf,
+  parsePseudoType,
+  renderTypeToTs,
+  type SpecType
+} from "~/scrape/type"
 
 // ── Shared types ──
 
@@ -59,14 +65,6 @@ export class NormalTypeError extends Data.TaggedError(
   }
 }
 
-// ── NormalType shape ──
-
-export interface NormalTypeShape {
-  typeNames: Array.NonEmptyReadonlyArray<string>
-  isEnum?: boolean
-  isOverridden?: boolean
-}
-
 // ── Enum extraction ──
 
 const regexQuotes = /["\u201C]([^"\u201D]+)["\u201D]/g
@@ -107,121 +105,48 @@ export function extractEnumFromTypeDescription(
   return enumValues.filter((_) => enumRegex.test(_))
 }
 
-// ── Pseudo-type mapping ──
-
-const array_of_label = "Array of"
-const array_of_regex = /array of/gi
-
-export const mapPseudoTypeToTsType = (typeName: string) =>
-  pipe(
-    Match.value(typeName),
-    Match.when("String", () => "string"),
-    Match.when("Integer", () => "number"),
-    Match.when("Int", () => "number"),
-    Match.when("Float", () => "number"),
-    Match.when("Boolean", () => "boolean"),
-    Match.when("True", () => "boolean"),
-    Match.when("False", () => "boolean"),
-    Match.orElse(() => typeName)
-  )
-
-const makeArray = (input: string) => {
-  const dimension = [...input.matchAll(array_of_regex)].length
-  const typeName = mapPseudoTypeToTsType(
-    input.replaceAll(array_of_regex, "").trim()
-  )
-
-  return `${typeName}${"[]".repeat(dimension)}`
-}
-
-export const makeNormalTypeFromPseudoTypes = (
-  pseudoType: string
-): Either.Either<NormalTypeShape, NormalTypeError> => {
-  if (pseudoType.includes(" or ")) {
-    const typeNames = pseudoType.split(" or ").map(mapPseudoTypeToTsType)
-
-    if (Array.isNonEmptyArray(typeNames) && typeNames[0].length > 0) {
-      return Either.right({ typeNames })
-    }
-
-    return NormalTypeError.left("EmptyType", { typeName: pseudoType })
-  } else if (pseudoType.startsWith(array_of_label)) {
-    const typeName = mapPseudoTypeToTsType(makeArray(pseudoType))
-
-    if (typeName.length > 0) {
-      return Either.right({ typeNames: [typeName] })
-    }
-
-    return NormalTypeError.left("EmptyType", { typeName: pseudoType })
-  } else {
-    const typeNames = Array.make(mapPseudoTypeToTsType(pseudoType))
-
-    if (typeNames[0].length == 0) {
-      return NormalTypeError.left("EmptyType", { typeName: pseudoType })
-    }
-
-    return Either.right({ typeNames })
-  }
-}
-
 // ── NormalType factory ──
 
-const makeNormalTypeFrom = (
+const makeSpecFor = (
   input: ExtractedEntityField
-): Either.Either<NormalTypeShape, NormalTypeError> => {
-  if (input.fieldName.endsWith("parse_mode")) {
-    return Either.right({
-      typeNames: [`"HTML" | "MarkdownV2"`],
-      isOverridden: true
-    })
-  }
+): Either.Either<SpecType, NormalTypeError> => {
+  const global = globalFieldOverrides.find((g) => g.match(input))
+  if (global) return Either.right(global.override)
 
-  if (input.pseudoType == "String") {
+  if (input.pseudoType === "String") {
     const enums = extractEnumFromTypeDescription(input.description)
-
-    if (Array.isNonEmptyArray(enums)) {
-      return Either.right({
-        typeNames: Array.map(enums, (_) => `"${_}"`),
-        isEnum: true
-      })
-    }
+    if (Array.isNonEmptyArray(enums)) return Either.right(enumOf(...enums))
   }
 
   const override = fieldOverrides[input.entityName]?.[input.fieldName]
+  if (override) return Either.right(override)
 
-  if (override) {
-    return Either.right({ ...override, isOverridden: true })
-  }
-
-  return makeNormalTypeFromPseudoTypes(input.pseudoType)
+  const parsed = parsePseudoType(input.pseudoType)
+  if (!parsed)
+    return NormalTypeError.left("EmptyType", { typeName: input.pseudoType })
+  return Either.right(parsed)
 }
 
 // ── NormalType class ──
 
-const union = (input: Array.NonEmptyReadonlyArray<string>) => input.join(" | ")
-
-export class NormalType extends Data.TaggedClass(
-  "NormalType"
-)<NormalTypeShape> {
+export class NormalType extends Data.TaggedClass("NormalType")<{
+  spec: SpecType
+}> {
   getTsType(typeNamespace?: string) {
-    if (this.isOverridden) return this.typeNames[0]
-    if (this.isEnum) return union(this.typeNames)
-    if (!typeNamespace) return union(this.typeNames)
-    const prefixed = Array.map(this.typeNames, (_) =>
-      isComplexType(_) ? `${typeNamespace}.${_}` : _
-    )
-    return union(prefixed)
+    return renderTypeToTs(this.spec, typeNamespace)
   }
 
-  static makeFromNames(...names: Array.NonEmptyArray<string>) {
-    return new NormalType({
-      typeNames: Array.map(names, mapPseudoTypeToTsType)
-    })
+  toSpec(): SpecType {
+    return this.spec
+  }
+
+  static fromSpec(spec: SpecType) {
+    return new NormalType({ spec })
   }
 
   static makeFrom(input: ExtractedEntityField) {
-    return makeNormalTypeFrom(input).pipe(
-      Either.andThen((_) => new NormalType(_))
+    return makeSpecFor(input).pipe(
+      Either.andThen((spec) => new NormalType({ spec }))
     )
   }
 }

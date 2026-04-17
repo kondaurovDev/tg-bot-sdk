@@ -11,7 +11,6 @@ import type {
 } from "./scrape/entity"
 
 export type HtmlElement = import("node-html-parser").HTMLElement
-export type TsSourceFile = import("ts-morph").SourceFile
 
 export const parseStringToHtml = (
   html: string

@@ -3,13 +3,12 @@ import { test } from "vitest"
 
 import { DocPage } from "~/scrape/page"
 import { PageProviderService } from "~/service/page-provider"
-import { BotApiCodeWriterService, TsMorpthWriter } from "~/service/code-writers"
+import { BotApiCodeWriterService } from "~/service/code-writers"
 import { BotApiCodegenRuntime } from "~/runtime"
 
 interface Fixture {
   readonly apiPage: DocPage
   readonly codeWriter: BotApiCodeWriterService
-  readonly tsMorph: TsMorpthWriter
 }
 
 const MainDependencies = Effect.gen(function* () {
@@ -17,9 +16,8 @@ const MainDependencies = Effect.gen(function* () {
   const apiPage = yield* htmlPageProvider.api
   const webAppPage = yield* htmlPageProvider.webapp
   const codeWriter = yield* BotApiCodeWriterService
-  const tsMorph = yield* TsMorpthWriter
 
-  return { apiPage, webAppPage, codeWriter, tsMorph } as const
+  return { apiPage, webAppPage, codeWriter } as const
 }).pipe(Effect.provide(BotApiCodegenRuntime))
 
 const mainPromise = MainDependencies.pipe(
@@ -36,9 +34,5 @@ export const fixture = test.extend<Fixture>({
   codeWriter: async ({}, use) => {
     const { codeWriter } = await mainPromise
     use(codeWriter)
-  },
-  tsMorph: async ({}, use) => {
-    const { tsMorph } = await mainPromise
-    use(tsMorph)
   }
 })
