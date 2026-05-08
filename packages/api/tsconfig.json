@@ -3,7 +3,6 @@
   "include": ["src", "codegen", "test"],
   "compilerOptions": {
     "lib": ["DOM", "ESNext"],
-    "baseUrl": ".",
     "paths": {
       "~/*": ["./codegen/*"],
       "~test/*": ["./test/*"]

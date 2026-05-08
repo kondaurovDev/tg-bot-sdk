@@ -3,7 +3,6 @@
   "include": ["src", "test"],
   "compilerOptions": {
     "lib": ["DOM", "ESNext"],
-    "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"],
       "~test/*": ["./test/*"]

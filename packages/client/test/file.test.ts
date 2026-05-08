@@ -2,7 +2,9 @@ import { assert, describe, expect } from "vitest"
 
 import { fixture } from "./fixture"
 
-describe("telegram bot client, download file", () => {
+const integration = process.env["bot_token"] && process.env["chat_id"]
+
+describe.skipIf(!integration)("telegram bot client, download file (integration)", () => {
   fixture("get file content", async ({ client, chat_id }) => {
     const result = await client.execute("send_document", {
       chat_id,

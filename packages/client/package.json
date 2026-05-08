@@ -13,7 +13,8 @@
   ],
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "test": "vitest run"
   },
   "author": {
     "name": "Aleksandr Kondaurov",

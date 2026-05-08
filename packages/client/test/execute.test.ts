@@ -4,10 +4,10 @@ import { fixture } from "./fixture"
 
 const fetchSpy = vi.spyOn(global, "fetch")
 
-describe("telegram bot client, execute method", () => {
-  fixture("send dice", async ({ chat_id, client }) => {
-    // skip();
+const integration = process.env["bot_token"] && process.env["chat_id"]
 
+describe.skipIf(!integration)("telegram bot client, execute method (integration)", () => {
+  fixture("send dice", async ({ chat_id, client }) => {
     const result = await client.execute("send_dice", {
       chat_id,
       emoji: "🎲",
@@ -25,9 +25,7 @@ describe("telegram bot client, execute method", () => {
     }
   })
 
-  fixture("send message", async ({ chat_id, client, skip }) => {
-    skip()
-
+  fixture("send message", async ({ chat_id, client }) => {
     const result = await client.execute("send_message", {
       chat_id,
       text: "hey again",
@@ -40,9 +38,7 @@ describe("telegram bot client, execute method", () => {
     }
   })
 
-  fixture("send message with keyboard", async ({ chat_id, client, skip }) => {
-    skip()
-
+  fixture("send message with keyboard", async ({ chat_id, client }) => {
     const result = await client.execute("send_message", {
       chat_id,
       text: "hey again!",
@@ -67,9 +63,7 @@ describe("telegram bot client, execute method", () => {
     }
   })
 
-  fixture("send document", async ({ chat_id, client, skip }) => {
-    skip()
-
+  fixture("send document", async ({ chat_id, client }) => {
     const result = await client.execute("send_document", {
       chat_id,
       message_effect_id: "🎉",

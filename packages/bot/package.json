@@ -18,7 +18,8 @@
   },
   "scripts": {
     "build": "tsup",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "test": "vitest run"
   },
   "homepage": "https://tg-bot-sdk.website",
   "repository": {

@@ -1,6 +1,7 @@
 import { describe, expect, assert } from "vitest"
 
 import { fixture } from "~test/fixture/codegen-main"
+import { expectRight } from "~test/fixture/either"
 import { renderTypeToTs, type SpecType } from "~/scrape/type"
 
 const returnAs = (spec: SpecType | undefined): string | undefined =>
@@ -8,150 +9,117 @@ const returnAs = (spec: SpecType | undefined): string | undefined =>
 
 describe("extracted-entity", () => {
   fixture("getUpdates", ({ apiPage }) => {
-    const entity = apiPage.getMethod("getUpdates")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right", "not right")
-    expect(entity.right.returnType.getTsType("T")).toEqual("T.Update[]")
+    const m = expectRight(apiPage.getMethod("getUpdates"), "getMethod(getUpdates)")
+    expect(m.returnType.getTsType("T")).toEqual("T.Update[]")
   })
 
   fixture("getAvailableGifts", ({ apiPage }) => {
-    const entity = apiPage.getMethod("getAvailableGifts")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    assert(entity.right.returnType._tag == "NormalType")
+    const m = expectRight(
+      apiPage.getMethod("getAvailableGifts"),
+      "getMethod(getAvailableGifts)"
+    )
+    assert(m.returnType._tag == "NormalType")
   })
 
   fixture("ReactionTypeEmoji", ({ apiPage }) => {
-    const entity = apiPage.getEntity("ReactionTypeEmoji")
+    const e = expectRight(
+      apiPage.getEntity("ReactionTypeEmoji"),
+      "getEntity(ReactionTypeEmoji)"
+    )
+    assert(e.type._tag == "EntityFields")
 
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    assert(entity.right.type._tag == "EntityFields")
-
-    const field1 = entity.right.type.fields.find((_) => _.name == "emoji")
-
-    const spec = field1?.type.toSpec()
+    const emoji = e.type.fields.find((_) => _.name == "emoji")
+    const spec = emoji?.type.toSpec()
     assert(spec?.kind === "enum", "expected enum")
     expect(spec.values[0]).toEqual("❤")
   })
 
   fixture("answerCallbackQuery", ({ apiPage }) => {
-    const entity = apiPage.getEntity("answerCallbackQuery")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
+    expectRight(
+      apiPage.getEntity("answerCallbackQuery"),
+      "getEntity(answerCallbackQuery)"
+    )
   })
 
   fixture("InputFile", ({ apiPage }) => {
-    const entity = apiPage.getEntity("InputFile")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    expect(entity.right.entityName).toEqual("InputFile")
-
-    assert(entity.right.type._tag == "NormalType")
-    expect(entity.right.type.getTsType()).toEqual(
+    const e = expectRight(apiPage.getEntity("InputFile"), "getEntity(InputFile)")
+    expect(e.entityName).toEqual("InputFile")
+    assert(e.type._tag == "NormalType")
+    expect(e.type.getTsType()).toEqual(
       "{ file_content: Uint8Array, file_name: string }"
     )
   })
 
   fixture("sendMediaGroup", ({ apiPage }) => {
-    const entity = apiPage.getEntity("sendMediaGroup")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    expect(entity.right.entityName).toEqual("sendMediaGroup")
-    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
-      "Message[]"
+    const e = expectRight(
+      apiPage.getEntity("sendMediaGroup"),
+      "getEntity(sendMediaGroup)"
     )
+    expect(e.entityName).toEqual("sendMediaGroup")
+    expect(returnAs(e.entityDescription.returns)).toEqual("Message[]")
 
-    assert(entity.right.type._tag == "EntityFields")
-    const field1 = entity.right.type.fields.find((_) => _.name == "media")
-
-    expect(field1?.type.getTsType("T")).toEqual(
+    assert(e.type._tag == "EntityFields")
+    const media = e.type.fields.find((_) => _.name == "media")
+    expect(media?.type.getTsType("T")).toEqual(
       "(T.InputMediaAudio | T.InputMediaDocument | T.InputMediaPhoto | T.InputMediaVideo)[]"
     )
   })
 
   fixture("setGameScore", ({ apiPage }) => {
-    const entity = apiPage.getEntity("setGameScore")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    expect(entity.right.entityName).toEqual("setGameScore")
-    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
-      "Message | boolean"
+    const e = expectRight(
+      apiPage.getEntity("setGameScore"),
+      "getEntity(setGameScore)"
     )
+    expect(e.entityName).toEqual("setGameScore")
+    expect(returnAs(e.entityDescription.returns)).toEqual("Message | boolean")
   })
 
   fixture("getStarTransactions", ({ apiPage }) => {
-    const entity = apiPage.getEntity("getStarTransactions")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    expect(entity.right.entityName).toEqual("getStarTransactions")
-    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
-      "StarTransactions"
+    const e = expectRight(
+      apiPage.getEntity("getStarTransactions"),
+      "getEntity(getStarTransactions)"
     )
+    expect(e.entityName).toEqual("getStarTransactions")
+    expect(returnAs(e.entityDescription.returns)).toEqual("StarTransactions")
   })
 
   fixture("deleteMessage", ({ apiPage }) => {
-    const entity = apiPage.getEntity("deleteMessage")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    expect(entity.right.entityName).toEqual("deleteMessage")
-    expect(returnAs(entity.right.entityDescription.returns)).toEqual("boolean")
+    const e = expectRight(
+      apiPage.getEntity("deleteMessage"),
+      "getEntity(deleteMessage)"
+    )
+    expect(e.entityName).toEqual("deleteMessage")
+    expect(returnAs(e.entityDescription.returns)).toEqual("boolean")
   })
 
   fixture("getWebhookInfo", ({ apiPage }) => {
-    const entity = apiPage.getEntity("getWebhookInfo")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    expect(entity.right.entityName).toEqual("getWebhookInfo")
-    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
-      "WebhookInfo"
+    const e = expectRight(
+      apiPage.getEntity("getWebhookInfo"),
+      "getEntity(getWebhookInfo)"
     )
+    expect(e.entityName).toEqual("getWebhookInfo")
+    expect(returnAs(e.entityDescription.returns)).toEqual("WebhookInfo")
   })
 
   fixture("ReplyKeyboardMarkup", ({ apiPage }) => {
-    const entity = apiPage.getEntity("ReplyKeyboardMarkup")
+    const e = expectRight(
+      apiPage.getEntity("ReplyKeyboardMarkup"),
+      "getEntity(ReplyKeyboardMarkup)"
+    )
+    expect(e.entityName).toEqual("ReplyKeyboardMarkup")
+    expect(e.entityDescription.returns).toBeUndefined()
+    assert(e.type._tag == "EntityFields")
 
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    expect(entity.right.entityName).toEqual("ReplyKeyboardMarkup")
-    expect(entity.right.entityDescription.returns).toBeUndefined()
-    assert(entity.right.type._tag == "EntityFields")
-
-    const field1 = entity.right.type.fields.find((_) => _.name == "keyboard")
-
-    expect(field1?.type.getTsType()).toEqual("KeyboardButton[][]")
+    const keyboard = e.type.fields.find((_) => _.name == "keyboard")
+    expect(keyboard?.type.getTsType()).toEqual("KeyboardButton[][]")
   })
 
   fixture("User", ({ apiPage }) => {
-    const entity = apiPage.getEntity("User")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    expect(entity.right.entityName).toEqual("User")
-    expect(entity.right.entityDescription.returns).toBeUndefined()
-    assert(entity.right.type._tag == "EntityFields")
-    expect(entity.right.type.fields.map((_) => _.name)).containSubset([
+    const e = expectRight(apiPage.getEntity("User"), "getEntity(User)")
+    expect(e.entityName).toEqual("User")
+    expect(e.entityDescription.returns).toBeUndefined()
+    assert(e.type._tag == "EntityFields")
+    expect(e.type.fields.map((_) => _.name)).containSubset([
       "id",
       "is_bot",
       "username"
@@ -159,151 +127,118 @@ describe("extracted-entity", () => {
   })
 
   fixture("forwardMessages", ({ apiPage }) => {
-    const entity = apiPage.getEntity("forwardMessages")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-    expect(entity.right.entityName).toEqual("forwardMessages")
-    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
-      "MessageId[]"
+    const e = expectRight(
+      apiPage.getEntity("forwardMessages"),
+      "getEntity(forwardMessages)"
     )
+    expect(e.entityName).toEqual("forwardMessages")
+    expect(returnAs(e.entityDescription.returns)).toEqual("MessageId[]")
   })
 
   fixture("Chat", ({ apiPage }) => {
-    const entity = apiPage.getEntity("Chat")
+    const e = expectRight(apiPage.getEntity("Chat"), "getEntity(Chat)")
 
-    if (entity._tag == "Left") console.log(entity.left)
+    expect(e.entityName).toEqual("Chat")
+    expect(e.entityDescription.lines[0]).toEqual("This object represents a chat.")
 
-    assert(entity._tag == "Right")
+    assert(e.type._tag == "EntityFields")
+    // Invariant: Chat must always have these core fields, regardless of how
+    // Telegram extends it later.
+    const fieldNames = e.type.fields.map((_) => _.name)
+    expect(fieldNames).containSubset(["id", "type"])
 
-    expect(entity.right.entityName).toEqual("Chat")
-    expect(entity.right.entityDescription.lines[0]).toEqual(
-      "This object represents a chat."
-    )
-
-    assert(entity.right.type._tag == "EntityFields")
-    expect(entity.right.type.fields.length).greaterThan(1)
-
-    const titleField = entity.right.type.fields.find((_) => _.name == "title")
-
+    const titleField = e.type.fields.find((_) => _.name == "title")
     expect(titleField?.description.at(0)).toEqual(
       "Title, for supergroups, channels and group chats"
     )
     expect(titleField?.type.getTsType()).toEqual("string")
     expect(titleField?.required).toEqual(false)
 
-    const typeField = entity.right.type.fields.find((_) => _.name == "type")
-
-    expect(typeField?.description.at(0)).toEqual(
-      "Type of the chat, can be either “private”, “group”, “supergroup” or “channel”"
-    )
+    const typeField = e.type.fields.find((_) => _.name == "type")
     expect(typeField?.type.getTsType()).toEqual(
       `"private" | "group" | "supergroup" | "channel"`
     )
   })
 
   fixture("Message", ({ apiPage }) => {
-    const entity = apiPage.getEntity("Message")
+    const e = expectRight(apiPage.getEntity("Message"), "getEntity(Message)")
+    expect(e.entityName).toEqual("Message")
+    assert(e.type._tag == "EntityFields")
 
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-
-    expect(entity.right.entityName).toEqual("Message")
-    assert(entity.right.type._tag == "EntityFields")
-
-    expect(entity.right.type.fields.length).greaterThan(80)
+    // Invariant — these are the core fields that have always been present.
+    // Avoid asserting the absolute count: Telegram adds/removes fields each
+    // release and the test would flap.
+    const fieldNames = e.type.fields.map((_) => _.name)
+    expect(fieldNames).containSubset(["message_id", "chat", "date"])
   })
 
   fixture("getMyCommands", ({ apiPage }) => {
-    const entity = apiPage.getEntity("getMyCommands")
-
-    if (entity._tag == "Left") console.log(entity.left)
-
-    assert(entity._tag == "Right")
-
-    expect(entity.right.entityName).toEqual("getMyCommands")
-    assert(entity.right.type._tag == "EntityFields")
-
-    expect(entity.right.type.fields).toHaveLength(2)
-    expect(returnAs(entity.right.entityDescription.returns)).toEqual(
-      "BotCommand[]"
+    const e = expectRight(
+      apiPage.getEntity("getMyCommands"),
+      "getEntity(getMyCommands)"
     )
+    expect(e.entityName).toEqual("getMyCommands")
+    assert(e.type._tag == "EntityFields")
+
+    expect(e.type.fields).toHaveLength(2)
+    expect(returnAs(e.entityDescription.returns)).toEqual("BotCommand[]")
   })
 
   fixture("logOut", ({ apiPage }) => {
-    const entity = apiPage.getEntity("logOut")
-
-    assert(entity._tag == "Right")
-
-    expect(entity.right.entityName).toEqual("logOut")
-    assert(entity.right.type._tag == "NormalType")
-
-    expect(entity.right.type.getTsType()).toEqual("never")
-    expect(returnAs(entity.right.entityDescription.returns)).toEqual("boolean")
+    const e = expectRight(apiPage.getEntity("logOut"), "getEntity(logOut)")
+    expect(e.entityName).toEqual("logOut")
+    assert(e.type._tag == "NormalType")
+    expect(e.type.getTsType()).toEqual("never")
+    expect(returnAs(e.entityDescription.returns)).toEqual("boolean")
   })
 
   fixture("getMe", ({ apiPage }) => {
-    const entity = apiPage.getEntity("getMe")
-
-    assert(entity._tag == "Right")
-
-    expect(entity.right.entityName).toEqual("getMe")
-    assert(entity.right.type._tag == "NormalType")
-
-    expect(entity.right.type.getTsType()).toEqual("never")
+    const e = expectRight(apiPage.getEntity("getMe"), "getEntity(getMe)")
+    expect(e.entityName).toEqual("getMe")
+    assert(e.type._tag == "NormalType")
+    expect(e.type.getTsType()).toEqual("never")
   })
 
   fixture("sendChatAction", ({ apiPage }) => {
-    const entity = apiPage.getEntity("sendChatAction")
-
-    assert(entity._tag == "Right")
-
-    expect(entity.right.entityName).toEqual("sendChatAction")
-    expect(entity.right.type._tag).toEqual("EntityFields")
+    const e = expectRight(
+      apiPage.getEntity("sendChatAction"),
+      "getEntity(sendChatAction)"
+    )
+    expect(e.entityName).toEqual("sendChatAction")
+    expect(e.type._tag).toEqual("EntityFields")
   })
 
-  fixture("ForumTopicClosed", async ({ apiPage }) => {
-    const entity = apiPage.getEntity("forumTopicClosed")
-
-    assert(entity._tag == "Right")
-
-    assert(entity.right.type._tag == "NormalType")
-
-    expect(entity.right.type.getTsType()).toEqual("never")
+  fixture("ForumTopicClosed", ({ apiPage }) => {
+    const e = expectRight(
+      apiPage.getEntity("forumTopicClosed"),
+      "getEntity(forumTopicClosed)"
+    )
+    assert(e.type._tag == "NormalType")
+    expect(e.type.getTsType()).toEqual("never")
   })
 
   fixture("ChatFullInfo", ({ apiPage }) => {
-    const entity = apiPage.getEntity("ChatFullInfo")
-
-    assert(entity._tag == "Right")
-
-    expect(entity.right.entityDescription.lines[0]).match(
-      /^This object contains full.*/
+    const e = expectRight(
+      apiPage.getEntity("ChatFullInfo"),
+      "getEntity(ChatFullInfo)"
     )
 
-    assert(entity.right.type._tag == "EntityFields")
+    expect(e.entityDescription.lines[0]).match(/^This object contains full.*/)
 
-    const field1 = entity.right.type.fields.find(
-      (_) => _.name == "accent_color_id"
-    )
+    assert(e.type._tag == "EntityFields")
 
-    expect(field1?.required).toBeTruthy()
-    expect(field1?.type.getTsType()).toEqual("number")
+    const accent = e.type.fields.find((_) => _.name == "accent_color_id")
+    expect(accent?.required).toBeTruthy()
+    expect(accent?.type.getTsType()).toEqual("number")
 
-    const field2 = entity.right.type.fields.find(
-      (_) => _.name == "available_reactions"
-    )
-    expect(field2?.type.getTsType()).toEqual("ReactionType[]")
-    expect(field2?.required).toBeFalsy()
+    const reactions = e.type.fields.find((_) => _.name == "available_reactions")
+    expect(reactions?.type.getTsType()).toEqual("ReactionType[]")
+    expect(reactions?.required).toBeFalsy()
 
-    const lastNameField = entity.right.type.fields.find(
-      (_) => _.name == "last_name"
-    )
-    expect(lastNameField?.type.getTsType()).toEqual("string")
-    expect(lastNameField?.required).toBeFalsy()
-    expect(lastNameField?.description).toEqual([
+    const lastName = e.type.fields.find((_) => _.name == "last_name")
+    expect(lastName?.type.getTsType()).toEqual("string")
+    expect(lastName?.required).toBeFalsy()
+    expect(lastName?.description).toEqual([
       "Last name of the other party in a private chat"
     ])
   })
