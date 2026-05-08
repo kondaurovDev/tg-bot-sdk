@@ -8,19 +8,19 @@
     "preview": "astro preview"
   },
   "devDependencies": {
-    "@astrojs/alpinejs": "^0.4.9",
+    "@astrojs/alpinejs": "^0.5.0",
+    "@astrojs/starlight": "^0.39.1",
     "@effect-ak/tg-bot": "workspace:^",
     "@effect-ak/tg-bot-api": "workspace:^",
     "@effect-ak/tg-bot-client": "workspace:^",
     "@monaco-editor/loader": "^1.6.1",
-    "alpinejs": "^3.15.8",
-    "@astrojs/starlight": "^0.32.0",
-    "@tailwindcss/vite": "^4.1.11",
+    "@tailwindcss/vite": "^4.2.4",
     "@types/alpinejs": "^3.13.11",
-    "astro": "^5.0.0",
-    "monaco-editor": "^0.54.0",
-    "sharp": "^0.33.0",
-    "tailwindcss": "^4.1.11",
+    "alpinejs": "^3.15.12",
+    "astro": "^6.3.1",
+    "monaco-editor": "^0.55.1",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^4.2.4",
     "typescript": "^5.9.0"
   }
 }

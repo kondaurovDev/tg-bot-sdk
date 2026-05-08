@@ -129,7 +129,16 @@ const bot = createWebhook({
   }
 })
 
-import type { VercelRequest, VercelResponse } from "@vercel/node"
+type VercelRequest = {
+  method?: string
+  body: unknown
+}
+
+type VercelResponse = {
+  status: (code: number) => {
+    send: (body: string) => void
+  }
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

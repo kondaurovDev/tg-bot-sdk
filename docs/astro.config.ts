@@ -16,9 +16,13 @@ export default defineConfig({
         src: "./src/assets/logo.svg",
         alt: "Telegram Bot SDK",
       },
-      social: {
-        github: "https://github.com/kondaurovDev/tg-bot-sdk",
-      },
+      social: [
+        {
+          icon: "github",
+          label: "GitHub",
+          href: "https://github.com/kondaurovDev/tg-bot-sdk",
+        },
+      ],
       components: {
         SocialIcons: "./src/components/SocialIcons.astro",
         PageTitle: "./src/components/PageTitle.astro",

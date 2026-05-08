@@ -3,7 +3,7 @@
   "include": ["src", "test"],
   "compilerOptions": {
     "types": ["node"],
-    "lib": ["DOM", "WebWorker"],
+    "lib": ["DOM", "ESNext", "WebWorker"],
     "paths": {
       "~/*": ["./src/*"],
       "~test/*": ["./test/*"]

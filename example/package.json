@@ -13,12 +13,11 @@
     "deploy:vercel": "tsup && vercel deploy dist --prod"
   },
   "dependencies": {
-    "@effect-ak/tg-bot-client": "workspace:*",
+    "@effect-ak/tg-bot": "workspace:*",
     "@effect-ak/tg-bot-api": "workspace:*",
-    "@effect-ak/tg-bot": "workspace:*"
+    "@effect-ak/tg-bot-client": "workspace:*"
   },
   "devDependencies": {
-    "@vercel/node": "^5.5.16",
     "typescript": "^5.9.3"
   }
 }
