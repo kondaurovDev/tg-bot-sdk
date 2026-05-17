@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "tg-bot-docs",
+  "compatibility_date": "2026-05-13",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  },
+  "routes": [
+    {
+      "pattern": "tg-bot-sdk.website",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.tg-bot-sdk.website",
+      "custom_domain": true
+    }
+  ]
+}
