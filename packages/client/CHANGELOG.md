@@ -1,5 +1,12 @@
 # @effect-ak/tg-bot-client
 
+## 1.7.0
+
+### Patch Changes
+
+- Updated dependencies [6c7ba8a]
+  - @effect-ak/tg-bot-api@1.7.0
+
 ## 1.6.0
 
 ### Patch Changes

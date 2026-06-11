@@ -1,5 +1,11 @@
 # @effect-ak/tg-bot-api
 
+## 1.7.0
+
+### Minor Changes
+
+- 6c7ba8a: Update generated Telegram Bot API metadata to Bot API 10.1.
+
 ## 1.6.0
 
 ### Minor Changes
