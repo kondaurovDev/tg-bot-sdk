@@ -26,9 +26,7 @@ export interface BatchUpdateResult {
   updates: Update[]
 }
 
-const isGuardedHandler = <U>(
-  handler: UpdateHandler<U>
-): handler is GuardedHandler<U> =>
+const isGuardedHandler = <U>(handler: UpdateHandler<U>): handler is GuardedHandler<U> =>
   typeof handler === "object" && handler !== null && "handle" in handler
 
 const executeSingleGuard = async <U>(
@@ -125,7 +123,9 @@ const handleOneByOne = async (
   onHandleResult?: (result: HandleResult) => void
 ): Promise<BatchUpdateResult> => {
   const results = await Promise.allSettled(
-    updates.map((update) => handleOneUpdate(update, handlers, client, settings, log, onHandleResult))
+    updates.map((update) =>
+      handleOneUpdate(update, handlers, client, settings, log, onHandleResult)
+    )
   )
 
   const hasErrors = results.some(
@@ -214,10 +214,13 @@ const handleOneUpdate = async (
 
   if ("chat" in update && handleResult.response) {
     const responsePayload = handleResult.response
-    const result = await client.execute(`send_${responsePayload.type}` as any, {
-      ...responsePayload,
-      chat_id: update.chat.id
-    } as any)
+    const result = await client.executeSafe(
+      `send_${responsePayload.type}` as any,
+      {
+        ...responsePayload,
+        chat_id: update.chat.id
+      } as any
+    )
     if (!result.ok) {
       log.warn("failed to send response", result.error)
     } else if (settings.log_level === "debug") {
@@ -228,7 +231,7 @@ const handleOneUpdate = async (
   onHandleResult?.({
     update: updateObject,
     updateType: update.type,
-    status: hasError ? "error" : (handleResult.response ? "handled" : "ignored"),
+    status: hasError ? "error" : handleResult.response ? "handled" : "ignored",
     ...(handleResult.response ? { responseType: handleResult.response.type } : {}),
     ...(errorMessage ? { error: errorMessage } : {}),
     duration

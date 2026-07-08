@@ -19,8 +19,7 @@ const baseSettings: PollSettings = {
   max_empty_responses: undefined
 }
 
-const update = (id: number): Update =>
-  ({ update_id: id }) as Update
+const update = (id: number): Update => ({ update_id: id }) as Update
 
 const okData = <T>(data: T) => ({ ok: true as const, data })
 const errResult = (tag: string = "NotOkResponse") => ({
@@ -28,14 +27,13 @@ const errResult = (tag: string = "NotOkResponse") => ({
   error: { _tag: tag } as { _tag: string }
 })
 
-const makeClient = (
-  execute: (...args: any[]) => Promise<any>
-): TgBotClient =>
-  ({
-    config: {} as never,
-    execute: execute as TgBotClient["execute"],
-    getFile: (() => Promise.reject(new Error("not used"))) as TgBotClient["getFile"]
-  })
+const makeClient = (executeSafe: (...args: any[]) => Promise<any>): TgBotClient => ({
+  config: {} as never,
+  execute: (() => Promise.reject(new Error("not used"))) as TgBotClient["execute"],
+  executeSafe: executeSafe as TgBotClient["executeSafe"],
+  getFile: (() => Promise.reject(new Error("not used"))) as TgBotClient["getFile"],
+  getFileSafe: (() => Promise.reject(new Error("not used"))) as TgBotClient["getFileSafe"]
+})
 
 describe("makePollSettings", () => {
   const warns: string[] = []
@@ -87,10 +85,7 @@ describe("makePollSettings", () => {
 
   it("preserves valid values without warnings", () => {
     warns.length = 0
-    const s = makePollSettings(
-      { batch_size: 50, poll_timeout: 30, max_empty_responses: 5 },
-      log
-    )
+    const s = makePollSettings({ batch_size: 50, poll_timeout: 30, max_empty_responses: 5 }, log)
     expect(s).toMatchObject({
       batch_size: 50,
       poll_timeout: 30,
@@ -108,10 +103,7 @@ describe("UpdateFetcher.fetchUpdates", () => {
     await fetcher.fetchUpdates()
 
     expect(execute).toHaveBeenCalledTimes(1)
-    expect(execute.mock.calls[0]).toEqual([
-      "get_updates",
-      { timeout: 10 }
-    ])
+    expect(execute.mock.calls[0]).toEqual(["get_updates", { timeout: 10 }, { timeout: 20_000 }])
   })
 
   it("advances offset to last_id+1 on the next call", async () => {
@@ -127,16 +119,13 @@ describe("UpdateFetcher.fetchUpdates", () => {
 
     expect(execute.mock.calls[1]).toEqual([
       "get_updates",
-      { timeout: 10, offset: 103 }
+      { timeout: 10, offset: 103 },
+      { timeout: 20_000 }
     ])
   })
 
   it("sorts incoming updates by update_id", async () => {
-    const execute = vi
-      .fn()
-      .mockResolvedValueOnce(
-        okData([update(102), update(100), update(101)])
-      )
+    const execute = vi.fn().mockResolvedValueOnce(okData([update(102), update(100), update(101)]))
 
     const fetcher = new UpdateFetcher(makeClient(execute), baseSettings)
     const updates = await fetcher.fetchUpdates()
@@ -145,10 +134,7 @@ describe("UpdateFetcher.fetchUpdates", () => {
   })
 
   it("does not advance offset on empty responses but increments empty counter", async () => {
-    const execute = vi
-      .fn()
-      .mockResolvedValueOnce(okData([]))
-      .mockResolvedValueOnce(okData([]))
+    const execute = vi.fn().mockResolvedValueOnce(okData([])).mockResolvedValueOnce(okData([]))
 
     const fetcher = new UpdateFetcher(makeClient(execute), baseSettings)
 
@@ -185,10 +171,7 @@ describe("UpdateFetcher.fetchUpdates", () => {
   })
 
   it("throws TooManyEmptyResponses when threshold is reached", async () => {
-    const execute = vi
-      .fn()
-      .mockResolvedValueOnce(okData([]))
-      .mockResolvedValueOnce(okData([]))
+    const execute = vi.fn().mockResolvedValueOnce(okData([])).mockResolvedValueOnce(okData([]))
 
     const fetcher = new UpdateFetcher(makeClient(execute), {
       ...baseSettings,
@@ -204,9 +187,7 @@ describe("UpdateFetcher.fetchUpdates", () => {
     const execute = vi.fn().mockResolvedValueOnce(errResult("NotOkResponse"))
     const fetcher = new UpdateFetcher(makeClient(execute), baseSettings)
 
-    await expect(fetcher.fetchUpdates()).rejects.toThrow(
-      /Failed to fetch updates: NotOkResponse/
-    )
+    await expect(fetcher.fetchUpdates()).rejects.toThrow(/Failed to fetch updates: NotOkResponse/)
   })
 })
 
@@ -220,7 +201,7 @@ describe("UpdateFetcher.commit", () => {
     expect(execute).not.toHaveBeenCalled()
   })
 
-  it("commits the next-offset to telegram with limit=0", async () => {
+  it("commits the next-offset to telegram", async () => {
     const execute = vi
       .fn()
       .mockResolvedValueOnce(okData([update(7), update(8)]))
@@ -231,10 +212,7 @@ describe("UpdateFetcher.commit", () => {
     await fetcher.fetchUpdates()
     await fetcher.commit()
 
-    expect(execute.mock.calls[1]).toEqual([
-      "get_updates",
-      { offset: 9, limit: 0 }
-    ])
+    expect(execute.mock.calls[1]).toEqual(["get_updates", { offset: 9 }])
   })
 
   it("throws when commit fails", async () => {
@@ -246,8 +224,6 @@ describe("UpdateFetcher.commit", () => {
     const fetcher = new UpdateFetcher(makeClient(execute), baseSettings)
 
     await fetcher.fetchUpdates()
-    await expect(fetcher.commit()).rejects.toThrow(
-      /Failed to commit offset: NotOkResponse/
-    )
+    await expect(fetcher.commit()).rejects.toThrow(/Failed to commit offset: NotOkResponse/)
   })
 })

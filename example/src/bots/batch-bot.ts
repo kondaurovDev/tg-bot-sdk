@@ -22,7 +22,7 @@ runBot({
 
     const messages = updates.map((_) => _.message).filter((_) => _ != null)
 
-    const result = await tgClient.execute("send_message", {
+    const result = await tgClient.executeSafe("send_message", {
       chat_id: config.chatId,
       text: `I got ${messages.length} messages`
     })

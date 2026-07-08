@@ -94,7 +94,7 @@ head:
       }
 ---
 
-import stats from '../../data/bot-api-stats.json';
+import stats from "../../data/bot-api-stats.json"
 
 ## Why does this project exist?
 
@@ -106,14 +106,14 @@ Most existing Telegram Bot libraries for TypeScript either lack native type supp
 
 ## How is this different from other libraries?
 
-| Feature | Telegram Bot SDK | grammY | Telegraf | node-telegram-bot-api |
-|---------|-----------------|--------|----------|-----------------------|
-| Types source | Auto-generated from official docs | Manually maintained | Manually maintained (typegram) | Community `@types/` |
-| Runtime dependencies | None (native fetch) | Yes | Yes | Yes |
-| Error handling | Discriminated union, never throws | try/catch + middleware | try/catch + middleware | EventEmitter |
-| Types-only package | Yes | No | No | No |
-| Works in browser | Yes | Partial | No | No |
-| Bot API version lag | Minimal (re-run codegen) | Days to weeks | Weeks to months | Months |
+| Feature              | Telegram Bot SDK                         | grammY                 | Telegraf                       | node-telegram-bot-api |
+| -------------------- | ---------------------------------------- | ---------------------- | ------------------------------ | --------------------- |
+| Types source         | Auto-generated from official docs        | Manually maintained    | Manually maintained (typegram) | Community `@types/`   |
+| Runtime dependencies | None (native fetch)                      | Yes                    | Yes                            | Yes                   |
+| Error handling       | Typed error (throwing and safe variants) | try/catch + middleware | try/catch + middleware         | EventEmitter          |
+| Types-only package   | Yes                                      | No                     | No                             | No                    |
+| Works in browser     | Yes                                      | Partial                | No                             | No                    |
+| Bot API version lag  | Minimal (re-run codegen)                 | Days to weeks          | Weeks to months                | Months                |
 
 ## How are types kept up-to-date?
 
@@ -121,10 +121,28 @@ A code generator parses the official Telegram Bot API documentation at [core.tel
 
 ## What happens when an API call fails?
 
-The client never throws exceptions. Every call returns a result with an `ok` field:
+Pick the style you prefer. `execute` returns the API result directly and throws a `TgBotClientError` on failure:
 
 ```typescript
-const result = await client.execute("send_message", {
+try {
+  const message = await client.execute("send_message", {
+    chat_id: "123",
+    text: "Hello"
+  })
+  console.log(message.message_id)
+} catch (error) {
+  if (error instanceof TgBotClientError) {
+    // error.reason is a tagged union:
+    // NotOkResponse | RequestTimeout | ClientInternalError | ...
+    console.log(error.reason._tag)
+  }
+}
+```
+
+`executeSafe` never throws — it returns a discriminated union with an `ok` field:
+
+```typescript
+const result = await client.executeSafe("send_message", {
   chat_id: "123",
   text: "Hello"
 })
@@ -132,10 +150,20 @@ const result = await client.execute("send_message", {
 if (result.ok) {
   console.log(result.data.message_id)
 } else {
-  // result.error is a tagged union:
-  // NotOkResponse | UnexpectedResponse | ClientInternalError | ...
   console.log(result.error._tag)
 }
+```
+
+Every request has a configurable timeout (60 seconds by default):
+
+```typescript
+const client = makeTgBotClient({
+  bot_token: "YOUR_BOT_TOKEN",
+  timeout: 10_000 // milliseconds, per client
+})
+
+// or per call, together with an optional AbortSignal
+await client.execute("get_me", {}, { timeout: 5_000 })
 ```
 
 ## Can I use just the types without the client?
@@ -167,7 +195,7 @@ Yes. The [Playground](/playground/) lets you write and run a bot directly in you
 
 ## How do I send files?
 
-Pass a `File`, `Blob`, or `ReadableStream` as a parameter value. The client automatically encodes the request as multipart `FormData`:
+Pass a `File`, a `Blob`, or a `{ file_content, file_name }` pair as a parameter value. The client automatically encodes the request as multipart `FormData`:
 
 ```typescript
 const result = await client.execute("send_document", {
@@ -184,9 +212,7 @@ Both are supported.
 
 ```typescript
 createBot()
-  .onMessage(({ text }) => [
-    text(({ ctx }) => ctx.reply("Got it"))
-  ])
+  .onMessage(({ text }) => [text(({ ctx }) => ctx.reply("Got it"))])
   .run({ bot_token: "YOUR_BOT_TOKEN" })
 ```
 

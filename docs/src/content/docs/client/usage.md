@@ -13,18 +13,32 @@ const client = makeTgBotClient({
 })
 ```
 
-If you run a [self-hosted Bot API server](https://core.telegram.org/bots/api#using-a-local-bot-api-server), pass a custom base URL:
+If you run a [self-hosted Bot API server](https://core.telegram.org/bots/api#using-a-local-bot-api-server), pass a custom base URL. You can also tune the request timeout (60 seconds by default):
 
 ```typescript
 const client = makeTgBotClient({
   bot_token: "YOUR_BOT_TOKEN",
-  base_url: "https://your-custom-server.com"
+  base_url: "https://your-custom-server.com",
+  timeout: 10_000 // milliseconds
 })
 ```
 
 All Telegram Bot API methods are available through `client.execute(method, params)`. Method names match the official API in snake_case — `send_message`, `send_photo`, `get_chat`, and so on. TypeScript will autocomplete both the method name and its parameters.
 
-Every call returns a `ClientResult` — a simple `{ ok, data }` or `{ ok, error }` object. Check `result.ok` to handle the response — see [Errors](#errors) below for all possible error types.
+`execute` returns the API result directly and throws a `TgBotClientError` on failure. If you prefer handling errors as values, use `client.executeSafe(method, params)` — it returns a `ClientResult`, a simple `{ ok, data }` or `{ ok, error }` object. See [Errors](#errors) below for all possible error types.
+
+Both methods accept an optional third argument with a per-call timeout and an abort signal:
+
+```typescript
+await client.execute(
+  "get_updates",
+  { timeout: 50 },
+  {
+    timeout: 60_000, // overrides the client-level timeout for this call
+    signal: abortController.signal
+  }
+)
+```
 
 ## Message Effects
 
@@ -42,14 +56,14 @@ const result = await client.execute("send_message", {
 
 These 6 effects are available for all bots without Telegram Premium:
 
-| Emoji | Description |
-|-------|-------------|
-| 🔥 | Fire |
-| 👍 | Thumbs up |
-| 👎 | Thumbs down |
-| ❤️ | Heart |
-| 🎉 | Party popper |
-| 💩 | Poop |
+| Emoji | Description  |
+| ----- | ------------ |
+| 🔥    | Fire         |
+| 👍    | Thumbs up    |
+| 👎    | Thumbs down  |
+| ❤️    | Heart        |
+| 🎉    | Party popper |
+| 💩    | Poop         |
 
 Telegram Premium unlocks hundreds of additional effects, but their IDs can only be obtained dynamically via the [MTProto API](https://core.telegram.org/api/effects) (`messages.getAvailableEffects`), not through the Bot API. If you have a Premium effect ID, you can still pass it as a raw string.
 
@@ -60,7 +74,19 @@ Telegram Premium unlocks hundreds of additional effects, but their IDs can only 
 #### Basic Text Message
 
 ```typescript
-const result = await client.execute("send_message", {
+// execute throws TgBotClientError on failure
+const message = await client.execute("send_message", {
+  chat_id: "123456789",
+  text: "Hello from TypeScript!"
+})
+
+console.log("Sent message:", message.message_id)
+```
+
+With `executeSafe` the same call never throws:
+
+```typescript
+const result = await client.executeSafe("send_message", {
   chat_id: "123456789",
   text: "Hello from TypeScript!"
 })
@@ -131,24 +157,50 @@ const result = await client.execute("send_photo", {
 ### File Download
 
 ```typescript
-const result = await client.getFile({
+// getFile throws TgBotClientError on failure
+const file = await client.getFile({
+  fileId: "AgACAgIAAxkBAAI..."
+})
+
+console.log(file.file_name)
+const base64 = file.base64String()
+```
+
+The non-throwing variant is `getFileSafe`:
+
+```typescript
+const result = await client.getFileSafe({
   fileId: "AgACAgIAAxkBAAI..."
 })
 
 if (result.ok) {
   console.log(result.data.file_name)
-  const base64 = result.data.base64String()
 }
 ```
 
 ## Errors
 
-Client methods never throw — they return a `ClientResult<T>` discriminated union:
+Every failure is described by a `ClientErrorReason` — a tagged union. `execute` and `getFile` throw it wrapped in a `TgBotClientError`:
 
 ```typescript
-type ClientResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; error: ClientErrorReason }
+import { TgBotClientError } from "@effect-ak/tg-bot-client"
+
+try {
+  const message = await client.execute("send_message", {
+    chat_id: "123456789",
+    text: "Hello!"
+  })
+} catch (error) {
+  if (error instanceof TgBotClientError) {
+    console.error(error.reason._tag, error.message)
+  }
+}
+```
+
+`executeSafe` and `getFileSafe` never throw — they return a `ClientResult<T>` discriminated union:
+
+```typescript
+type ClientResult<T> = { ok: true; data: T } | { ok: false; error: ClientErrorReason }
 ```
 
 Check `result.error._tag` to determine what went wrong:
@@ -158,6 +210,9 @@ if (!result.ok) {
   switch (result.error._tag) {
     case "NotOkResponse":
       console.error("API error:", result.error.errorCode, result.error.details)
+      break
+    case "RequestTimeout":
+      console.error("Timed out after", result.error.timeoutMs, "ms")
       break
     case "UnexpectedResponse":
       console.error("Unexpected response:", result.error.response)
@@ -181,10 +236,11 @@ console.log(result.data.message_id)
 
 ### Error types
 
-| Tag | Description |
-|-----|-------------|
-| `NotOkResponse` | Telegram API returned an error (e.g., invalid chat_id) |
-| `UnexpectedResponse` | Response didn't match expected format |
-| `ClientInternalError` | Internal error (network failure, etc.) |
-| `UnableToGetFile` | File download failed |
-| `NotJsonResponse` | Response was not valid JSON |
+| Tag                   | Description                                            |
+| --------------------- | ------------------------------------------------------ |
+| `NotOkResponse`       | Telegram API returned an error (e.g., invalid chat_id) |
+| `RequestTimeout`      | Request exceeded the configured timeout                |
+| `UnexpectedResponse`  | Response didn't match expected format                  |
+| `ClientInternalError` | Internal error (network failure, etc.)                 |
+| `UnableToGetFile`     | File download failed                                   |
+| `NotJsonResponse`     | Response was not valid JSON                            |

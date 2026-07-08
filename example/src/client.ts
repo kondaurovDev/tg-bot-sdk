@@ -1,4 +1,4 @@
-import { makeTgBotClient } from "@effect-ak/tg-bot-client"
+import { makeTgBotClient, TgBotClientError } from "@effect-ak/tg-bot-client"
 import { loadConfig } from "./config"
 
 async function main() {
@@ -9,13 +9,17 @@ async function main() {
     bot_token: config.token
   })
 
-  const result = await client.execute("send_message", {
-    text: `hello, ${chatId}`,
-    chat_id: chatId
-  })
-
-  if (!result.ok) {
-    console.error("Error:", result.error._tag, result.error)
+  try {
+    await client.execute("send_message", {
+      text: `hello, ${chatId}`,
+      chat_id: chatId
+    })
+  } catch (error) {
+    if (error instanceof TgBotClientError) {
+      console.error("Error:", error.reason._tag, error.message)
+    } else {
+      console.error("Error:", error)
+    }
     process.exit(1)
   }
 

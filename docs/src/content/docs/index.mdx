@@ -42,18 +42,34 @@ head:
       }
 ---
 
-import { Card, CardGrid, LinkCard, Tabs, TabItem } from '@astrojs/starlight/components';
-import stats from '../../data/bot-api-stats.json';
+import { Card, CardGrid, LinkCard, Tabs, TabItem } from "@astrojs/starlight/components"
+import stats from "../../data/bot-api-stats.json"
 
 Types auto-generated from the [official Telegram documentation](https://core.telegram.org/bots/api) — {stats.typeCount} types and {stats.methodCount} methods, always up to date. Zero dependencies, typed results you can pattern-match on.
 
 ## Features
 
 <CardGrid>
-  <LinkCard title="TypeScript Types" description="Full type coverage for the Telegram Bot API, auto-generated from official docs." href="/api-types/bot-api/" />
-  <LinkCard title="Client" description="Lightweight, type-safe client for calling any Bot API method." href="/client/usage/" />
-  <LinkCard title="Build Bots" description="Run Telegram bots with long polling or webhooks." href="/bot-runner/writing-bots/" />
-  <LinkCard title="API Reference" description={`${stats.methodCount} methods, ${stats.typeCount} types — Bot API v${stats.version}.`} href="/api/" />
+  <LinkCard
+    title="TypeScript Types"
+    description="Full type coverage for the Telegram Bot API, auto-generated from official docs."
+    href="/api-types/bot-api/"
+  />
+  <LinkCard
+    title="Client"
+    description="Lightweight, type-safe client for calling any Bot API method."
+    href="/client/usage/"
+  />
+  <LinkCard
+    title="Build Bots"
+    description="Run Telegram bots with long polling or webhooks."
+    href="/bot-runner/writing-bots/"
+  />
+  <LinkCard
+    title="API Reference"
+    description={`${stats.methodCount} methods, ${stats.typeCount} types — Bot API v${stats.version}.`}
+    href="/api/"
+  />
 </CardGrid>
 
 ## Getting Started
@@ -93,6 +109,7 @@ Read the [Introduction](/getting-started/introduction/) or jump to [Quick Start]
     ```
 
     Install with `npm install @effect-ak/tg-bot` — includes the client and all types.
+
   </TabItem>
   <TabItem label="Client">
     Call any Bot API method directly with full type safety and typed error handling.
@@ -104,19 +121,23 @@ Read the [Introduction](/getting-started/introduction/) or jump to [Quick Start]
       bot_token: "YOUR_BOT_TOKEN"
     })
 
-    const result = await client.execute("send_message", {
+    // throws TgBotClientError on failure
+    const message = await client.execute("send_message", {
       chat_id: 123456,
       text: "Hello from the client!"
     })
 
-    if (result.ok) {
-      console.log("Sent:", result.data.message_id)
-    } else {
-      console.log("Error:", result.error._tag)
-    }
+    console.log("Sent:", message.message_id)
+
+    // or the non-throwing variant
+    const result = await client.executeSafe("get_me", {})
+
+    if (result.ok) console.log("Bot:", result.data.first_name)
+    else console.log("Error:", result.error._tag)
     ```
 
     Install with `npm install @effect-ak/tg-bot-client` — lightweight client without the bot runner.
+
   </TabItem>
   <TabItem label="Mini App">
     Use auto-generated TypeScript types for the `Telegram.WebApp` API in your Mini App.
@@ -137,6 +158,6 @@ Read the [Introduction](/getting-started/introduction/) or jump to [Quick Start]
     ```
 
     Install with `npm install @effect-ak/tg-bot-api` — types only, zero runtime code.
+
   </TabItem>
 </Tabs>
-

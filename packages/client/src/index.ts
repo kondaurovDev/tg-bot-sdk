@@ -2,7 +2,9 @@ export {
   MESSAGE_EFFECTS,
   messageEffectIdCodes,
   makePayload,
-  executeTgBotMethod
+  executeTgBotMethod,
+  unwrapClientResult,
+  TgBotClientError
 } from "./execute"
 
 export type {
@@ -10,15 +12,11 @@ export type {
   ClientErrorReason,
   FileContent,
   MessageEffect,
-  ExecuteMethod
+  ExecuteMethod,
+  ExecuteSafeMethod,
+  ExecuteOptions
 } from "./execute"
 
-export {
-  makeTgBotClient
-} from "./client"
+export { makeTgBotClient } from "./client"
 
-export type {
-  TgBotClient,
-  TgClientConfig,
-  TgFile
-} from "./client"
+export type { TgBotClient, TgClientConfig, GetFileInput, TgFile } from "./client"

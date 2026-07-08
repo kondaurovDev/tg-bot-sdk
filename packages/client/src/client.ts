@@ -1,10 +1,24 @@
-import { executeTgBotMethod, type ExecuteMethod, type ClientResult } from "./execute"
+import {
+  executeTgBotMethod,
+  unwrapClientResult,
+  type ClientResult,
+  type ExecuteMethod,
+  type ExecuteSafeMethod
+} from "./execute"
 
 const TG_BOT_API_URL = "https://api.telegram.org"
+const DEFAULT_TIMEOUT_MS = 60_000
 
 export interface TgClientConfig {
   bot_token: string
   base_url?: string
+  /** Request timeout in milliseconds, overridable per call. Default: 60_000 */
+  timeout?: number
+}
+
+export interface GetFileInput {
+  fileId: string
+  type?: string
 }
 
 export interface TgFile {
@@ -16,23 +30,36 @@ export interface TgFile {
 
 export interface TgBotClient {
   readonly config: Required<TgClientConfig>
+  /** Calls a Bot API method; throws `TgBotClientError` on failure */
   readonly execute: ExecuteMethod
-  readonly getFile: (input: { fileId: string; type?: string }) => Promise<ClientResult<TgFile>>
+  /** Calls a Bot API method; returns a `ClientResult` instead of throwing */
+  readonly executeSafe: ExecuteSafeMethod
+  /** Downloads a file by its id; throws `TgBotClientError` on failure */
+  readonly getFile: (input: GetFileInput) => Promise<TgFile>
+  /** Downloads a file by its id; returns a `ClientResult` instead of throwing */
+  readonly getFileSafe: (input: GetFileInput) => Promise<ClientResult<TgFile>>
 }
 
 export function makeTgBotClient(config: TgClientConfig): TgBotClient {
   const tgConfig = {
     bot_token: config.bot_token,
-    base_url: config.base_url ?? TG_BOT_API_URL
+    base_url: config.base_url ?? TG_BOT_API_URL,
+    timeout: config.timeout ?? DEFAULT_TIMEOUT_MS
   }
 
-  const execute: ExecuteMethod = (method, input) =>
+  const executeSafe: ExecuteSafeMethod = (method, input, options) =>
     executeTgBotMethod({
-      config: tgConfig, method, input: input as any
+      config: tgConfig,
+      method,
+      input: input as any,
+      options
     })
 
-  const getFile = async (params: { fileId: string; type?: string }): Promise<ClientResult<TgFile>> => {
-    const response = await execute("get_file", { file_id: params.fileId })
+  const execute: ExecuteMethod = (method, input, options) =>
+    executeSafe(method, input, options).then(unwrapClientResult)
+
+  const getFileSafe = async (params: GetFileInput): Promise<ClientResult<TgFile>> => {
+    const response = await executeSafe("get_file", { file_id: params.fileId })
 
     if (!response.ok) return response
 
@@ -50,16 +77,16 @@ export function makeTgBotClient(config: TgClientConfig): TgBotClient {
 
     let content: ArrayBuffer
     try {
-      content = await fetch(url).then((_) => _.arrayBuffer())
+      content = await fetch(url, {
+        signal: AbortSignal.timeout(tgConfig.timeout)
+      }).then((_) => _.arrayBuffer())
     } catch (cause) {
       return { ok: false, error: { _tag: "UnableToGetFile", cause } }
     }
 
     const base64String = () => Buffer.from(content).toString("base64")
     const file = () =>
-      new File([content], file_name, {
-        ...(params.type ? { type: params.type } : {})
-      })
+      new File([content], file_name, params.type ? { type: params.type } : undefined)
 
     return {
       ok: true,
@@ -67,9 +94,14 @@ export function makeTgBotClient(config: TgClientConfig): TgBotClient {
     }
   }
 
+  const getFile = (params: GetFileInput): Promise<TgFile> =>
+    getFileSafe(params).then(unwrapClientResult)
+
   return {
     config: tgConfig,
     execute,
-    getFile
+    executeSafe,
+    getFile,
+    getFileSafe
   }
 }

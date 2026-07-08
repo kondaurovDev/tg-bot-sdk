@@ -19,10 +19,7 @@ export interface PollSettings {
   max_empty_responses: number | undefined
 }
 
-export function makePollSettings(
-  input: Partial<PollSettings>,
-  log: BotLogger
-): PollSettings {
+export function makePollSettings(input: Partial<PollSettings>, log: BotLogger): PollSettings {
   let batch_size = input.batch_size ?? 10
   let poll_timeout = input.poll_timeout ?? 10
   let max_empty_responses = input.max_empty_responses
@@ -40,9 +37,7 @@ export function makePollSettings(
   }
 
   if (max_empty_responses && max_empty_responses < 2) {
-    log.warn(
-      "Wrong max_empty_responses, must be in [2..infinity], using infinity"
-    )
+    log.warn("Wrong max_empty_responses, must be in [2..infinity], using infinity")
     max_empty_responses = undefined
   }
 
@@ -87,10 +82,15 @@ export class UpdateFetcher {
       })
     }
 
-    const result = await this.client.execute("get_updates", {
-      timeout: this.settings.poll_timeout,
-      ...(this.lastUpdateId ? { offset: this.lastUpdateId } : undefined)
-    })
+    // fetch timeout must exceed the long-poll timeout Telegram holds the request for
+    const result = await this.client.executeSafe(
+      "get_updates",
+      {
+        timeout: this.settings.poll_timeout,
+        ...(this.lastUpdateId ? { offset: this.lastUpdateId } : undefined)
+      },
+      { timeout: (this.settings.poll_timeout + 10) * 1000 }
+    )
 
     if (!result.ok) {
       throw new Error(`Failed to fetch updates: ${result.error._tag}`)
@@ -119,9 +119,8 @@ export class UpdateFetcher {
       console.debug("committing offset", this.lastUpdateId)
     }
 
-    const result = await this.client.execute("get_updates", {
-      offset: this.lastUpdateId,
-      limit: 0
+    const result = await this.client.executeSafe("get_updates", {
+      offset: this.lastUpdateId
     })
 
     if (!result.ok) {

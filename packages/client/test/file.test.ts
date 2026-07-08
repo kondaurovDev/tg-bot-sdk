@@ -6,7 +6,7 @@ const integration = process.env["bot_token"] && process.env["chat_id"]
 
 describe.skipIf(!integration)("telegram bot client, download file (integration)", () => {
   fixture("get file content", async ({ client, chat_id }) => {
-    const result = await client.execute("send_document", {
+    const result = await client.executeSafe("send_document", {
       chat_id,
       document: {
         file_content: Buffer.from("Hello!"),
@@ -20,7 +20,7 @@ describe.skipIf(!integration)("telegram bot client, download file (integration)"
 
     assert(fileId, "file id is null")
 
-    const fileResult = await client.getFile({ fileId })
+    const fileResult = await client.getFileSafe({ fileId })
 
     expect(fileResult.ok).toBe(true)
   })

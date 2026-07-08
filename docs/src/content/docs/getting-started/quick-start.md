@@ -21,13 +21,19 @@ const client = makeTgBotClient({
   bot_token: "YOUR_BOT_TOKEN"
 })
 
-const result = await client.execute("send_message", {
+// throws TgBotClientError on failure
+const message = await client.execute("send_message", {
   chat_id: "123456789",
   text: "Hello, World!"
 })
 
+console.log("Sent:", message.message_id)
+
+// or handle errors as values with the non-throwing variant
+const result = await client.executeSafe("get_me", {})
+
 if (result.ok) {
-  console.log("Sent:", result.data.message_id)
+  console.log("Bot:", result.data.first_name)
 }
 ```
 

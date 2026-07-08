@@ -8,27 +8,17 @@ async function main() {
     bot_token: config.token
   })
 
-  // Set webhook
+  // Set webhook (execute throws TgBotClientError on failure)
   const result = await client.execute("set_webhook", {
     url: config.webhookUrl,
     drop_pending_updates: true,
-    allowed_updates: [ 'callback_query', 'poll', 'message']
+    allowed_updates: ["callback_query", "poll", "message"]
   })
-
-  if (!result.ok) {
-    console.error("Failed to set webhook:", result.error)
-    process.exit(1)
-  }
-  console.log("Webhook set:", result.data)
+  console.log("Webhook set:", result)
 
   // Verify
   const info = await client.execute("get_webhook_info", {})
-
-  if (!info.ok) {
-    console.error("Failed to get webhook info:", info.error)
-    process.exit(1)
-  }
-  console.log("Webhook info:", info.data)
+  console.log("Webhook info:", info)
 }
 
 main().catch(console.error)

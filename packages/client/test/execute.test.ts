@@ -8,7 +8,7 @@ const integration = process.env["bot_token"] && process.env["chat_id"]
 
 describe.skipIf(!integration)("telegram bot client, execute method (integration)", () => {
   fixture("send dice", async ({ chat_id, client }) => {
-    const result = await client.execute("send_dice", {
+    const result = await client.executeSafe("send_dice", {
       chat_id,
       emoji: "🎲",
       message_effect_id: "🔥"
@@ -26,7 +26,7 @@ describe.skipIf(!integration)("telegram bot client, execute method (integration)
   })
 
   fixture("send message", async ({ chat_id, client }) => {
-    const result = await client.execute("send_message", {
+    const result = await client.executeSafe("send_message", {
       chat_id,
       text: "hey again",
       message_effect_id: "🔥"
@@ -39,7 +39,7 @@ describe.skipIf(!integration)("telegram bot client, execute method (integration)
   })
 
   fixture("send message with keyboard", async ({ chat_id, client }) => {
-    const result = await client.execute("send_message", {
+    const result = await client.executeSafe("send_message", {
       chat_id,
       text: "hey again!",
       message_effect_id: "🎉",
@@ -64,7 +64,7 @@ describe.skipIf(!integration)("telegram bot client, execute method (integration)
   })
 
   fixture("send document", async ({ chat_id, client }) => {
-    const result = await client.execute("send_document", {
+    const result = await client.executeSafe("send_document", {
       chat_id,
       message_effect_id: "🎉",
       document: {
@@ -82,14 +82,14 @@ describe.skipIf(!integration)("telegram bot client, execute method (integration)
   })
 
   fixture("send message with action", async ({ chat_id, client }) => {
-    await client.execute("send_chat_action", {
+    await client.executeSafe("send_chat_action", {
       chat_id,
       action: "upload_voice"
     })
 
     await new Promise((res) => setTimeout(res, 5000))
 
-    const result = await client.execute("send_message", {
+    const result = await client.executeSafe("send_message", {
       chat_id,
       text: "hey again with typings",
       message_effect_id: "🔥"
