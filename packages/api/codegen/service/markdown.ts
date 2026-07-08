@@ -11,24 +11,15 @@ import { Config, Effect, String as Str } from "effect"
 import { writeFile, mkdir } from "fs/promises"
 import * as Path from "path"
 
-import type { ExtractedMethodShape } from "~/scrape/entity"
-import { removeHtmlTags } from "~/scrape/entity"
-import type { ExtractedTypeShape } from "~/scrape/entity"
-import {
-  EntityFields,
-  isComplexType,
-  NormalType,
-  type EntityField
-} from "~/scrape/type-system"
+import { removeHtmlTags, type ExtractedMethodShape, type ExtractedTypeShape } from "~/scrape/entity"
+import { EntityFields, isComplexType, NormalType, type EntityField } from "~/scrape/type-system"
 import type { SpecType } from "~/scrape/type"
 
 // ── Helpers ──
 
-const toKebab = (name: string) =>
-  Str.snakeToKebab(Str.camelToSnake(name)).replace(/^-/, "")
+const toKebab = (name: string) => Str.snakeToKebab(Str.camelToSnake(name)).replace(/^-/, "")
 
-const escapeYaml = (text: string) =>
-  text.replaceAll('"', '\\"').replaceAll("\n", " ")
+const escapeYaml = (text: string) => text.replaceAll('"', '\\"').replaceAll("\n", " ")
 
 const joinSentences = (parts: string[]) => {
   const text = parts.map(removeHtmlTags).join(". ")
@@ -69,12 +60,9 @@ const collectRefNames = (t: SpecType, out: Set<string> = new Set()): Set<string>
 
 const renderLinkedType = (type: NormalType): string => {
   const spec = type.toSpec()
-  if (spec.kind === "raw" || spec.kind === "enum")
-    return `\`${type.getTsType()}\``
+  if (spec.kind === "raw" || spec.kind === "enum") return `\`${type.getTsType()}\``
   if (spec.kind === "union") {
-    return spec.members
-      .map((m) => renderLinkedType(NormalType.fromSpec(m)))
-      .join(" \\| ")
+    return spec.members.map((m) => renderLinkedType(NormalType.fromSpec(m))).join(" \\| ")
   }
   if (spec.kind === "array") {
     return `${renderLinkedType(NormalType.fromSpec(spec.element))}[]`
@@ -122,9 +110,7 @@ const makeUsageExample = (method: ExtractedMethodShape): string[] => {
     ]
   }
 
-  const params = requiredFields.map(
-    (f) => `  ${f.name}: ${placeholderForField(f.name, f.type)}`
-  )
+  const params = requiredFields.map((f) => `  ${f.name}: ${placeholderForField(f.name, f.type)}`)
 
   return [
     "```typescript",
@@ -357,7 +343,7 @@ const makeTypeMetaDescription = (extracted: ExtractedTypeShape): string => {
 // ── Method summary ──
 
 const limitPatterns = [
-  /(\d[\d,]*[\-–]\d[\d,]*\s+characters)/i,
+  /(\d[\d,]*[-–]\d[\d,]*\s+characters)/i,
   /(at most \d[\d,]*\s*(?:MB|KB|characters|bytes))/i,
   /(must not exceed \d[\d,]*)/i,
   /(up to \d[\d,]*\s*(?:MB|KB|characters|bytes|messages))/i,
@@ -417,7 +403,9 @@ const makeMethodSummary = (method: ExtractedMethodShape): string[] => {
 type MethodGroupMap = Map<string, ExtractedMethodShape[]>
 
 const getMethodPrefix = (name: string): string | undefined => {
-  const match = name.match(/^(send|get|set|delete|edit|create|answer|ban|unban|pin|unpin|forward|copy|upload|add|remove|close|reopen|hide|unhide|export|revoke|restrict|promote|approve|decline|stop|leave|verify|transfer|upgrade|convert|read|post|repost)/)
+  const match = name.match(
+    /^(send|get|set|delete|edit|create|answer|ban|unban|pin|unpin|forward|copy|upload|add|remove|close|reopen|hide|unhide|export|revoke|restrict|promote|approve|decline|stop|leave|verify|transfer|upgrade|convert|read|post|repost)/
+  )
   return match?.[1]
 }
 
@@ -486,10 +474,7 @@ const makeTypeJsonLd = (extracted: ExtractedTypeShape): string => {
 
 // ── Method page ──
 
-const makeMethodPage = (
-  method: ExtractedMethodShape,
-  groupMap: MethodGroupMap
-): string => {
+const makeMethodPage = (method: ExtractedMethodShape, groupMap: MethodGroupMap): string => {
   const description = joinSentences(method.methodDescription)
   const metaDescription = makeMethodMetaDescription(method)
   const tgLink = `[↗](https://core.telegram.org/bots/api#${method.methodName.toLowerCase()})`
@@ -585,10 +570,7 @@ const buildTypeUsageMap = (methods: ExtractedMethodShape[]): TypeUsageMap => {
 
 // ── Type page ──
 
-const makeTypePage = (
-  extracted: ExtractedTypeShape,
-  usageMap: TypeUsageMap
-): string => {
+const makeTypePage = (extracted: ExtractedTypeShape, usageMap: TypeUsageMap): string => {
   const description = joinSentences(extracted.description)
   const metaDescription = makeTypeMetaDescription(extracted)
   const tgLink = `[↗](https://core.telegram.org/bots/api#${extracted.typeName.toLowerCase()})`
@@ -620,9 +602,7 @@ const makeTypePage = (
     if (usedBy && usedBy.length > 0) {
       lines.push("## Used by", "")
       for (const method of usedBy) {
-        lines.push(
-          `- [${method.methodName}](/api/methods/${toKebab(method.methodName)}/)`
-        )
+        lines.push(`- [${method.methodName}](/api/methods/${toKebab(method.methodName)}/)`)
       }
       lines.push("")
     }
@@ -639,11 +619,7 @@ const makeTypePage = (
   } else {
     const spec = extracted.type.toSpec()
     const variantNames =
-      spec.kind === "union"
-        ? spec.members.flatMap((m) =>
-            m.kind === "ref" ? [m.name] : []
-          )
-        : []
+      spec.kind === "union" ? spec.members.flatMap((m) => (m.kind === "ref" ? [m.name] : [])) : []
     if (variantNames.length > 1) {
       lines.push("## Variants", "")
       for (const name of variantNames) {
@@ -657,9 +633,7 @@ const makeTypePage = (
     if (usedBy && usedBy.length > 0) {
       lines.push("## Used by", "")
       for (const method of usedBy) {
-        lines.push(
-          `- [${method.methodName}](/api/methods/${toKebab(method.methodName)}/)`
-        )
+        lines.push(`- [${method.methodName}](/api/methods/${toKebab(method.methodName)}/)`)
       }
       lines.push("")
     }
@@ -675,12 +649,10 @@ const makeIndex = (input: {
   methods: ExtractedMethodShape[]
   types: ExtractedTypeShape[]
 }): string => {
-  const sorted = [...input.methods].sort((a, b) =>
-    a.methodName.localeCompare(b.methodName)
-  )
+  const sorted = [...input.methods].sort((a, b) => a.methodName.localeCompare(b.methodName))
 
   const links = sorted
-    .map(m => `[${m.methodName}](/api/methods/${toKebab(m.methodName)}/)`)
+    .map((m) => `[${m.methodName}](/api/methods/${toKebab(m.methodName)}/)`)
     .join(" · ")
 
   const lines: string[] = [
@@ -703,17 +675,10 @@ const makeIndex = (input: {
 
 // ── Types index page ──
 
-const makeTypesIndex = (input: {
-  apiVersion: string
-  types: ExtractedTypeShape[]
-}): string => {
-  const sorted = [...input.types].sort((a, b) =>
-    a.typeName.localeCompare(b.typeName)
-  )
+const makeTypesIndex = (input: { apiVersion: string; types: ExtractedTypeShape[] }): string => {
+  const sorted = [...input.types].sort((a, b) => a.typeName.localeCompare(b.typeName))
 
-  const links = sorted
-    .map(t => `[${t.typeName}](/api/types/${toKebab(t.typeName)}/)`)
-    .join(" · ")
+  const links = sorted.map((t) => `[${t.typeName}](/api/types/${toKebab(t.typeName)}/)`).join(" · ")
 
   const lines: string[] = [
     "---",
@@ -739,10 +704,7 @@ export class MarkdownWriterService extends Effect.Service<MarkdownWriterService>
   "MarkdownWriterService",
   {
     effect: Effect.gen(function* () {
-      const writeToDir = yield* Config.array(
-        Config.nonEmptyString(),
-        "markdown-out-dir"
-      )
+      const writeToDir = yield* Config.array(Config.nonEmptyString(), "markdown-out-dir")
 
       const baseDir = Path.join(...writeToDir)
       const methodsDir = Path.join(baseDir, "methods")
@@ -754,12 +716,8 @@ export class MarkdownWriterService extends Effect.Service<MarkdownWriterService>
         methods: ExtractedMethodShape[]
       }) =>
         Effect.gen(function* () {
-          yield* Effect.tryPromise(() =>
-            mkdir(methodsDir, { recursive: true })
-          )
-          yield* Effect.tryPromise(() =>
-            mkdir(typesDir, { recursive: true })
-          )
+          yield* Effect.tryPromise(() => mkdir(methodsDir, { recursive: true }))
+          yield* Effect.tryPromise(() => mkdir(typesDir, { recursive: true }))
 
           const groupMap = buildMethodGroupMap(input.methods)
 
@@ -768,9 +726,7 @@ export class MarkdownWriterService extends Effect.Service<MarkdownWriterService>
             (method) => {
               const fileName = `${toKebab(method.methodName)}.md`
               const content = makeMethodPage(method, groupMap)
-              return Effect.tryPromise(() =>
-                writeFile(Path.join(methodsDir, fileName), content)
-              )
+              return Effect.tryPromise(() => writeFile(Path.join(methodsDir, fileName), content))
             },
             { concurrency: "unbounded" }
           )
@@ -782,9 +738,7 @@ export class MarkdownWriterService extends Effect.Service<MarkdownWriterService>
             (type) => {
               const fileName = `${toKebab(type.typeName)}.md`
               const content = makeTypePage(type, usageMap)
-              return Effect.tryPromise(() =>
-                writeFile(Path.join(typesDir, fileName), content)
-              )
+              return Effect.tryPromise(() => writeFile(Path.join(typesDir, fileName), content))
             },
             { concurrency: "unbounded" }
           )

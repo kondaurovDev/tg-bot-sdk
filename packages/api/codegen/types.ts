@@ -5,16 +5,11 @@
  */
 import { Either } from "effect"
 import { parse as parseHtml, type HTMLElement } from "node-html-parser"
-import type {
-  ExtractEntityError,
-  ExtractedType
-} from "./scrape/entity"
+import type { ExtractEntityError, ExtractedType } from "./scrape/entity"
 
 export type HtmlElement = import("node-html-parser").HTMLElement
 
-export const parseStringToHtml = (
-  html: string
-): Either.Either<HTMLElement, string> => {
+export const parseStringToHtml = (html: string): Either.Either<HTMLElement, string> => {
   const node = Either.try(() => parseHtml(html))
   if (Either.isLeft(node)) return Either.left("InvalidHtml")
   return Either.right(node.right)

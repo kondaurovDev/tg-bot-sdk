@@ -1,37 +1,29 @@
 {
   "name": "@effect-ak/tg-bot-client",
-  "type": "module",
-  "description": "Type-safe HTTP client for Telegram Bot API",
   "version": "1.7.0",
-  "license": "MIT",
+  "description": "Type-safe HTTP client for Telegram Bot API",
   "keywords": [
+    "http-client",
     "telegram",
     "telegram-bot",
     "telegram-bot-api",
-    "http-client",
     "typescript"
   ],
-  "scripts": {
-    "build": "tsup",
-    "typecheck": "tsc",
-    "test": "vitest run"
-  },
+  "homepage": "https://tg-bot-sdk.website",
+  "license": "MIT",
   "author": {
     "name": "Aleksandr Kondaurov",
     "email": "kondaurov.dev@gmail.com"
   },
-  "homepage": "https://tg-bot-sdk.website",
   "repository": {
     "type": "git",
     "url": "https://github.com/kondaurovDev/tg-bot-sdk",
     "directory": "packages/client"
   },
-  "publishConfig": {
-    "access": "public"
-  },
-  "types": "./dist/index.d.ts",
+  "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -39,6 +31,14 @@
       "require": "./dist/index.cjs"
     },
     "./dist/*": "./dist/*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc",
+    "test": "vitest run"
   },
   "dependencies": {
     "@effect-ak/tg-bot-api": "workspace:^"

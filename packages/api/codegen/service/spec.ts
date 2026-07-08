@@ -19,11 +19,7 @@
 import { writeFile, mkdir } from "node:fs/promises"
 import * as Path from "node:path"
 
-import type {
-  ExtractedMethodShape,
-  ExtractedType,
-  ExtractedTypeShape
-} from "~/scrape/entity"
+import type { ExtractedMethodShape, ExtractedType, ExtractedTypeShape } from "~/scrape/entity"
 import type { ExtractedEntitiesShape } from "~/scrape/entities"
 import { ExtractedWebApp } from "~/scrape/entities"
 import type { EntityField } from "~/scrape/type-system"
@@ -117,9 +113,7 @@ const toSpecMethod = (m: ExtractedMethodShape): SpecMethod => ({
 const isInterface = (d: SpecDecl): d is SpecInterface => "fields" in d
 
 /** Build a name → SpecInterface lookup for discriminator detection. */
-const buildInterfaceIndex = (
-  types: SpecDecl[]
-): Map<string, SpecInterface> => {
+const buildInterfaceIndex = (types: SpecDecl[]): Map<string, SpecInterface> => {
   const map = new Map<string, SpecInterface>()
   for (const t of types) {
     if (isInterface(t)) map.set(t.name, t)
@@ -175,9 +169,7 @@ const annotateDiscriminators = (
     case "union": {
       const members = t.members.map((m) => annotateDiscriminators(m, index))
       const disc = detectDiscriminator(members, index)
-      return disc
-        ? { kind: "union", members, discriminator: disc }
-        : { kind: "union", members }
+      return disc ? { kind: "union", members, discriminator: disc } : { kind: "union", members }
     }
     case "array":
       return { kind: "array", element: annotateDiscriminators(t.element, index) }
@@ -194,10 +186,7 @@ const annotateDiscriminators = (
   }
 }
 
-const annotateDecl = (
-  d: SpecDecl,
-  index: Map<string, SpecInterface>
-): SpecDecl =>
+const annotateDecl = (d: SpecDecl, index: Map<string, SpecInterface>): SpecDecl =>
   isInterface(d)
     ? {
         ...d,
@@ -208,10 +197,7 @@ const annotateDecl = (
       }
     : { ...d, type: annotateDiscriminators(d.type, index) }
 
-const annotateMethod = (
-  m: SpecMethod,
-  index: Map<string, SpecInterface>
-): SpecMethod => ({
+const annotateMethod = (m: SpecMethod, index: Map<string, SpecInterface>): SpecMethod => ({
   ...m,
   return: annotateDiscriminators(m.return, index),
   parameters: m.parameters.map((p) => ({
@@ -220,17 +206,14 @@ const annotateMethod = (
   }))
 })
 
-const annotateField = (
-  f: SpecField,
-  index: Map<string, SpecInterface>
-): SpecField => ({ ...f, type: annotateDiscriminators(f.type, index) })
+const annotateField = (f: SpecField, index: Map<string, SpecInterface>): SpecField => ({
+  ...f,
+  type: annotateDiscriminators(f.type, index)
+})
 
 // ── Builders ──
 
-export const buildBotApiSpec = (
-  entities: ExtractedEntitiesShape,
-  version: string
-): BotApiSpec => {
+export const buildBotApiSpec = (entities: ExtractedEntitiesShape, version: string): BotApiSpec => {
   const rawTypes = entities.types.map(toSpecDecl)
   const rawMethods = entities.methods.map(toSpecMethod)
   const index = buildInterfaceIndex(rawTypes)
@@ -243,10 +226,7 @@ export const buildBotApiSpec = (
   }
 }
 
-export const buildMiniAppSpec = (
-  extracted: ExtractedWebApp,
-  version: string
-): MiniAppSpec => {
+export const buildMiniAppSpec = (extracted: ExtractedWebApp, version: string): MiniAppSpec => {
   const rawTypes = extracted.types.map(toSpecDecl)
   const rawFields = extracted.fields.map(toSpecField)
   const index = buildInterfaceIndex(rawTypes)
@@ -263,10 +243,7 @@ export const buildMiniAppSpec = (
 
 // ── Writer ──
 
-export const writeSpecJson = async (
-  outPath: string,
-  spec: BotApiSpec | MiniAppSpec
-) => {
+export const writeSpecJson = async (outPath: string, spec: BotApiSpec | MiniAppSpec) => {
   await mkdir(Path.dirname(outPath), { recursive: true })
   await writeFile(outPath, JSON.stringify(spec, null, 2) + "\n")
   console.log("Wrote", outPath)

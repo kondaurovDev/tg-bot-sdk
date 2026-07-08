@@ -4,12 +4,7 @@
  * factories (command, text, photo, etc.) and terminates with
  * {@link Bot.run} (polling) or {@link Bot.webhook} (webhook).
  */
-import type {
-  Message,
-  CallbackQuery,
-  InlineQuery,
-  Update
-} from "@effect-ak/tg-bot-api"
+import type { Message, CallbackQuery, InlineQuery, Update } from "@effect-ak/tg-bot-api"
 
 import type {
   BotUpdatesHandlers,
@@ -54,10 +49,7 @@ export interface CallbackQueryHelpers {
 }
 
 export interface InlineQueryHelpers {
-  query: (
-    pattern: string | RegExp,
-    handler: HandlerFn<InlineQuery>
-  ) => GuardedHandler<InlineQuery>
+  query: (pattern: string | RegExp, handler: HandlerFn<InlineQuery>) => GuardedHandler<InlineQuery>
   fallback: (handler: HandlerFn<InlineQuery>) => GuardedHandler<InlineQuery>
 }
 
@@ -69,9 +61,7 @@ export interface GenericHelpers<U> {
 // Registration input: callback with helpers OR direct array
 // ---------------------------------------------------------------------------
 
-type HandlerRegistration<U, H> =
-  | ((helpers: H) => GuardedHandler<U>[])
-  | GuardedHandler<U>[]
+type HandlerRegistration<U, H> = ((helpers: H) => GuardedHandler<U>[]) | GuardedHandler<U>[]
 
 // ---------------------------------------------------------------------------
 // Bot config for run / webhook
@@ -148,9 +138,7 @@ function makeCallbackQueryHelpers(): CallbackQueryHelpers {
   return {
     data: (pattern, handler) => ({
       match: ({ update }) =>
-        typeof pattern === "string"
-          ? update.data === pattern
-          : pattern.test(update.data ?? ""),
+        typeof pattern === "string" ? update.data === pattern : pattern.test(update.data ?? ""),
       handle: handler
     }),
     fallback: (handler) => ({ handle: handler })
@@ -161,9 +149,7 @@ function makeInlineQueryHelpers(): InlineQueryHelpers {
   return {
     query: (pattern, handler) => ({
       match: ({ update }) =>
-        typeof pattern === "string"
-          ? update.query === pattern
-          : pattern.test(update.query),
+        typeof pattern === "string" ? update.query === pattern : pattern.test(update.query),
       handle: handler
     }),
     fallback: (handler) => ({ handle: handler })

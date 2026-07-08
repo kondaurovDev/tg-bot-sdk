@@ -1,11 +1,14 @@
 {
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "codegen": "pnpm --filter @effect-ak/tg-bot-api gen",
     "build": "pnpm codegen && pnpm -r build",
-    "format:fix": "prettier --write .",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
     "typecheck": "pnpm run --parallel -r typecheck",
     "test": "pnpm run --parallel -r test",
     "docs:dev": "pnpm --filter tg-bot-docs dev",
@@ -16,27 +19,24 @@
     "version-packages": "changeset version",
     "release": "pnpm codegen && pnpm build && changeset publish"
   },
+  "devDependencies": {
+    "@changesets/cli": "^2.31.0",
+    "@types/node": "^25.6.1",
+    "dotenv": "17.4.2",
+    "effect": "3.21.2",
+    "oxfmt": "^0.56.0",
+    "oxlint": "^1.67.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.5"
+  },
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild",
       "sharp",
       "workerd"
     ]
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.31.0",
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^25.6.1",
-    "dotenv": "17.4.2",
-    "effect": "3.21.2",
-    "eslint": "^10.3.0",
-    "eslint-config-prettier": "^10.1.8",
-    "prettier": "3.8.3",
-    "tsup": "^8.5.1",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.59.2",
-    "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.5"
   }
 }

@@ -1,38 +1,32 @@
 {
   "name": "@effect-ak/tg-bot-api",
   "version": "1.7.0",
-  "type": "module",
   "description": "TypeScript types for Telegram Bot Api and Telegram Mini Apps",
-  "license": "MIT",
   "keywords": [
+    "mini-app",
     "telegram",
     "telegram-bot",
     "telegram-bot-api",
-    "mini-app",
-    "typescript",
-    "types"
+    "types",
+    "typescript"
   ],
+  "homepage": "https://tg-bot-sdk.website",
+  "license": "MIT",
   "author": {
     "name": "Aleksandr Kondaurov",
     "email": "kondaurov.dev@gmail.com"
   },
-  "scripts": {
-    "build": "tsup",
-    "typecheck": "tsc",
-    "gen": "pnpm run gen:bot:api && pnpm run gen:webapp:api",
-    "gen:bot:api": "MODULE_NAME=bot_api tsx ./codegen/main.ts",
-    "gen:webapp:api": "MODULE_NAME=webapp tsx ./codegen/main.ts",
-    "test": "vitest run"
-  },
-  "homepage": "https://tg-bot-sdk.website",
   "repository": {
     "type": "git",
     "url": "https://github.com/kondaurovDev/tg-bot-sdk",
     "directory": "packages/api"
   },
-  "publishConfig": {
-    "access": "public"
-  },
+  "files": [
+    "dist/*.js",
+    "dist/*.cjs",
+    "dist/*.d.ts"
+  ],
+  "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -43,11 +37,17 @@
     },
     "./dist/*": "./dist/*"
   },
-  "files": [
-    "dist/*.js",
-    "dist/*.cjs",
-    "dist/*.d.ts"
-  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc",
+    "gen": "pnpm run gen:bot:api && pnpm run gen:webapp:api",
+    "gen:bot:api": "MODULE_NAME=bot_api tsx ./codegen/main.ts",
+    "gen:webapp:api": "MODULE_NAME=webapp tsx ./codegen/main.ts",
+    "test": "vitest run"
+  },
   "devDependencies": {
     "@types/he": "^1.2.3",
     "he": "^1.2.0",

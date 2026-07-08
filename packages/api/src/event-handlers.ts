@@ -31,13 +31,9 @@ export interface EventHandlers {
   }) => void
   biometricTokenUpdated: (options: { isUpdated: boolean }) => void
   fullscreenChanged: () => void
-  fullscreenFailed: (options: {
-    error: "UNSUPPORTED" | "ALREADY_FULLSCREEN"
-  }) => void
+  fullscreenFailed: (options: { error: "UNSUPPORTED" | "ALREADY_FULLSCREEN" }) => void
   homeScreenAdded: () => void
-  homeScreenChecked: (options: {
-    status: "unsupported" | "unknown" | "added" | "missed"
-  }) => void
+  homeScreenChecked: (options: { status: "unsupported" | "unknown" | "added" | "missed" }) => void
   accelerometerStarted: () => void
   accelerometerStopped: () => void
   accelerometerChanged: () => void
@@ -71,10 +67,6 @@ export interface EventHandlers {
       | "SERVER_ERROR"
       | "UNKNOWN_ERROR"
   }) => void
-  emojiStatusAccessRequested: (options: {
-    status: "allowed" | "cancelled"
-  }) => void
-  fileDownloadRequested: (options: {
-    status: "downloading" | "cancelled"
-  }) => void
+  emojiStatusAccessRequested: (options: { status: "allowed" | "cancelled" }) => void
+  fileDownloadRequested: (options: { status: "downloading" | "cancelled" }) => void
 }

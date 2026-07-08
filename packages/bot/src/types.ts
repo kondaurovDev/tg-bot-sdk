@@ -74,9 +74,7 @@ export type ExtractedUpdate<K extends AvailableUpdateTypes> = {
 } & Update[K]
 export type AvailableUpdateTypes = Exclude<keyof Update, "update_id">
 
-export type HandleUpdateFunction<U> = (
-  update: U
-) => BotResponse | PromiseLike<BotResponse>
+export type HandleUpdateFunction<U> = (update: U) => BotResponse | PromiseLike<BotResponse>
 
 type BotResponseParams<T extends string> = Extract<
   Parameters<typeof BotResponse.make>[0],
@@ -110,15 +108,10 @@ export interface GuardedHandler<U> {
   readonly handle: (input: HandlerInput<U>) => BotResponse | PromiseLike<BotResponse>
 }
 
-export type UpdateHandler<U> =
-  | HandleUpdateFunction<U>
-  | GuardedHandler<U>
-  | GuardedHandler<U>[]
+export type UpdateHandler<U> = HandleUpdateFunction<U> | GuardedHandler<U> | GuardedHandler<U>[]
 
 export type BotUpdatesHandlers = {
-  [K in AvailableUpdateTypes as `on_${K}`]?: UpdateHandler<
-    NonNullable<Update[K]>
-  >
+  [K in AvailableUpdateTypes as `on_${K}`]?: UpdateHandler<NonNullable<Update[K]>>
 }
 
 export interface HandleBatchUpdateFunction {
@@ -158,12 +151,10 @@ export const createBotContext = (update: unknown): BotContext => {
 
   return {
     command,
-    reply: (text, options) =>
-      BotResponse.make({ type: "message", text, ...options }),
+    reply: (text, options) => BotResponse.make({ type: "message", text, ...options }),
     replyWithDocument: (document, options) =>
       BotResponse.make({ type: "document", document, ...options }),
-    replyWithPhoto: (photo, options) =>
-      BotResponse.make({ type: "photo", photo, ...options }),
+    replyWithPhoto: (photo, options) => BotResponse.make({ type: "photo", photo, ...options }),
     ignore: BotResponse.ignore
   }
 }

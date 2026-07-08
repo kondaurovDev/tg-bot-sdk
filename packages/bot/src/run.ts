@@ -60,7 +60,14 @@ export const runBot = async (input: RunBotInput): Promise<BotInstance> => {
         if (input.onUpdate) {
           for (const u of updates) input.onUpdate(u)
         }
-        const result = await handleUpdates(updates, behavior, client, settings, log, input.onHandleResult)
+        const result = await handleUpdates(
+          updates,
+          behavior,
+          client,
+          settings,
+          log,
+          input.onHandleResult
+        )
 
         if (updates.length > 0 && !result.hasErrors) {
           await fetcher.commit()
@@ -94,8 +101,7 @@ export const runBot = async (input: RunBotInput): Promise<BotInstance> => {
 }
 
 export const defineBot = (input: BotUpdatesHandlers) => {
-  if (Object.keys(input).length === 0)
-    console.warn("No handlers are defined for bot")
+  if (Object.keys(input).length === 0) console.warn("No handlers are defined for bot")
   return input
 }
 
@@ -121,12 +127,19 @@ export const createWebhook = (config: WebhookBotConfig): WebhookHandler => {
   const settings = makePollSettings({}, log)
 
   const handleUpdate = async (update: Update): Promise<void> => {
-    await handleUpdates([update], { type: "single", ...handlers }, client, settings, log, onHandleResult)
+    await handleUpdates(
+      [update],
+      { type: "single", ...handlers },
+      client,
+      settings,
+      log,
+      onHandleResult
+    )
   }
 
   const handler = async (request: Request): Promise<Response> => {
     try {
-      const update = await request.json() as Update
+      const update = (await request.json()) as Update
       await handleUpdate(update)
       return new Response("ok", { status: 200 })
     } catch (error) {

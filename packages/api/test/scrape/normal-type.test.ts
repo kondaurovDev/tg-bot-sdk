@@ -62,10 +62,7 @@ describe("extractEnumFromTypeDescription", () => {
 
     check(["Type of the result, must be gif"], ["gif"])
 
-    check(
-      ["The member's status in the chat, always \u201Crestricted\u201D"],
-      ["restricted"]
-    )
+    check(["The member's status in the chat, always \u201Crestricted\u201D"], ["restricted"])
 
     check(["Nothing"], [])
 
@@ -84,10 +81,7 @@ describe("extractEnumFromTypeDescription", () => {
 
   it("handles multi-line description with enum only on the second line", () => {
     check(
-      [
-        "Regular text without any enum.",
-        "Type must be \u201Calpha\u201D, \u201Cbeta\u201D"
-      ],
+      ["Regular text without any enum.", "Type must be \u201Calpha\u201D, \u201Cbeta\u201D"],
       ["alpha", "beta"]
     )
   })

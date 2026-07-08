@@ -16,15 +16,14 @@ All examples work in the browser — [open the Playground](/playground/) to expe
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
 
-const bot = createBot()
-  .onMessage(({ command, text, fallback }) => [
-    // Rule 1: user sent /start → greet them
-    command("/start", ({ ctx }) => ctx.reply("Welcome!")),
-    // Rule 2: user sent any text → echo it back
-    text(({ update, ctx }) => ctx.reply(`You said: ${update.text}`)),
-    // Rule 3: catch-all fallback
-    fallback(({ ctx }) => ctx.ignore)
-  ])
+const bot = createBot().onMessage(({ command, text, fallback }) => [
+  // Rule 1: user sent /start → greet them
+  command("/start", ({ ctx }) => ctx.reply("Welcome!")),
+  // Rule 2: user sent any text → echo it back
+  text(({ update, ctx }) => ctx.reply(`You said: ${update.text}`)),
+  // Rule 3: catch-all fallback
+  fallback(({ ctx }) => ctx.ignore)
+])
 
 bot.run({
   bot_token: "YOUR_BOT_TOKEN"
@@ -32,6 +31,7 @@ bot.run({
 ```
 
 Each handler has two parts:
+
 - **`match`** — a condition: should this handler run? Built-in helpers like `command()`, `text()`, `photo()` handle common cases. If omitted (like `fallback`), the handler always runs.
 - **`handle`** — the action: what to do when the condition is met.
 
@@ -41,28 +41,27 @@ Handlers are checked in order, top to bottom. The first match wins — the rest 
 
 The `onMessage` callback provides helper functions for common patterns:
 
-| Helper | Matches |
-|--------|---------|
+| Helper                  | Matches                           |
+| ----------------------- | --------------------------------- |
 | `command(cmd, handler)` | Specific command (e.g., `/start`) |
-| `text(handler)` | Any text message |
-| `photo(handler)` | Photo message |
-| `document(handler)` | Document message |
-| `sticker(handler)` | Sticker message |
-| `fallback(handler)` | Always matches (catch-all) |
+| `text(handler)`         | Any text message                  |
+| `photo(handler)`        | Photo message                     |
+| `document(handler)`     | Document message                  |
+| `sticker(handler)`      | Sticker message                   |
+| `fallback(handler)`     | Always matches (catch-all)        |
 
 You can also mix helpers with raw handler objects for custom match logic:
 
 ```typescript
-createBot()
-  .onMessage(({ command, text }) => [
-    command("/start", ({ ctx }) => ctx.reply("Hi!")),
-    // Custom match — raw handler object
-    {
-      match: ({ update }) => !!update.text?.includes("+"),
-      handle: ({ update, ctx }) => ctx.reply(`Got: ${update.text}`)
-    },
-    text(({ ctx }) => ctx.reply("Send me something with +"))
-  ])
+createBot().onMessage(({ command, text }) => [
+  command("/start", ({ ctx }) => ctx.reply("Hi!")),
+  // Custom match — raw handler object
+  {
+    match: ({ update }) => !!update.text?.includes("+"),
+    handle: ({ update, ctx }) => ctx.reply(`Got: ${update.text}`)
+  },
+  text(({ ctx }) => ctx.reply("Send me something with +"))
+])
 ```
 
 ## Context Helpers
@@ -102,29 +101,26 @@ All Telegram `send_*` methods are supported: `message`, `photo`, `document`, `vi
 
 You can handle different types of Telegram updates using fluent methods:
 
-| Method | Trigger |
-|--------|---------|
-| `.onMessage()` | New incoming message |
-| `.onEditedMessage()` | Message was edited |
-| `.onChannelPost()` | New channel post |
-| `.onEditedChannelPost()` | Channel post was edited |
-| `.onCallbackQuery()` | Callback query from inline keyboard |
-| `.onInlineQuery()` | Inline query |
-| `.on(type)` | Any other update type |
+| Method                   | Trigger                             |
+| ------------------------ | ----------------------------------- |
+| `.onMessage()`           | New incoming message                |
+| `.onEditedMessage()`     | Message was edited                  |
+| `.onChannelPost()`       | New channel post                    |
+| `.onEditedChannelPost()` | Channel post was edited             |
+| `.onCallbackQuery()`     | Callback query from inline keyboard |
+| `.onInlineQuery()`       | Inline query                        |
+| `.on(type)`              | Any other update type               |
 
 ```typescript
 createBot()
-  .onMessage(({ command }) => [
-    command("/start", ({ ctx }) => ctx.reply("Welcome!"))
-  ])
-  .onCallbackQuery(({ data }) => [
-    data("confirm", ({ ctx }) => ctx.reply("Confirmed!"))
-  ])
+  .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("Welcome!"))])
+  .onCallbackQuery(({ data }) => [data("confirm", ({ ctx }) => ctx.reply("Confirmed!"))])
 ```
 
 ## Error Handling
 
 If a handler throws an error, the bot:
+
 1. Logs the error with update details
 2. Sends an error message to the user
 3. Continues processing other updates (if `on_error: "continue"`)

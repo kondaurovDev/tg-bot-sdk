@@ -15,10 +15,9 @@ runBot({
     {
       match: ({ ctx }) => ctx.command === "/echo",
       handle: ({ update, ctx }) =>
-        ctx.reply(
-          `<pre language="json">${JSON.stringify(update, undefined, 2)}</pre>`,
-          { parse_mode: "HTML" }
-        )
+        ctx.reply(`<pre language="json">${JSON.stringify(update, undefined, 2)}</pre>`, {
+          parse_mode: "HTML"
+        })
     },
     {
       match: ({ ctx }) => ctx.command === "/bye",

@@ -5,11 +5,7 @@
  * Bot API and WebApp code generation.
  */
 import { ConfigProvider, Layer, Logger, ManagedRuntime } from "effect"
-import {
-  BotApiCodeWriterService,
-  PageProviderService,
-  WebAppCodeWriterService
-} from "./service"
+import { BotApiCodeWriterService, PageProviderService, WebAppCodeWriterService } from "./service"
 import { MarkdownWriterService } from "./service/markdown"
 
 const configProvider = ConfigProvider.fromJson({
@@ -22,17 +18,11 @@ export const BotApiCodegenRuntime = ManagedRuntime.make(
     PageProviderService.Default,
     BotApiCodeWriterService.Default,
     MarkdownWriterService.Default
-  ).pipe(
-    Layer.provide(Layer.setConfigProvider(configProvider)),
-    Layer.provide(Logger.pretty)
-  )
+  ).pipe(Layer.provide(Layer.setConfigProvider(configProvider)), Layer.provide(Logger.pretty))
 )
 
 export const WebAppCodegenRuntime = ManagedRuntime.make(
-  Layer.mergeAll(
-    PageProviderService.Default,
-    WebAppCodeWriterService.Default
-  ).pipe(
+  Layer.mergeAll(PageProviderService.Default, WebAppCodeWriterService.Default).pipe(
     Layer.provide(Layer.setConfigProvider(configProvider)),
     Layer.provide(Logger.pretty)
   )

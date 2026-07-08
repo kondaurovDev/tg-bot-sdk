@@ -3,7 +3,7 @@ title: Introduction
 description: What Telegram Bot SDK is and how its packages work together
 ---
 
-import stats from '../../../data/bot-api-stats.json';
+import stats from "../../../data/bot-api-stats.json"
 
 Telegram Bot SDK is a TypeScript toolkit for working with the Telegram Bot API. It consists of three packages that can be used independently or together.
 
@@ -17,11 +17,11 @@ Telegram Bot SDK is a TypeScript toolkit for working with the Telegram Bot API. 
 
 ## Packages
 
-| Package | npm | What it does |
-|---------|-----|-------------|
-| `@effect-ak/tg-bot-client` | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-client)](https://www.npmjs.com/package/@effect-ak/tg-bot-client) | Type-safe client for calling Bot API methods |
-| `@effect-ak/tg-bot` | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot)](https://www.npmjs.com/package/@effect-ak/tg-bot) | Bot framework with handlers, polling, and webhooks |
-| `@effect-ak/tg-bot-api` | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-api)](https://www.npmjs.com/package/@effect-ak/tg-bot-api) | TypeScript types for the entire Bot API |
+| Package                    | npm                                                                                                                     | What it does                                       |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `@effect-ak/tg-bot-client` | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-client)](https://www.npmjs.com/package/@effect-ak/tg-bot-client) | Type-safe client for calling Bot API methods       |
+| `@effect-ak/tg-bot`        | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot)](https://www.npmjs.com/package/@effect-ak/tg-bot)               | Bot framework with handlers, polling, and webhooks |
+| `@effect-ak/tg-bot-api`    | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-api)](https://www.npmjs.com/package/@effect-ak/tg-bot-api)       | TypeScript types for the entire Bot API            |
 
 The bot framework (`@effect-ak/tg-bot`) includes the client, so you only need one install if you're building a bot. Use the client package on its own for simpler use cases like sending notifications or integrating Telegram into an existing app.
 

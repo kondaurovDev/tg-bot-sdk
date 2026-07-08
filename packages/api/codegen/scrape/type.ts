@@ -15,12 +15,7 @@
 
 // ── SpecType algebra ──
 
-export type PrimitiveName =
-  | "string"
-  | "integer"
-  | "float"
-  | "boolean"
-  | "bytes"
+export type PrimitiveName = "string" | "integer" | "float" | "boolean" | "bytes"
 
 export interface ObjectField {
   name: string
@@ -57,12 +52,11 @@ export const array = (element: SpecType): SpecType => ({
   kind: "array",
   element
 })
-export const union = (
-  ...members: [SpecType, SpecType, ...SpecType[]]
-): SpecType => ({ kind: "union", members })
-export const enumOf = (
-  ...values: [string, ...string[]]
-): SpecType => ({ kind: "enum", values })
+export const union = (...members: [SpecType, SpecType, ...SpecType[]]): SpecType => ({
+  kind: "union",
+  members
+})
+export const enumOf = (...values: [string, ...string[]]): SpecType => ({ kind: "enum", values })
 export const object = (fields: ObjectField[]): SpecType => ({
   kind: "object",
   fields
@@ -80,8 +74,7 @@ export const P = {
 
 // ── TS renderer ──
 
-const needsParens = (t: SpecType): boolean =>
-  t.kind === "union" || t.kind === "enum"
+const needsParens = (t: SpecType): boolean => t.kind === "union" || t.kind === "enum"
 
 const primitiveToTs: Record<PrimitiveName, string> = {
   string: "string",
@@ -107,10 +100,7 @@ export const renderTypeToTs = (t: SpecType, namespace?: string): string => {
       return t.values.map((v) => `"${v}"`).join(" | ")
     case "object": {
       const body = t.fields
-        .map(
-          (f) =>
-            `${f.name}${f.required ? "" : "?"}: ${renderTypeToTs(f.type, namespace)}`
-        )
+        .map((f) => `${f.name}${f.required ? "" : "?"}: ${renderTypeToTs(f.type, namespace)}`)
         .join(", ")
       return body.length === 0 ? "{}" : `{ ${body} }`
     }

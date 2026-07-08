@@ -15,9 +15,7 @@ import type { ExtractedTypeShape } from "~/scrape/entity"
 
 describe("emitter primitives", () => {
   it("emits a namespace import", () => {
-    expect(emitNamespaceImport("T", "./types")).toBe(
-      `import * as T from "./types"`
-    )
+    expect(emitNamespaceImport("T", "./types")).toBe(`import * as T from "./types"`)
   })
 
   it("emits a type-only namespace import", () => {
@@ -36,9 +34,7 @@ describe("emitter primitives", () => {
         { name: "id", type: "number" },
         { name: "nickname", type: "string", optional: true }
       ])
-    ).toBe(
-      `export interface User {\n  id: number\n  nickname?: string\n}`
-    )
+    ).toBe(`export interface User {\n  id: number\n  nickname?: string\n}`)
   })
 
   it("emits an empty interface", () => {
@@ -60,9 +56,7 @@ describe("emitter primitives", () => {
   })
 
   it("assembles a file with generated header and parts", () => {
-    expect(assembleFile(["a", "b", undefined, "c"])).toBe(
-      "// GENERATED CODE\n\na\n\nb\n\nc\n"
-    )
+    expect(assembleFile(["a", "b", undefined, "c"])).toBe("// GENERATED CODE\n\na\n\nb\n\nc\n")
   })
 
   it("assembles a file with only the header when all parts are empty", () => {
@@ -94,9 +88,7 @@ describe("emitExtractedType", () => {
         ]
       })
     }
-    expect(emitExtractedType(shape)).toBe(
-      `export interface Foo {\n  a: string\n  b?: number\n}`
-    )
+    expect(emitExtractedType(shape)).toBe(`export interface Foo {\n  a: string\n  b?: number\n}`)
   })
 
   it("emits a type alias for NormalType union", () => {
@@ -114,8 +106,6 @@ describe("emitExtractedType", () => {
       description: [],
       type: NormalType.fromSpec(union(ref("User"), P.string))
     }
-    expect(emitExtractedType(shape, { namespace: "T" })).toBe(
-      `export type Baz = T.User | string`
-    )
+    expect(emitExtractedType(shape, { namespace: "T" })).toBe(`export type Baz = T.User | string`)
   })
 })

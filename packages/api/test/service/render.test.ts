@@ -1,22 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import {
-  renderMethods,
-  renderTypes,
-  renderWebApp
-} from "~/service/code-writers"
+import { renderMethods, renderTypes, renderWebApp } from "~/service/code-writers"
 import { ExtractedWebApp } from "~/scrape/entities"
 import { ExtractedType } from "~/scrape/entity"
 import type { ExtractedMethodShape } from "~/scrape/entity"
 import { EntityFields, NormalType } from "~/scrape/type-system"
-import {
-  enumOf,
-  P,
-  parsePseudoType,
-  ref,
-  union,
-  type SpecType
-} from "~/scrape/type"
+import { enumOf, P, parsePseudoType, ref, union, type SpecType } from "~/scrape/type"
 
 // ── Helpers to build minimal fixtures ──
 
@@ -43,10 +32,7 @@ const interfaceType = (typeName: string, fields: ReturnType<typeof field>[]) =>
     type: new EntityFields({ fields })
   })
 
-const aliasType = (
-  typeName: string,
-  variants: [string, string, ...string[]]
-) =>
+const aliasType = (typeName: string, variants: [string, string, ...string[]]) =>
   new ExtractedType({
     typeName,
     description: [],
@@ -163,15 +149,8 @@ describe("renderWebApp", () => {
         entityDescription: { lines: [], returns: undefined },
         type: new EntityFields({ fields: [] })
       },
-      fields: [
-        field("version", "string"),
-        field("isExpanded", "boolean")
-      ],
-      types: [
-        interfaceType("ThemeParams", [
-          field("bg_color", "string", false)
-        ])
-      ]
+      fields: [field("version", "string"), field("isExpanded", "boolean")],
+      types: [interfaceType("ThemeParams", [field("bg_color", "string", false)])]
     })
 
     expect(renderWebApp(webapp)).toMatchInlineSnapshot(`

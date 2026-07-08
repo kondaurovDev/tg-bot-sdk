@@ -23,18 +23,12 @@ import {
 
 type ToAnchor = (name: string) => string
 
-const findEntityByAnchor = (
-  node: HtmlElement,
-  name: string,
-  toAnchor: ToAnchor
-) =>
+const findEntityByAnchor = (node: HtmlElement, name: string, toAnchor: ToAnchor) =>
   pipe(
-    Either.fromNullable(
-      node.querySelector(`a.anchor[name="${toAnchor(name)}"]`),
-      () =>
-        ExtractEntityError.make("TypeDefinition:NotFound", {
-          entityName: name
-        })
+    Either.fromNullable(node.querySelector(`a.anchor[name="${toAnchor(name)}"]`), () =>
+      ExtractEntityError.make("TypeDefinition:NotFound", {
+        entityName: name
+      })
     ),
     Either.andThen((_) => ExtractedEntity.makeFrom(_.parentNode))
   )
@@ -74,9 +68,7 @@ const botApiAnchor: ToAnchor = (name) => name.toLowerCase()
 
 export class DocPage extends BasePage {
   static fromHtmlString(html: string) {
-    return parseStringToHtml(html).pipe(
-      Either.andThen((node) => new DocPage(node))
-    )
+    return parseStringToHtml(html).pipe(Either.andThen((node) => new DocPage(node)))
   }
 
   private constructor(node: HtmlElement) {
@@ -90,14 +82,11 @@ export class DocPage extends BasePage {
 
 // ── WebAppPage ──
 
-const webAppAnchor: ToAnchor = (name) =>
-  name.toLowerCase().replaceAll(" ", "-")
+const webAppAnchor: ToAnchor = (name) => name.toLowerCase().replaceAll(" ", "-")
 
 export class WebAppPage extends BasePage {
   static fromHtmlString(html: string) {
-    return parseStringToHtml(html).pipe(
-      Either.andThen((node) => new WebAppPage(node))
-    )
+    return parseStringToHtml(html).pipe(Either.andThen((node) => new WebAppPage(node)))
   }
 
   private constructor(node: HtmlElement) {

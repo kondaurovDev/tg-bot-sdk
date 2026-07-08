@@ -83,27 +83,29 @@ const bot = createWebhook({
     },
     {
       match: ({ ctx }) => ctx.command === "/install",
-      handle: ({ ctx }) => ctx.reply(installMessage, {
-        parse_mode: "HTML",
-        link_preview_options: { is_disabled: true }
-      })
+      handle: ({ ctx }) =>
+        ctx.reply(installMessage, {
+          parse_mode: "HTML",
+          link_preview_options: { is_disabled: true }
+        })
     },
     {
       match: ({ ctx }) => ctx.command === "/features",
-      handle: ({ ctx }) => ctx.reply(featuresMessage, {
-        link_preview_options: { is_disabled: true }
-      })
+      handle: ({ ctx }) =>
+        ctx.reply(featuresMessage, {
+          link_preview_options: { is_disabled: true }
+        })
     },
     {
       match: ({ ctx }) => ctx.command === "/example",
-      handle: ({ ctx }) => ctx.reply(exampleMessage, {
-        link_preview_options: { is_disabled: true }
-      })
+      handle: ({ ctx }) =>
+        ctx.reply(exampleMessage, {
+          link_preview_options: { is_disabled: true }
+        })
     },
     {
       match: ({ ctx }) => ctx.command === "/dice",
-      handle: ({ ctx }) =>
-        ctx.reply(`You rolled: ${Math.floor(Math.random() * 6) + 1}`)
+      handle: ({ ctx }) => ctx.reply(`You rolled: ${Math.floor(Math.random() * 6) + 1}`)
     },
     {
       match: ({ update }) => update.text?.includes("+") ?? false,
@@ -116,8 +118,7 @@ const bot = createWebhook({
     },
     {
       match: ({ update }) => !!update.text,
-      handle: ({ ctx }) =>
-        ctx.reply("Send /start to see available commands")
+      handle: ({ ctx }) => ctx.reply("Send /start to see available commands")
     }
   ],
 

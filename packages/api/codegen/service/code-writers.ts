@@ -3,14 +3,16 @@
  *
  * TypeScript code generation services.
  *
- * Pure string-based emitter + prettier. No AST, no compiler dependency.
+ * Pure string-based emitter + oxfmt. No AST, no compiler dependency.
  * - {@link BotApiCodeWriterService} writes `types.ts` and `api.ts`
  *   (all Bot API interfaces and method signatures)
  * - {@link WebAppCodeWriterService} writes `webapp.ts`
  *   (Mini Apps WebApp interface and related types)
  */
 import { Config, Effect, String } from "effect"
+import { execFile } from "node:child_process"
 import { writeFile, mkdir } from "node:fs/promises"
+import { promisify } from "node:util"
 import * as Path from "path"
 
 import type { ExtractedMethodShape, ExtractedTypeShape } from "~/scrape/entity"
@@ -20,16 +22,17 @@ import {
   emitExtractedType,
   emitInterface,
   emitNamespaceImport,
-  emitTypeAlias,
-  formatTsSource
+  emitTypeAlias
 } from "./emitter"
 
 // ── Shared ──
 
+const execFileAsync = promisify(execFile)
+
 const writeTsFile = async (outPath: string, source: string) => {
-  const formatted = await formatTsSource(source)
   await mkdir(Path.dirname(outPath), { recursive: true })
-  await writeFile(outPath, formatted)
+  await writeFile(outPath, source)
+  await execFileAsync("pnpm", ["exec", "oxfmt", "--write", outPath])
   console.log("Wrote", outPath)
 }
 
@@ -44,8 +47,7 @@ const toKebab = (name: string): string =>
   String.snakeToKebab(String.camelToSnake(name)).replace(/^-/, "")
 
 const typeDocUrl = (name: string) => `${SITE_BASE}/api/types/${toKebab(name)}/`
-const methodDocUrl = (name: string) =>
-  `${SITE_BASE}/api/methods/${toKebab(name)}/`
+const methodDocUrl = (name: string) => `${SITE_BASE}/api/methods/${toKebab(name)}/`
 
 // ── Bot API types.ts ──
 
@@ -54,17 +56,14 @@ const TYPE_NAMESPACE = "T"
 export const renderTypes = (types: ExtractedTypeShape[]): string => {
   const parts = [
     emitTypeAlias("AllowedUpdateName", `Exclude<keyof Update, "update_id">`),
-    ...types.map((t) =>
-      emitExtractedType(t, { seeUrl: typeDocUrl(t.typeName) })
-    )
+    ...types.map((t) => emitExtractedType(t, { seeUrl: typeDocUrl(t.typeName) }))
   ]
   return assembleFile(parts)
 }
 
 // ── Bot API api.ts ──
 
-const makeMethodInputName = (methodName: string) =>
-  `${String.snakeToPascal(methodName)}Input`
+const makeMethodInputName = (methodName: string) => `${String.snakeToPascal(methodName)}Input`
 
 export const renderMethods = (methods: ExtractedMethodShape[]): string => {
   const apiInterface = emitInterface("Api", {
@@ -104,21 +103,14 @@ export class BotApiCodeWriterService extends Effect.Service<BotApiCodeWriterServ
   "BotApiCodeWriterService",
   {
     effect: Effect.gen(function* () {
-      const outDirParts = yield* Config.array(
-        Config.nonEmptyString(),
-        "scrapper-out-dir"
-      )
+      const outDirParts = yield* Config.array(Config.nonEmptyString(), "scrapper-out-dir")
       const outDir = Path.join(...outDirParts)
 
       return {
         writeTypes: (types: ExtractedTypeShape[]) =>
-          Effect.tryPromise(() =>
-            writeTsFile(specPath(outDir, "types"), renderTypes(types))
-          ),
+          Effect.tryPromise(() => writeTsFile(specPath(outDir, "types"), renderTypes(types))),
         writeMethods: (methods: ExtractedMethodShape[]) =>
-          Effect.tryPromise(() =>
-            writeTsFile(specPath(outDir, "api"), renderMethods(methods))
-          )
+          Effect.tryPromise(() => writeTsFile(specPath(outDir, "api"), renderMethods(methods)))
       } as const
     })
   }
@@ -143,10 +135,7 @@ export class WebAppCodeWriterService extends Effect.Service<WebAppCodeWriterServ
   "WebAppCodeWriterService",
   {
     effect: Effect.gen(function* () {
-      const outDirParts = yield* Config.array(
-        Config.nonEmptyString(),
-        "scrapper-out-dir"
-      )
+      const outDirParts = yield* Config.array(Config.nonEmptyString(), "scrapper-out-dir")
       const outDir = Path.join(...outDirParts)
 
       return {

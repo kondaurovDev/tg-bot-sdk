@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "node", "promise", "import"],
+  "rules": {
+    "import/no-cycle": "error",
+    "import/no-self-import": "error",
+    "import/no-duplicates": "error",
+    "no-unused-vars": [
+      "warn",
+      {
+        "ignoreRestSiblings": true,
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["**/test/**"],
+      "rules": {
+        "no-empty-pattern": "off"
+      }
+    },
+    {
+      "files": ["docs/src/playground/**"],
+      "rules": {
+        "import/default": "off"
+      }
+    }
+  ],
+  "ignorePatterns": ["**/dist", "**/src/specification", "docs/.astro", "example"]
+}

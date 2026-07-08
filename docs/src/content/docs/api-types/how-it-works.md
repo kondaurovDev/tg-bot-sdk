@@ -52,13 +52,20 @@ The Bot API documentation (`core.telegram.org/bots/api`) is a single long HTML p
 ### Page Layout
 
 ```html
-<h3>Getting updates</h3>           <!-- group name -->
-  <h4><a class="anchor" name="getUpdates"/>getUpdates</h4>
-    <p>...</p>                      <!-- description -->
-    <table>...</table>              <!-- field definitions -->
-  <h4><a class="anchor" name="update"/>Update</h4>
-    <p>...</p>
-    <table>...</table>
+<h3>Getting updates</h3>
+<!-- group name -->
+<h4><a class="anchor" name="getUpdates" />getUpdates</h4>
+<p>...</p>
+<!-- description -->
+<table>
+  ...
+</table>
+<!-- field definitions -->
+<h4><a class="anchor" name="update" />Update</h4>
+<p>...</p>
+<table>
+  ...
+</table>
 ```
 
 - **`<h3>`** sets the current section group (e.g. "Getting updates", "Available types")
@@ -87,15 +94,15 @@ Starting from each `<h4>`, the extractor walks siblings to collect:
 
 Telegram pseudo-types are mapped to TypeScript:
 
-| Telegram | TypeScript |
-|----------|------------|
-| `String` | `string` |
-| `Integer`, `Int` | `number` |
-| `Float` | `number` |
-| `Boolean`, `True`, `False` | `boolean` |
-| `Array of X` | `X[]` |
-| `X or Y` | `X \| Y` |
-| `InputFile` | `{ file_content: Uint8Array, file_name: string }` |
+| Telegram                   | TypeScript                                        |
+| -------------------------- | ------------------------------------------------- |
+| `String`                   | `string`                                          |
+| `Integer`, `Int`           | `number`                                          |
+| `Float`                    | `number`                                          |
+| `Boolean`, `True`, `False` | `boolean`                                         |
+| `Array of X`               | `X[]`                                             |
+| `X or Y`                   | `X \| Y`                                          |
+| `InputFile`                | `{ file_content: Uint8Array, file_name: string }` |
 
 ### Enum Extraction
 

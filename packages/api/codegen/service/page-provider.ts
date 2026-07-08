@@ -26,9 +26,7 @@ export const HtmlPages = {
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 
 const forceRefresh = process.env.FORCE_REFRESH === "true"
-const cacheTtlMs = process.env.CACHE_TTL_MS
-  ? Number(process.env.CACHE_TTL_MS)
-  : DEFAULT_TTL_MS
+const cacheTtlMs = process.env.CACHE_TTL_MS ? Number(process.env.CACHE_TTL_MS) : DEFAULT_TTL_MS
 
 const readFresh = async (fileName: string) => {
   if (forceRefresh) return undefined
@@ -57,11 +55,7 @@ const getPageHtml = (page: HtmlPageName) =>
 
     return content
   }).pipe(
-    Effect.retry(
-      Schedule.exponential("2 seconds").pipe(
-        Schedule.compose(Schedule.recurs(3))
-      )
-    )
+    Effect.retry(Schedule.exponential("2 seconds").pipe(Schedule.compose(Schedule.recurs(3))))
   )
 
 // ── PageProviderService ──
@@ -76,9 +70,7 @@ export class PageProviderService extends Effect.Service<PageProviderService>()(
 
       return {
         api: getPageHtml("api").pipe(Effect.andThen(DocPage.fromHtmlString)),
-        webapp: getPageHtml("webapp").pipe(
-          Effect.andThen(WebAppPage.fromHtmlString)
-        )
+        webapp: getPageHtml("webapp").pipe(Effect.andThen(WebAppPage.fromHtmlString))
       } as const
     })
   }

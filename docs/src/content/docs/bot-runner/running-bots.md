@@ -13,9 +13,7 @@ No public URL or SSL certificate needed — the bot pulls updates from Telegram 
 import { createBot } from "@effect-ak/tg-bot"
 
 const instance = await createBot()
-  .onMessage(({ text }) => [
-    text(({ update, ctx }) => ctx.reply(update.text!))
-  ])
+  .onMessage(({ text }) => [text(({ update, ctx }) => ctx.reply(update.text!))])
   .run({ bot_token: "YOUR_BOT_TOKEN" })
 ```
 
@@ -62,9 +60,7 @@ Replace handlers without restarting the process. The next polling iteration pick
 ```typescript
 instance.reload({
   type: "single",
-  on_message: [
-    { handle: ({ ctx }) => ctx.reply("Updated handler!") }
-  ]
+  on_message: [{ handle: ({ ctx }) => ctx.reply("Updated handler!") }]
 })
 ```
 
@@ -76,9 +72,7 @@ For serverless deployments (Vercel, Cloudflare Workers, Bun.serve, etc.), use `.
 import { createBot } from "@effect-ak/tg-bot"
 
 const handler = createBot()
-  .onMessage(({ command }) => [
-    command("/start", ({ ctx }) => ctx.reply("Hello!"))
-  ])
+  .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("Hello!"))])
   .webhook({ bot_token: "YOUR_BOT_TOKEN" })
 
 // Export as your HTTP handler
@@ -98,9 +92,7 @@ import { createBot } from "@effect-ak/tg-bot"
 import type { VercelRequest, VercelResponse } from "@vercel/node"
 
 const bot = createBot()
-  .onMessage(({ command }) => [
-    command("/start", ({ ctx }) => ctx.reply("Hello from Vercel!"))
-  ])
+  .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("Hello from Vercel!"))])
   .webhook({ bot_token: process.env.BOT_TOKEN! })
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -131,19 +123,19 @@ createBot()
   })
 ```
 
-| Option | Default | Description |
-|--------|---------|-------------|
-| `log_level` | `"info"` | `"info"` — basic logging, `"debug"` — all updates and responses |
-| `on_error` | `"stop"` | `"stop"` — stop bot on error, `"continue"` — keep polling |
-| `batch_size` | `10` | Updates per poll (10–100) |
-| `poll_timeout` | `10` | Long polling timeout in seconds (2–120) |
-| `max_empty_responses` | `undefined` | Stop after N consecutive empty responses (useful for testing) |
+| Option                | Default     | Description                                                     |
+| --------------------- | ----------- | --------------------------------------------------------------- |
+| `log_level`           | `"info"`    | `"info"` — basic logging, `"debug"` — all updates and responses |
+| `on_error`            | `"stop"`    | `"stop"` — stop bot on error, `"continue"` — keep polling       |
+| `batch_size`          | `10`        | Updates per poll (10–100)                                       |
+| `poll_timeout`        | `10`        | Long polling timeout in seconds (2–120)                         |
+| `max_empty_responses` | `undefined` | Stop after N consecutive empty responses (useful for testing)   |
 
 ## Polling vs Webhooks
 
-| | Long Polling | Webhooks |
-|---|---|---|
-| Setup | No public URL needed | Requires HTTPS endpoint |
-| Hosting | Any machine, VPS, local dev | Serverless / always-on server |
-| Latency | ~1s polling interval | Instant push from Telegram |
-| Best for | Development, simple deployments | Production, serverless |
+|          | Long Polling                    | Webhooks                      |
+| -------- | ------------------------------- | ----------------------------- |
+| Setup    | No public URL needed            | Requires HTTPS endpoint       |
+| Hosting  | Any machine, VPS, local dev     | Serverless / always-on server |
+| Latency  | ~1s polling interval            | Instant push from Telegram    |
+| Best for | Development, simple deployments | Production, serverless        |

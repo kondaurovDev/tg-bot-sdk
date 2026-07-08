@@ -2,11 +2,9 @@
  * @module emitter
  *
  * String-based TypeScript code emitter. Pure text-in/text-out helpers that
- * replace ts-morph for our codegen output. Resulting source is piped through
- * prettier for final formatting.
+ * replace ts-morph for our codegen output. Written files are formatted
+ * with oxfmt afterwards.
  */
-import prettier from "prettier"
-
 import type { ExtractedTypeShape } from "~/scrape/entity"
 
 // ── JSDoc ──
@@ -69,12 +67,7 @@ export interface EmitInterfaceBody {
   seeUrl?: string | undefined
 }
 
-const emitProperty = ({
-  name,
-  type,
-  optional,
-  description
-}: EmitProperty): string => {
+const emitProperty = ({ name, type, optional, description }: EmitProperty): string => {
   const line = `  ${name}${optional ? "?" : ""}: ${type}`
   const jsdoc = emitJsDoc({ description })
   return jsdoc ? `${indentLines(jsdoc, "  ")}\n${line}` : line
@@ -93,23 +86,16 @@ const emitMethodSignature = ({
   return jsdoc ? `${indentLines(jsdoc, "  ")}\n${line}` : line
 }
 
-const prependJsDoc = (jsdoc: string, body: string): string =>
-  jsdoc ? `${jsdoc}\n${body}` : body
+const prependJsDoc = (jsdoc: string, body: string): string => (jsdoc ? `${jsdoc}\n${body}` : body)
 
-export const emitInterface = (
-  name: string,
-  body: EmitProperty[] | EmitInterfaceBody
-): string => {
+export const emitInterface = (name: string, body: EmitProperty[] | EmitInterfaceBody): string => {
   const {
     properties = [],
     methods = [],
     description,
     seeUrl
   } = Array.isArray(body) ? { properties: body } : body
-  const members = [
-    ...properties.map(emitProperty),
-    ...methods.map(emitMethodSignature)
-  ]
+  const members = [...properties.map(emitProperty), ...methods.map(emitMethodSignature)]
   const iface =
     members.length === 0
       ? `export interface ${name} {}`
@@ -126,14 +112,9 @@ export const emitTypeAlias = (
   name: string,
   type: string,
   options: EmitTypeAliasOptions = {}
-): string =>
-  prependJsDoc(emitJsDoc(options), `export type ${name} = ${type}`)
+): string => prependJsDoc(emitJsDoc(options), `export type ${name} = ${type}`)
 
-export const emitNamespaceImport = (
-  alias: string,
-  from: string,
-  typeOnly = false
-): string =>
+export const emitNamespaceImport = (alias: string, from: string, typeOnly = false): string =>
   `import${typeOnly ? " type" : ""} * as ${alias} from "${from}"`
 
 // ── High-level emitters ──
@@ -179,16 +160,5 @@ export const emitExtractedType = (
 
 const GENERATED_HEADER = "// GENERATED CODE"
 
-export const assembleFile = (
-  parts: ReadonlyArray<string | undefined>
-): string =>
-  [GENERATED_HEADER, ...parts.filter((p): p is string => !!p)].join("\n\n") +
-  "\n"
-
-export const formatTsSource = async (source: string): Promise<string> => {
-  const config = await prettier.resolveConfig(process.cwd())
-  return prettier.format(source, {
-    ...config,
-    parser: "typescript"
-  })
-}
+export const assembleFile = (parts: ReadonlyArray<string | undefined>): string =>
+  [GENERATED_HEADER, ...parts.filter((p): p is string => !!p)].join("\n\n") + "\n"

@@ -26,12 +26,7 @@ import {
   startsWithUpperCase,
   INITIALING_MINI_APPS
 } from "~/scrape/type-system"
-import {
-  array,
-  parsePseudoType,
-  type SpecType,
-  union
-} from "~/scrape/type"
+import { array, parsePseudoType, type SpecType, union } from "~/scrape/type"
 
 // ── ExtractEntityError ──
 
@@ -84,15 +79,12 @@ const optional_field_label = "Optional"
 
 const MAX_STEPS = 10
 
-const findTypeNode = (
-  node: HtmlElement
-): Either.Either<HtmlElement, ExtractEntityError> => {
+const findTypeNode = (node: HtmlElement): Either.Either<HtmlElement, ExtractEntityError> => {
   let current = node.nextElementSibling
 
   for (let step = 1; step <= MAX_STEPS; step++) {
     if (!current) return ExtractEntityError.left("TypeDefinition:NoSiblings")
-    if (current.tagName == "H4")
-      return ExtractEntityError.left("TypeDefinition:StopTagEncountered")
+    if (current.tagName == "H4") return ExtractEntityError.left("TypeDefinition:StopTagEncountered")
     if (type_node_set.has(current.tagName)) return Either.right(current)
     current = current.nextElementSibling
   }
@@ -108,12 +100,9 @@ const type_tags_regex = /\w+(?=<\/(a|em)>)/g
 const html_tags_regex = /<\/?[^>]+>/g
 
 const isReturnSentence = (_: string) =>
-  _.startsWith("On success") ||
-  _.endsWith("is returned") ||
-  _.startsWith("Returns ")
+  _.startsWith("On success") || _.endsWith("is returned") || _.startsWith("Returns ")
 
-export const removeHtmlTags = (input: string) =>
-  he.decode(input.replaceAll(html_tags_regex, ""))
+export const removeHtmlTags = (input: string) => he.decode(input.replaceAll(html_tags_regex, ""))
 
 /** Split HTML by sentence boundaries, keeping only non-empty parts with letters. */
 const splitHtmlToSentences = (html: string): string[] => {
@@ -138,10 +127,7 @@ const collectSiblingsSentences = (node: HtmlElement): string[] => {
 }
 
 /** Extract candidate return types from a single HTML sentence. */
-const extractReturnTypes = (
-  htmlLine: string,
-  plainLine: string
-): SpecType[] =>
+const extractReturnTypes = (htmlLine: string, plainLine: string): SpecType[] =>
   pipe(
     Array.fromIterable(htmlLine.matchAll(type_tags_regex)),
     Array.filterMap((_) => {
@@ -149,9 +135,7 @@ const extractReturnTypes = (
       if (!isComplexType(originName)) return Option.none()
       const parsed = parsePseudoType(originName)
       if (!parsed) return Option.none()
-      const isArray = plainLine
-        .toLowerCase()
-        .includes(`an array of ${originName.toLowerCase()}`)
+      const isArray = plainLine.toLowerCase().includes(`an array of ${originName.toLowerCase()}`)
       return Option.some(isArray ? array(parsed) : parsed)
     })
   )
@@ -172,10 +156,7 @@ const dedupeSpecTypes = (types: SpecType[]): SpecType[] => {
 const extractEntityDescription = (
   node: HtmlElement,
   entityName: string
-): Either.Either<
-  ExtractedEntityShape["entityDescription"],
-  ExtractEntityError
-> => {
+): Either.Either<ExtractedEntityShape["entityDescription"], ExtractEntityError> => {
   const sentences = collectSiblingsSentences(node)
   const returnTypeOverridden = returnTypeOverrides[entityName]
 
@@ -207,11 +188,7 @@ const extractEntityDescription = (
     if (deduped.length > 1) {
       return Either.right({
         lines,
-        returns: union(
-          deduped[0],
-          deduped[1],
-          ...deduped.slice(2)
-        )
+        returns: union(deduped[0], deduped[1], ...deduped.slice(2))
       })
     }
     return Either.right({ lines, returns: undefined })
@@ -227,9 +204,7 @@ const extractEntityDescription = (
 }
 
 export const extractFieldDescription = (input: HtmlElement) =>
-  splitHtmlToSentences(input.innerHTML).map((line) =>
-    removeHtmlTags(replaceImgWithAlt(line))
-  )
+  splitHtmlToSentences(input.innerHTML).map((line) => removeHtmlTags(replaceImgWithAlt(line)))
 
 function replaceImgWithAlt(text: string): string {
   const imgTagRegex = /<img[^>]*alt="([^"]*)"[^>]*>/g
@@ -259,18 +234,14 @@ const extractFromList = (node: HtmlElement) => {
   }
 
   if (Array.isNonEmptyArray(oneOf)) {
-    const members = oneOf.map((name) => parsePseudoType(name)).filter(
-      (t): t is SpecType => t !== null
-    )
+    const members = oneOf
+      .map((name) => parsePseudoType(name))
+      .filter((t): t is SpecType => t !== null)
     if (members.length === 1) {
       return Either.right(NormalType.fromSpec(members[0]))
     }
     if (Array.isNonEmptyArray(members) && members.length >= 2) {
-      return Either.right(
-        NormalType.fromSpec(
-          union(members[0], members[1], ...members.slice(2))
-        )
-      )
+      return Either.right(NormalType.fromSpec(union(members[0], members[1], ...members.slice(2))))
     }
   }
 
@@ -298,8 +269,7 @@ const extractFromTable = (node: HtmlElement, entityName: string) => {
         entityName
       })
     if (pseudoType == "Function") {
-      const returnType =
-        entityName == INITIALING_MINI_APPS ? "void" : entityName
+      const returnType = entityName == INITIALING_MINI_APPS ? "void" : entityName
       pseudoType = fieldName.endsWith("()") ? `() => ${returnType}` : "unknown"
       const parenIndex = fieldName.indexOf("(")
       if (parenIndex !== -1) fieldName = fieldName.substring(0, parenIndex)
@@ -376,8 +346,7 @@ const extractFromNode = (
 
   const entityDescription = extractEntityDescription(node, entityName)
 
-  if (entityDescription._tag == "Left")
-    return Either.left(entityDescription.left)
+  if (entityDescription._tag == "Left") return Either.left(entityDescription.left)
 
   const detailsNode = findTypeNode(node)
 
@@ -387,9 +356,7 @@ const extractFromNode = (
       return Either.right({
         entityName,
         entityDescription: entityDescription.right,
-        type: NormalType.fromSpec(
-          overridden ?? { kind: "raw", ts: "never" }
-        )
+        type: NormalType.fromSpec(overridden ?? { kind: "raw", ts: "never" })
       })
     }
     return Either.left({
@@ -423,13 +390,9 @@ export interface ExtractedEntityShape {
   groupName?: string
 }
 
-export class ExtractedEntity extends Data.TaggedClass(
-  "ExtractedEntity"
-)<ExtractedEntityShape> {
+export class ExtractedEntity extends Data.TaggedClass("ExtractedEntity")<ExtractedEntityShape> {
   static makeFrom(node: HtmlElement) {
-    return extractFromNode(node).pipe(
-      Either.andThen((_) => new ExtractedEntity(_))
-    )
+    return extractFromNode(node).pipe(Either.andThen((_) => new ExtractedEntity(_)))
   }
 }
 
@@ -452,8 +415,7 @@ const makeMethodFrom = (
 
   const returnType = entity.entityDescription.returns
 
-  if (!returnType)
-    return ExtractEntityError.left("Method:ReturnTypeNotFound", entity)
+  if (!returnType) return ExtractEntityError.left("Method:ReturnTypeNotFound", entity)
 
   return Either.right({
     methodName: entity.entityName,
@@ -464,9 +426,7 @@ const makeMethodFrom = (
   })
 }
 
-export class ExtractedMethod extends Data.TaggedClass(
-  "ExtractedMethod"
-)<ExtractedMethodShape> {
+export class ExtractedMethod extends Data.TaggedClass("ExtractedMethod")<ExtractedMethodShape> {
   static makeFrom(input: ExtractedEntityShape) {
     return pipe(
       makeMethodFrom(input),
@@ -483,9 +443,7 @@ export interface ExtractedTypeShape {
   type: ExtractedEntityShape["type"]
 }
 
-export class ExtractedType extends Data.TaggedClass(
-  "ExtractedType"
-)<ExtractedTypeShape> {
+export class ExtractedType extends Data.TaggedClass("ExtractedType")<ExtractedTypeShape> {
   static makeFrom(entity: ExtractedEntityShape) {
     return new ExtractedType({
       typeName: entity.entityName,

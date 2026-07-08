@@ -106,7 +106,7 @@ export function registerApiRunner(Alpine: Alpine) {
         const res = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(params),
+          body: JSON.stringify(params)
         })
         const json = await res.json()
         this.response = JSON.stringify(json, null, 2)
@@ -132,13 +132,12 @@ export function registerApiRunner(Alpine: Alpine) {
       this.detectingChatId = true
       this.error = null
       try {
-        const res = await fetch(
-          `https://api.telegram.org/bot${this.token}/getUpdates`
-        )
+        const res = await fetch(`https://api.telegram.org/bot${this.token}/getUpdates`)
         const json = await res.json()
         const updates = json?.result
         if (!Array.isArray(updates) || updates.length === 0) {
-          this.error = "No messages found. Send any message to your bot first, then click Detect again."
+          this.error =
+            "No messages found. Send any message to your bot first, then click Detect again."
           return
         }
         const last = updates[updates.length - 1]
@@ -166,6 +165,6 @@ export function registerApiRunner(Alpine: Alpine) {
 
     get optionalFields(): FieldConfig[] {
       return this.fieldDefs.filter((f: FieldConfig) => !f.required)
-    },
+    }
   }))
 }

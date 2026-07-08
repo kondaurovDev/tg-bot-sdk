@@ -16,12 +16,11 @@ npm install @effect-ak/tg-bot
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
 
-const bot = createBot()
-  .onMessage(({ command, text, fallback }) => [
-    command("/start", ({ ctx }) => ctx.reply("Welcome!")),
-    text(({ update, ctx }) => ctx.reply(`You said: ${update.text}`)),
-    fallback(({ ctx }) => ctx.reply("Send me a text message"))
-  ])
+const bot = createBot().onMessage(({ command, text, fallback }) => [
+  command("/start", ({ ctx }) => ctx.reply("Welcome!")),
+  text(({ update, ctx }) => ctx.reply(`You said: ${update.text}`)),
+  fallback(({ ctx }) => ctx.reply("Send me a text message"))
+])
 
 await bot.run({ bot_token: "YOUR_BOT_TOKEN" })
 ```
@@ -30,9 +29,7 @@ await bot.run({ bot_token: "YOUR_BOT_TOKEN" })
 
 ```typescript
 const handler = createBot()
-  .onMessage(({ command }) => [
-    command("/start", ({ ctx }) => ctx.reply("Hello!"))
-  ])
+  .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("Hello!"))])
   .webhook({ bot_token: "YOUR_BOT_TOKEN" })
 
 // Use as a Request -> Response handler

@@ -46,8 +46,7 @@ const extractTypesFromPage = (
 ): Either.Either<ExtractedType[], ExtractError> => {
   const nodes = page.node.querySelectorAll("h4")
 
-  if (nodes.length == 0)
-    return Either.left(ExtractedEntitiesError.make("NodesNotFound"))
+  if (nodes.length == 0) return Either.left(ExtractedEntitiesError.make("NodesNotFound"))
 
   const result: ExtractedType[] = []
 
@@ -65,24 +64,19 @@ const extractTypesFromPage = (
   return Either.right(result)
 }
 
-const botApiTitle: TitleExtractor = (node) =>
-  node.childNodes.at(1)?.text
+const botApiTitle: TitleExtractor = (node) => node.childNodes.at(1)?.text
 
 // childNodes.at(2) is needed for webapp HTML structure
 const webAppTitle: TitleExtractor = (node) =>
-  node.childNodes.at(2)?.text?.trim() ||
-  node.childNodes.at(1)?.text?.trim()
+  node.childNodes.at(2)?.text?.trim() || node.childNodes.at(1)?.text?.trim()
 
-const extractEntities = (
-  page: DocPage
-): Either.Either<ExtractedEntitiesShape, ExtractError> => {
+const extractEntities = (page: DocPage): Either.Either<ExtractedEntitiesShape, ExtractError> => {
   const types = extractTypesFromPage(page, botApiTitle)
   if (Either.isLeft(types)) return Either.left(types.left)
 
   const nodes = page.node.querySelectorAll("h3, h4")
 
-  if (nodes.length == 0)
-    return Either.left(ExtractedEntitiesError.make("NodesNotFound"))
+  if (nodes.length == 0) return Either.left(ExtractedEntitiesError.make("NodesNotFound"))
 
   const methods: ExtractedMethod[] = []
   let currentGroup: string | undefined
@@ -95,8 +89,7 @@ const extractEntities = (
       continue
     }
 
-    if (!currentGroup)
-      return Either.left(ExtractedEntitiesError.make("GroupNameNotDefined"))
+    if (!currentGroup) return Either.left(ExtractedEntitiesError.make("GroupNameNotDefined"))
 
     if (!title || !method_type_name_regex.test(title)) continue
     if (isComplexType(title)) continue
@@ -126,8 +119,7 @@ export interface ExtractedEntitiesShape {
   types: ExtractedType[]
 }
 
-export const extractBotApiEntities = (page: DocPage) =>
-  extractEntities(page)
+export const extractBotApiEntities = (page: DocPage) => extractEntities(page)
 
 // ── ExtractedWebApp ──
 
@@ -163,9 +155,7 @@ const extractFromPage = (page: WebAppPage) => {
   )
 }
 
-export class ExtractedWebApp extends Data.TaggedClass(
-  "ExtractedWebApp"
-)<ExtractedWebAppShape> {
+export class ExtractedWebApp extends Data.TaggedClass("ExtractedWebApp")<ExtractedWebAppShape> {
   static make(page: WebAppPage) {
     return extractFromPage(page)
   }

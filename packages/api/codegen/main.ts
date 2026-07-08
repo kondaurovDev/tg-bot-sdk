@@ -17,11 +17,7 @@ import {
 import { MarkdownWriterService } from "./service/markdown"
 import { BotApiCodegenRuntime, WebAppCodegenRuntime } from "./runtime"
 import { consumeWarnings, formatWarnings } from "./warnings"
-import {
-  buildBotApiSpec,
-  buildMiniAppSpec,
-  writeSpecJson
-} from "./service/spec"
+import { buildBotApiSpec, buildMiniAppSpec, writeSpecJson } from "./service/spec"
 
 const rootDir = path.resolve(import.meta.dirname, "..", "..", "..")
 const pkgDir = path.resolve(import.meta.dirname, "..")
@@ -79,10 +75,13 @@ const generateBotApi = Effect.fn("generate bot api")(function* () {
   const faqPath = path.resolve(rootDir, "docs", "src", "content", "docs", "faq.mdx")
   if (fs.existsSync(faqPath)) {
     const faqContent = fs.readFileSync(faqPath, "utf-8")
-    fs.writeFileSync(faqPath, faqContent.replace(
-      /covers \d+ types and \d+\+? methods/g,
-      `covers ${typeCount} types and ${methodCount} methods`
-    ))
+    fs.writeFileSync(
+      faqPath,
+      faqContent.replace(
+        /covers \d+ types and \d+\+? methods/g,
+        `covers ${typeCount} types and ${methodCount} methods`
+      )
+    )
   }
 
   updateReadmeBadge(/BotApi-[\d.]+/, `BotApi-${apiVersion}`)

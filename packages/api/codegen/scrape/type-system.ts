@@ -15,12 +15,7 @@
 import { Array, Data, Either } from "effect"
 
 import { fieldOverrides, globalFieldOverrides } from "~/scrape/overrides"
-import {
-  enumOf,
-  parsePseudoType,
-  renderTypeToTs,
-  type SpecType
-} from "~/scrape/type"
+import { enumOf, parsePseudoType, renderTypeToTs, type SpecType } from "~/scrape/type"
 
 // ── Shared types ──
 
@@ -41,21 +36,14 @@ export { INITIALING_MINI_APPS } from "./constants"
 // ── NormalType errors ──
 
 interface ErrorShape {
-  error: [
-    "Failed",
-    "ReturnTypeSentenceNotFound",
-    "EmptyType",
-    "NoEnumFound"
-  ][number]
+  error: ["Failed", "ReturnTypeSentenceNotFound", "EmptyType", "NoEnumFound"][number]
   details: {
     entityName?: string
     typeName?: string
   }
 }
 
-export class NormalTypeError extends Data.TaggedError(
-  "NormalTypeError"
-)<ErrorShape> {
+export class NormalTypeError extends Data.TaggedError("NormalTypeError")<ErrorShape> {
   static make(error: ErrorShape["error"], details: ErrorShape["details"]) {
     return new NormalTypeError({ error, details })
   }
@@ -77,9 +65,7 @@ const enumPresenceIndicatiors = ["must be", "always", "one of", "can be"]
 const hasEnum = (line: string) =>
   enumPresenceIndicatiors.map((_) => line.includes(_)).includes(true)
 
-export function extractEnumFromTypeDescription(
-  description: string[]
-): string[] {
+export function extractEnumFromTypeDescription(description: string[]): string[] {
   const enumValues: string[] = []
 
   for (const line of description) {
@@ -87,17 +73,13 @@ export function extractEnumFromTypeDescription(
 
     let match
     while ((match = regexQuotes.exec(line)) !== null) {
-      enumValues.push(
-        ...match[1].split(/",\s*|\u201D,\s*|\u201C|\u201D|,/).map((s) => s.trim())
-      )
+      enumValues.push(...match[1].split(/",\s*|\u201D,\s*|\u201C|\u201D|,/).map((s) => s.trim()))
     }
 
     if (enumValues.length === 0) {
       const fallbackMatch = regexFallback.exec(line)
       if (fallbackMatch) {
-        enumValues.push(
-          ...fallbackMatch[1].split(/,\s*|or\s+/).map((s) => s.trim())
-        )
+        enumValues.push(...fallbackMatch[1].split(/,\s*|or\s+/).map((s) => s.trim()))
       }
     }
   }
@@ -107,9 +89,7 @@ export function extractEnumFromTypeDescription(
 
 // ── NormalType factory ──
 
-const makeSpecFor = (
-  input: ExtractedEntityField
-): Either.Either<SpecType, NormalTypeError> => {
+const makeSpecFor = (input: ExtractedEntityField): Either.Either<SpecType, NormalTypeError> => {
   const global = globalFieldOverrides.find((g) => g.match(input))
   if (global) return Either.right(global.override)
 
@@ -122,8 +102,7 @@ const makeSpecFor = (
   if (override) return Either.right(override)
 
   const parsed = parsePseudoType(input.pseudoType)
-  if (!parsed)
-    return NormalTypeError.left("EmptyType", { typeName: input.pseudoType })
+  if (!parsed) return NormalTypeError.left("EmptyType", { typeName: input.pseudoType })
   return Either.right(parsed)
 }
 
@@ -145,9 +124,7 @@ export class NormalType extends Data.TaggedClass("NormalType")<{
   }
 
   static makeFrom(input: ExtractedEntityField) {
-    return makeSpecFor(input).pipe(
-      Either.andThen((spec) => new NormalType({ spec }))
-    )
+    return makeSpecFor(input).pipe(Either.andThen((spec) => new NormalType({ spec })))
   }
 }
 

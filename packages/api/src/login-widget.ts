@@ -49,24 +49,16 @@ export interface TelegramLoginService {
    * Store options and register the auth callback.
    * If auth data is already present in the URL hash, the callback fires immediately.
    */
-  init: (
-    options: TelegramLoginOptions,
-    callback: (data: TelegramLoginData | false) => void,
-  ) => void
+  init: (options: TelegramLoginOptions, callback: (data: TelegramLoginData | false) => void) => void
   /**
    * Open the login popup using options previously set by {@link init}.
    */
-  open: (
-    callback?: (data: TelegramLoginData | false) => void,
-  ) => void
+  open: (callback?: (data: TelegramLoginData | false) => void) => void
   /**
    * Full auth flow — opens a popup for Telegram OAuth.
    * Self-contained, does not require a prior {@link init} call.
    */
-  auth: (
-    options: TelegramLoginOptions,
-    callback: (data: TelegramLoginData | false) => void,
-  ) => void
+  auth: (options: TelegramLoginOptions, callback: (data: TelegramLoginData | false) => void) => void
   /**
    * Retrieve previously stored auth data from the server via POST request.
    *
@@ -75,7 +67,7 @@ export interface TelegramLoginService {
    */
   getAuthData: (
     options: { bot_id: string; lang?: string },
-    callback: (origin: string, data: TelegramLoginData | false) => void,
+    callback: (origin: string, data: TelegramLoginData | false) => void
   ) => void
 }
 
@@ -87,20 +79,17 @@ declare global {
       /** Query an embedded iframe widget for its metadata */
       getWidgetInfo: (
         el: string | HTMLElement,
-        callback: (info: Record<string, unknown>) => void,
+        callback: (info: Record<string, unknown>) => void
       ) => void
       /** Send runtime configuration to widget iframe(s) */
-      setWidgetOptions: (
-        options: Record<string, unknown>,
-        el?: string | HTMLElement,
-      ) => void
+      setWidgetOptions: (options: Record<string, unknown>, el?: string | HTMLElement) => void
     }
   }
 }
 
 const toHex = (buffer: ArrayBuffer) =>
   Array.from(new Uint8Array(buffer))
-    .map(b => b.toString(16).padStart(2, "0"))
+    .map((b) => b.toString(16).padStart(2, "0"))
     .join("")
 
 /**
@@ -123,27 +112,25 @@ export const verifyLoginData = async (input: {
   data: TelegramLoginData
   botToken: string
 }): Promise<boolean> => {
-
-  const dataCheckString =
-    Object.entries(input.data)
-      .filter(([key]) => key !== "hash")
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
-      .join("\n")
+  const dataCheckString = Object.entries(input.data)
+    .filter(([key]) => key !== "hash")
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n")
 
   const encoder = new TextEncoder()
 
-  const secretKey =
-    await crypto.subtle.digest("SHA-256", encoder.encode(input.botToken))
+  const secretKey = await crypto.subtle.digest("SHA-256", encoder.encode(input.botToken))
 
-  const signingKey =
-    await crypto.subtle.importKey(
-      "raw", secretKey, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]
-    )
+  const signingKey = await crypto.subtle.importKey(
+    "raw",
+    secretKey,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  )
 
-  const signature =
-    await crypto.subtle.sign("HMAC", signingKey, encoder.encode(dataCheckString))
+  const signature = await crypto.subtle.sign("HMAC", signingKey, encoder.encode(dataCheckString))
 
   return toHex(signature) === input.data.hash
-
 }

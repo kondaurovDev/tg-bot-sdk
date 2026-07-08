@@ -18,10 +18,9 @@ Echoes back any text message. [Try in Playground →](/playground/)
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
 
-export default createBot()
-  .onMessage(({ text }) => [
-    text(({ update, ctx }) => ctx.reply(update.text!))
-  ])
+export default createBot().onMessage(({ text }) => [
+  text(({ update, ctx }) => ctx.reply(update.text!))
+])
 ```
 
 ## Command Bot
@@ -31,24 +30,20 @@ Handles `/start`, `/help`, and `/echo`. The `/echo` command dumps the raw update
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
 
-export default createBot()
-  .onMessage(({ command, text }) => [
-    command("/start", ({ ctx }) =>
-      ctx.reply("Hello! Try /help or /echo")
-    ),
-    command("/help", ({ ctx }) =>
-      ctx.reply(
-        "Available commands:\n/start — welcome message\n/help — this message\n/echo — your message as JSON"
-      )
-    ),
-    command("/echo", ({ update, ctx }) =>
-      ctx.reply(
-        `<pre language="json">${JSON.stringify(update, null, 2)}</pre>`,
-        { parse_mode: "HTML" }
-      )
-    ),
-    text(({ ctx }) => ctx.reply("Unknown command. Try /help"))
-  ])
+export default createBot().onMessage(({ command, text }) => [
+  command("/start", ({ ctx }) => ctx.reply("Hello! Try /help or /echo")),
+  command("/help", ({ ctx }) =>
+    ctx.reply(
+      "Available commands:\n/start — welcome message\n/help — this message\n/echo — your message as JSON"
+    )
+  ),
+  command("/echo", ({ update, ctx }) =>
+    ctx.reply(`<pre language="json">${JSON.stringify(update, null, 2)}</pre>`, {
+      parse_mode: "HTML"
+    })
+  ),
+  text(({ ctx }) => ctx.reply("Unknown command. Try /help"))
+])
 ```
 
 ## File Bot
@@ -58,19 +53,16 @@ Converts any text message into a `.txt` file and sends it back. Shows how to use
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
 
-export default createBot()
-  .onMessage(({ command, text }) => [
-    command("/start", ({ ctx }) =>
-      ctx.reply("Send me any text and I'll save it as a file")
-    ),
-    text(({ update, ctx }) =>
-      ctx.replyWithDocument(
-        {
-          file_content: new TextEncoder().encode(update.text!),
-          file_name: "message.txt"
-        },
-        { caption: "Here's your text as a file" }
-      )
+export default createBot().onMessage(({ command, text }) => [
+  command("/start", ({ ctx }) => ctx.reply("Send me any text and I'll save it as a file")),
+  text(({ update, ctx }) =>
+    ctx.replyWithDocument(
+      {
+        file_content: new TextEncoder().encode(update.text!),
+        file_name: "message.txt"
+      },
+      { caption: "Here's your text as a file" }
     )
-  ])
+  )
+])
 ```

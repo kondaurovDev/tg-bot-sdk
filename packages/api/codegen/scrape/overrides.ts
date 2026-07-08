@@ -12,16 +12,7 @@
  * - {@link globalFieldOverrides} — pattern-matched overrides applied across
  *   all entities (e.g. every `*parse_mode` field)
  */
-import {
-  array,
-  enumOf,
-  object,
-  P,
-  raw,
-  ref,
-  union,
-  type SpecType
-} from "~/scrape/type"
+import { array, enumOf, object, P, raw, ref, union, type SpecType } from "~/scrape/type"
 import type { ExtractedEntityField } from "~/scrape/type-system"
 import { INITIALING_MINI_APPS } from "./constants"
 
@@ -139,43 +130,29 @@ const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
     switchInlineQuery: raw(
       `(query: string, chat_type?: "users" | "bots" | "groups" | "channels") => void`
     ),
-    openLink: raw(
-      `(url: string, options?: { try_instant_view: boolean }) => void`
-    ),
+    openLink: raw(`(url: string, options?: { try_instant_view: boolean }) => void`),
     openTelegramLink: raw(`(url: string) => void`),
     isVersionAtLeast: raw(`(version: string) => boolean`),
-    openInvoice: raw(
-      `(url: string, callback?: (invoiceStatus: unknown) => void) => void`
-    ),
+    openInvoice: raw(`(url: string, callback?: (invoiceStatus: unknown) => void) => void`),
     requestEmojiStatusAccess: raw(
       `(url: string, callback?: (invoiceStatus: unknown) => void) => void`
     ),
-    shareToStory: raw(
-      `(mediaUrl: string, options?: StoryShareParams) => void`
-    ),
+    shareToStory: raw(`(mediaUrl: string, options?: StoryShareParams) => void`),
     setEmojiStatus: raw(
       `(custom_emoj_id: string, params?: EmojiStatusParams, callback?: (isStatusSet: boolean) => void) => void`
     ),
     setHeaderColor: raw(`(color: string) => void`),
     setBackgroundColor: raw(`(color: string) => void`),
     setBottomBarColor: raw(`(color: string) => void`),
-    shareMessage: raw(
-      `(msg_id: number, options?: (isSent: boolean) => void) => void`
-    ),
+    shareMessage: raw(`(msg_id: number, options?: (isSent: boolean) => void) => void`),
     showScanQrPopup: raw(
       `(params: ScanQrPopupParams, callback?: (data: string) => boolean) => void`
     ),
-    showPopup: raw(
-      `(params: PopupParams, callback?: (buttonId: string) => void) => void`
-    ),
+    showPopup: raw(`(params: PopupParams, callback?: (buttonId: string) => void) => void`),
     showAlert: raw(`(message: string, callback?: () => void) => void`),
-    showConfirm: raw(
-      `(message: string, callback?: (isOk: boolean) => void) => void`
-    ),
+    showConfirm: raw(`(message: string, callback?: (isOk: boolean) => void) => void`),
     readTextFromClipboard: raw(`(callback?: (text: string) => void) => void`),
-    requestWriteAccess: raw(
-      `(callback?: (isGranted: boolean) => void) => void`
-    ),
+    requestWriteAccess: raw(`(callback?: (isGranted: boolean) => void) => void`),
     requestContact: raw(`(callback?: (isShared: boolean) => void) => void`)
   },
   Accelerometer: {
@@ -187,9 +164,7 @@ const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
   BottomButton: {
     onClick: raw("(callback: () => void) => BottomButton"),
     offClick: raw("(callback: () => void) => BottomButton"),
-    showProgress: raw(
-      "(callback: (leaveActive: boolean) => void) => BottomButton"
-    ),
+    showProgress: raw("(callback: (leaveActive: boolean) => void) => BottomButton"),
     setParams: raw(
       `
       (params: {
@@ -244,24 +219,16 @@ const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
     stop: raw("(callback?: (isStopped: boolean) => void) => void")
   },
   Gyroscope: {
-    start: raw(
-      "(params: GyroscopeStartParams, callback?: (isTracking: boolean) => void) => void"
-    ),
+    start: raw("(params: GyroscopeStartParams, callback?: (isTracking: boolean) => void) => void"),
     stop: raw("(callback?: (isStopped: boolean) => void) => void")
   },
   HapticFeedback: {
-    impactOccurred: raw(
-      `(style: "light" | "medium" | "heavy" | "rigid" | "soft") => void`
-    ),
-    notificationOccurred: raw(
-      `(type: "error" | "success" | "warning") => void`
-    )
+    impactOccurred: raw(`(style: "light" | "medium" | "heavy" | "rigid" | "soft") => void`),
+    notificationOccurred: raw(`(type: "error" | "success" | "warning") => void`)
   },
   LocationManager: {
     init: raw("(callback?: () => void) => LocationManager"),
-    getLocation: raw(
-      "(callback: (location: LocationData | null) => void) => LocationManager"
-    )
+    getLocation: raw("(callback: (location: LocationData | null) => void) => LocationManager")
   },
   SettingsButton: {
     onClick: raw("(callback: () => void) => SettingsButton"),
@@ -281,9 +248,7 @@ const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
     removeItem: raw(
       `(key: string, callback?: (error: unknown | null, isRemoved: boolean) => void) => DeviceStorage`
     ),
-    clear: raw(
-      `(callback?: (error: unknown | null, isCleared: boolean) => void) => DeviceStorage`
-    )
+    clear: raw(`(callback?: (error: unknown | null, isCleared: boolean) => void) => DeviceStorage`)
   },
   SecureStorage: {
     setItem: raw(
@@ -298,9 +263,7 @@ const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
     removeItem: raw(
       `(key: string, callback?: (error: unknown | null, isRemoved: boolean) => void) => SecureStorage`
     ),
-    clear: raw(
-      `(callback?: (error: unknown | null, isCleared: boolean) => void) => SecureStorage`
-    )
+    clear: raw(`(callback?: (error: unknown | null, isCleared: boolean) => void) => SecureStorage`)
   }
 }
 

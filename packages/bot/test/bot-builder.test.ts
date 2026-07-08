@@ -94,10 +94,7 @@ const lastUrl = (spy: { mock: { calls: unknown[][] } }) => {
   return calls[calls.length - 1]![0]
 }
 
-const sendUpdate = async (
-  handler: (req: Request) => Promise<Response>,
-  update: Update
-) => {
+const sendUpdate = async (handler: (req: Request) => Promise<Response>, update: Update) => {
   const req = new Request("https://example.test/webhook", {
     method: "POST",
     body: JSON.stringify(update),
@@ -131,9 +128,7 @@ describe("createBot — message helpers via webhook", () => {
     expect(res.status).toBe(200)
 
     expect(fetchCalls(fetchSpy)).toHaveLength(1)
-    expect(lastUrl(fetchSpy)).toBe(
-      `https://api.telegram.org/bot${TOKEN}/sendMessage`
-    )
+    expect(lastUrl(fetchSpy)).toBe(`https://api.telegram.org/bot${TOKEN}/sendMessage`)
     expect(decodeFormData(fetchCalls(fetchSpy)[0]![1])).toMatchObject({
       chat_id: "99",
       text: "hello"
@@ -190,9 +185,7 @@ describe("createBot — message helpers via webhook", () => {
 
   it("ignores update when no guard matches and no fallback is registered", async () => {
     const handler = createBot()
-      .onMessage(({ command }) => [
-        command("/start", ({ ctx }) => ctx.reply("hello"))
-      ])
+      .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("hello"))])
       .webhook({ bot_token: TOKEN, logger: silentLogger })
 
     await sendUpdate(handler, messageUpdate({ text: "random" }))
@@ -203,12 +196,8 @@ describe("createBot — message helpers via webhook", () => {
 
   it("merges guards across chained onMessage calls", async () => {
     const handler = createBot()
-      .onMessage(({ command }) => [
-        command("/a", ({ ctx }) => ctx.reply("A"))
-      ])
-      .onMessage(({ command }) => [
-        command("/b", ({ ctx }) => ctx.reply("B"))
-      ])
+      .onMessage(({ command }) => [command("/a", ({ ctx }) => ctx.reply("A"))])
+      .onMessage(({ command }) => [command("/b", ({ ctx }) => ctx.reply("B"))])
       .webhook({ bot_token: TOKEN, logger: silentLogger })
 
     await sendUpdate(handler, messageWithCommand("/b"))
@@ -231,9 +220,7 @@ describe("createBot — message helpers via webhook", () => {
 
     await sendUpdate(handler, messageWithCommand("/file"))
 
-    expect(lastUrl(fetchSpy)).toBe(
-      `https://api.telegram.org/bot${TOKEN}/sendDocument`
-    )
+    expect(lastUrl(fetchSpy)).toBe(`https://api.telegram.org/bot${TOKEN}/sendDocument`)
   })
 
   it("text helper matches messages with text", async () => {
@@ -373,9 +360,7 @@ describe("createBot — multiple update types", () => {
 
   it("ignores updates of types that have no registered handler", async () => {
     const handler = createBot()
-      .onMessage(({ command }) => [
-        command("/start", ({ ctx }) => ctx.reply("hello"))
-      ])
+      .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("hello"))])
       .webhook({ bot_token: TOKEN, logger: silentLogger })
 
     await sendUpdate(handler, callbackQueryUpdate("anything"))
@@ -412,9 +397,7 @@ describe("createBot — error handling", () => {
 
   it("returns 500 if request body is not valid JSON", async () => {
     const handler = createBot()
-      .onMessage(({ command }) => [
-        command("/start", ({ ctx }) => ctx.reply("hi"))
-      ])
+      .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("hi"))])
       .webhook({ bot_token: TOKEN, logger: silentLogger })
 
     const req = new Request("https://example.test/webhook", {
@@ -429,9 +412,7 @@ describe("createBot — error handling", () => {
   it("invokes onHandleResult with status=handled for matched updates", async () => {
     const results: Array<{ status: string; updateType: string }> = []
     const handler = createBot()
-      .onMessage(({ command }) => [
-        command("/start", ({ ctx }) => ctx.reply("hi"))
-      ])
+      .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("hi"))])
       .webhook({
         bot_token: TOKEN,
         logger: silentLogger,
@@ -451,9 +432,7 @@ describe("createBot — error handling", () => {
   it("invokes onHandleResult with status=no_handler when no handler matches the update type", async () => {
     const results: Array<{ status: string }> = []
     const handler = createBot()
-      .onMessage(({ command }) => [
-        command("/start", ({ ctx }) => ctx.reply("hi"))
-      ])
+      .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("hi"))])
       .webhook({
         bot_token: TOKEN,
         logger: silentLogger,
@@ -468,9 +447,7 @@ describe("createBot — error handling", () => {
   it("invokes onHandleResult with status=ignored when handler returns BotResponse.ignore", async () => {
     const results: Array<{ status: string }> = []
     const handler = createBot()
-      .onMessage(({ command }) => [
-        command("/silent", ({ ctx }) => ctx.ignore)
-      ])
+      .onMessage(({ command }) => [command("/silent", ({ ctx }) => ctx.ignore)])
       .webhook({
         bot_token: TOKEN,
         logger: silentLogger,
@@ -483,4 +460,3 @@ describe("createBot — error handling", () => {
     expect(fetchSpy).not.toHaveBeenCalled()
   })
 })
-
