@@ -15,7 +15,7 @@ head:
             "name": "Why does this project exist?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Most existing Telegram Bot libraries for TypeScript either lack native type support, have confusing type definitions, or come with heavy middleware abstractions. This SDK has auto-generated types, zero runtime dependencies, and never-throwing error handling."
+              "text": "Most existing Telegram Bot libraries for TypeScript either lack native type support, have confusing type definitions, or come with heavy middleware abstractions. This SDK has auto-generated types, zero runtime dependencies, and typed error handling with both throwing and non-throwing variants."
             }
           },
           {
@@ -23,7 +23,7 @@ head:
             "name": "How is this different from other libraries?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Types are auto-generated from official docs (not manually maintained), zero runtime dependencies (native fetch), discriminated union error handling (never throws), includes a types-only package, and works in the browser."
+              "text": "Types are auto-generated from official docs (not manually maintained), zero runtime dependencies (native fetch), discriminated union error handling, includes a types-only package, and works in the browser."
             }
           },
           {
@@ -39,7 +39,7 @@ head:
             "name": "What happens when an API call fails?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "The client never throws exceptions. Every call returns a result with an 'ok' field. If ok is false, result.error is a tagged union you can pattern-match on."
+              "text": "Pick your style: execute throws a typed TgBotClientError on failure, while executeSafe never throws and returns a result with an 'ok' field. In both cases the error is a tagged union you can pattern-match on."
             }
           },
           {
@@ -79,7 +79,7 @@ head:
             "name": "Long polling or webhooks?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Both are supported. Long polling works out of the box with no server required. Webhooks are available via createWebhook() for server-based deployments."
+              "text": "Both are supported. Long polling works out of the box with no server required. Webhooks are available via the .webhook() builder method for serverless deployments."
             }
           },
           {
@@ -95,6 +95,7 @@ head:
 ---
 
 import stats from "../../data/bot-api-stats.json"
+import StarCta from "../../components/StarCta.astro"
 
 ## Why does this project exist?
 
@@ -216,10 +217,12 @@ createBot()
   .run({ bot_token: "YOUR_BOT_TOKEN" })
 ```
 
-**Webhooks** are available via `createWebhook()` for server-based deployments.
+**Webhooks** are available via the `.webhook()` builder method — it returns a handler that accepts a standard `Request`, ready for serverless platforms. See [Running Bots](/bot-runner/running-bots/#webhooks) for details.
 
 ## Which package should I install?
 
 - **Building a bot?** → `npm install @effect-ak/tg-bot` (includes the client)
 - **Just calling API methods?** → `npm install @effect-ak/tg-bot-client`
 - **Only need types?** → `npm install @effect-ak/tg-bot-api`
+
+<StarCta />

@@ -3,7 +3,7 @@ title: Writing Bots
 description: How to write a Telegram bot — match incoming updates and respond with the right action
 ---
 
-A Telegram bot is simple: Telegram sends your bot **updates** (messages, commands, button clicks, etc.), and you decide what to do with each one. That's it.
+A Telegram bot is simple: Telegram sends your bot **updates** (messages, commands, button clicks, etc.), and you decide what to do with each one. That's it — no middleware chains, no plugins, no framework ceremony.
 
 You write a list of rules — **handlers** — each with a condition and an action. The bot checks them top to bottom and runs the first match. Think of it as a `switch/case` for incoming updates.
 
@@ -126,3 +126,8 @@ If a handler throws an error, the bot:
 3. Continues processing other updates (if `on_error: "continue"`)
 
 Up to 10 updates are processed concurrently. If some handlers fail, others continue.
+
+## Next steps
+
+- [Running Bots](/bot-runner/running-bots/) — start your bot with long polling or deploy it with webhooks
+- [Examples](/bot-runner/examples/) — ready-to-run bots you can copy or open in the Playground

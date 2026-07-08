@@ -23,9 +23,15 @@ export default defineConfig({
           href: "https://github.com/kondaurovDev/tg-bot-sdk"
         }
       ],
+      customCss: ["./src/styles/custom.css"],
+      editLink: {
+        baseUrl: "https://github.com/kondaurovDev/tg-bot-sdk/edit/main/docs/"
+      },
+      lastUpdated: true,
       components: {
         SocialIcons: "./src/components/SocialIcons.astro",
-        PageTitle: "./src/components/PageTitle.astro"
+        PageTitle: "./src/components/PageTitle.astro",
+        Hero: "./src/components/landing/Hero.astro"
       },
       head: [
         {

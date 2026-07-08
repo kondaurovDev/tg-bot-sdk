@@ -2,6 +2,8 @@
 title: Telegram Bot API for TypeScript
 description: Type-safe TypeScript SDK for building Telegram bots. HTTP client, bot runner with long polling and webhooks, and full Bot API type coverage.
 template: splash
+hero:
+  tagline: Type-safe SDK for building Telegram bots — auto-generated types, lightweight client, zero runtime dependencies.
 head:
   - tag: script
     attrs:
@@ -42,122 +44,93 @@ head:
       }
 ---
 
-import { Card, CardGrid, LinkCard, Tabs, TabItem } from "@astrojs/starlight/components"
-import stats from "../../data/bot-api-stats.json"
+import { Tabs, TabItem } from "@astrojs/starlight/components"
+import Features from "../../components/landing/Features.astro"
+import Packages from "../../components/landing/Packages.astro"
+import Section from "../../components/landing/Section.astro"
+import Cta from "../../components/landing/Cta.astro"
 
-Types auto-generated from the [official Telegram documentation](https://core.telegram.org/bots/api) — {stats.typeCount} types and {stats.methodCount} methods, always up to date. Zero dependencies, typed results you can pattern-match on.
+<Features />
 
-## Features
+<Section
+  eyebrow="Examples"
+  title="See it in code"
+  description="A full bot, a bare client call, or just the types — the API stays small at every layer."
+>
+  <Tabs>
+    <TabItem label="Bot">
+      Create a bot with command handling and text replies — no middleware, no boilerplate.
 
-<CardGrid>
-  <LinkCard
-    title="TypeScript Types"
-    description="Full type coverage for the Telegram Bot API, auto-generated from official docs."
-    href="/api-types/bot-api/"
-  />
-  <LinkCard
-    title="Client"
-    description="Lightweight, type-safe client for calling any Bot API method."
-    href="/client/usage/"
-  />
-  <LinkCard
-    title="Build Bots"
-    description="Run Telegram bots with long polling or webhooks."
-    href="/bot-runner/writing-bots/"
-  />
-  <LinkCard
-    title="API Reference"
-    description={`${stats.methodCount} methods, ${stats.typeCount} types — Bot API v${stats.version}.`}
-    href="/api/"
-  />
-</CardGrid>
+      ```typescript
+      import { createBot } from "@effect-ak/tg-bot"
 
-## Getting Started
+      createBot()
+        .onMessage(({ command, text }) => [
+          command("/start", ({ ctx }) =>
+            ctx.reply("Hello! I'm your new bot.")
+          ),
+          text(({ ctx }) =>
+            ctx.reply(`You said: ${ctx.update.message.text}`)
+          )
+        ])
+        .run({ bot_token: "YOUR_BOT_TOKEN" })
+      ```
 
-```bash
-# Full bot framework (includes client and types)
-npm install @effect-ak/tg-bot
+      Install with `npm install @effect-ak/tg-bot` — includes the client and all types.
 
-# HTTP client only
-npm install @effect-ak/tg-bot-client
+    </TabItem>
+    <TabItem label="Client">
+      Call any Bot API method directly with full type safety and typed error handling.
 
-# Types only (zero runtime code)
-npm install @effect-ak/tg-bot-api
-```
+      ```typescript
+      import { makeTgBotClient } from "@effect-ak/tg-bot-client"
 
-Read the [Introduction](/getting-started/introduction/) or jump to [Quick Start](/getting-started/quick-start/) to build your first bot in under 5 minutes.
+      const client = makeTgBotClient({
+        bot_token: "YOUR_BOT_TOKEN"
+      })
 
-## Examples
+      // throws TgBotClientError on failure
+      const message = await client.execute("send_message", {
+        chat_id: 123456,
+        text: "Hello from the client!"
+      })
 
-<Tabs>
-  <TabItem label="Bot">
-    Create a bot with command handling and text replies — no middleware, no boilerplate.
+      console.log("Sent:", message.message_id)
 
-    ```typescript
-    import { createBot } from "@effect-ak/tg-bot"
+      // or the non-throwing variant
+      const result = await client.executeSafe("get_me", {})
 
-    createBot()
-      .onMessage(({ command, text }) => [
-        command("/start", ({ ctx }) =>
-          ctx.reply("Hello! I'm your new bot.")
-        ),
-        text(({ ctx }) =>
-          ctx.reply(`You said: ${ctx.update.message.text}`)
-        )
-      ])
-      .run({ bot_token: "YOUR_BOT_TOKEN" })
-    ```
+      if (result.ok) console.log("Bot:", result.data.first_name)
+      else console.log("Error:", result.error._tag)
+      ```
 
-    Install with `npm install @effect-ak/tg-bot` — includes the client and all types.
+      Install with `npm install @effect-ak/tg-bot-client` — lightweight client without the bot runner.
 
-  </TabItem>
-  <TabItem label="Client">
-    Call any Bot API method directly with full type safety and typed error handling.
+    </TabItem>
+    <TabItem label="Mini App">
+      Use auto-generated TypeScript types for the `Telegram.WebApp` API in your Mini App.
 
-    ```typescript
-    import { makeTgBotClient } from "@effect-ak/tg-bot-client"
+      ```typescript
+      import type { WebApp } from "@effect-ak/tg-bot-api"
 
-    const client = makeTgBotClient({
-      bot_token: "YOUR_BOT_TOKEN"
-    })
+      declare const Telegram: { WebApp: WebApp }
 
-    // throws TgBotClientError on failure
-    const message = await client.execute("send_message", {
-      chat_id: 123456,
-      text: "Hello from the client!"
-    })
+      const app = Telegram.WebApp
+      app.ready()
 
-    console.log("Sent:", message.message_id)
+      app.MainButton.setText("Submit")
+      app.MainButton.onClick(() => {
+        app.sendData(JSON.stringify({ action: "submit" }))
+      })
+      app.MainButton.show()
+      ```
 
-    // or the non-throwing variant
-    const result = await client.executeSafe("get_me", {})
+      Install with `npm install @effect-ak/tg-bot-api` — types only, zero runtime code.
 
-    if (result.ok) console.log("Bot:", result.data.first_name)
-    else console.log("Error:", result.error._tag)
-    ```
+    </TabItem>
+  </Tabs>
+</Section>
 
-    Install with `npm install @effect-ak/tg-bot-client` — lightweight client without the bot runner.
+<Packages />
 
-  </TabItem>
-  <TabItem label="Mini App">
-    Use auto-generated TypeScript types for the `Telegram.WebApp` API in your Mini App.
-
-    ```typescript
-    import type { WebApp } from "@effect-ak/tg-bot-api"
-
-    declare const Telegram: { WebApp: WebApp }
-
-    const app = Telegram.WebApp
-    app.ready()
-
-    app.MainButton.setText("Submit")
-    app.MainButton.onClick(() => {
-      app.sendData(JSON.stringify({ action: "submit" }))
-    })
-    app.MainButton.show()
-    ```
-
-    Install with `npm install @effect-ak/tg-bot-api` — types only, zero runtime code.
-
-  </TabItem>
-</Tabs>
+<Cta />

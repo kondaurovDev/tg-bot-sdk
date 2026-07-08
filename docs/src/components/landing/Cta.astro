@@ -1,0 +1,135 @@
+---
+
+---
+
+<section class="landing-cta not-content">
+  <div class="cta-glow" aria-hidden="true"></div>
+  <h2>Ship your first bot in under 5 minutes</h2>
+  <p>Install the SDK, paste a token from BotFather, and your bot is live — or try it right in the browser first.</p>
+  <div class="cta-actions">
+    <a class="btn btn-primary" href="/getting-started/quick-start/">
+      Quick Start
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 12h14M12 5l7 7-7 7" />
+      </svg>
+    </a>
+    <a class="btn btn-ghost" href="/playground/">Open Playground</a>
+  </div>
+  <a class="cta-star" href="https://github.com/kondaurovDev/tg-bot-sdk" target="_blank" rel="noopener">
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+    </svg>
+    Open source and free forever — star it on GitHub
+  </a>
+</section>
+
+<style>
+  .landing-cta {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin: 5rem 0 2rem;
+    padding: 3.5rem 1.5rem;
+    border: 1px solid color-mix(in srgb, var(--sl-color-accent) 35%, var(--sl-color-hairline));
+    border-radius: 1.25rem;
+    text-align: center;
+  }
+
+  .cta-glow {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+    background:
+      radial-gradient(40rem 18rem at 50% 120%, rgba(34, 158, 217, 0.22), transparent 70%),
+      radial-gradient(24rem 12rem at 10% -20%, rgba(42, 171, 238, 0.12), transparent 70%);
+  }
+
+  .landing-cta h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3.5vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--sl-color-white);
+  }
+
+  .landing-cta p {
+    margin: 0;
+    max-width: 34rem;
+    font-size: var(--sl-text-base);
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+  }
+
+  .cta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
+    border-radius: 999px;
+    font-size: var(--sl-text-base);
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .btn svg {
+    width: 1.1em;
+    height: 1.1em;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #2aabee, #229ed9);
+    color: #fff;
+    box-shadow: 0 8px 24px -8px rgba(34, 158, 217, 0.6);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px -8px rgba(34, 158, 217, 0.7);
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--sl-color-hairline);
+    color: var(--sl-color-white);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  .cta-star {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.75rem;
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-gray-3);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .cta-star svg {
+    width: 1em;
+    height: 1em;
+    color: #e3b341;
+  }
+
+  .cta-star:hover {
+    color: #e3b341;
+  }
+</style>

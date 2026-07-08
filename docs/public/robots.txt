@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tg-bot-sdk.website/sitemap-index.xml

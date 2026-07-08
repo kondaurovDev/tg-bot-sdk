@@ -3,7 +3,11 @@ title: How to Use Client
 description: Create a client, send messages, upload files, and handle errors
 ---
 
+The client is a thin, type-safe wrapper over the Bot API: one `execute` method that covers every API method, automatic `FormData` encoding for file uploads, and typed errors. No runtime dependencies — just native `fetch`.
+
 ## Setup
+
+Get a bot token from [@BotFather](https://t.me/BotFather) and create a client:
 
 ```typescript
 import { makeTgBotClient } from "@effect-ak/tg-bot-client"

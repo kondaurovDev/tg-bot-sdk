@@ -3,17 +3,35 @@ title: Introduction
 description: What Telegram Bot SDK is and how its packages work together
 ---
 
+import { LinkCard, CardGrid } from "@astrojs/starlight/components"
 import stats from "../../../data/bot-api-stats.json"
 
-Telegram Bot SDK is a TypeScript toolkit for working with the Telegram Bot API. It consists of three packages that can be used independently or together.
+Telegram Bot SDK is a TypeScript toolkit for working with the [Telegram Bot API](https://core.telegram.org/bots/api). It consists of three small packages that can be used independently or together — from raw type definitions to a full bot framework.
 
 ## What you can do
 
-**Call any Bot API method** — send messages, upload files, manage chats. You get full autocomplete for method names and parameters, and typed results with a simple `ok` / `error` shape. → [How to Use Client](/client/usage/)
-
-**Build a bot** — define handlers for commands, text messages, and callbacks with a fluent builder API. Run it with long polling (no server needed) or webhooks. → [How to Write Bots](/bot-runner/writing-bots/)
-
-**Use just the types** — {stats.typeCount} types and {stats.methodCount} methods, auto-generated from official Telegram docs. No runtime code, works with any HTTP client. → [API Reference](/api/)
+<CardGrid>
+  <LinkCard
+    title="Call any Bot API method"
+    description="Send messages, upload files, manage chats — with autocomplete for method names and parameters, and typed errors."
+    href="/client/usage/"
+  />
+  <LinkCard
+    title="Build a bot"
+    description="Define handlers for commands, messages, and callbacks with a fluent builder. Run with long polling or webhooks."
+    href="/bot-runner/writing-bots/"
+  />
+  <LinkCard
+    title="Use just the types"
+    description={`${stats.typeCount} types and ${stats.methodCount} methods, auto-generated from official Telegram docs. Works with any HTTP client.`}
+    href="/api/"
+  />
+  <LinkCard
+    title="Build Mini Apps"
+    description="Typed Telegram.WebApp API — buttons, cloud storage, haptics, themes."
+    href="/api-types/webapp/"
+  />
+</CardGrid>
 
 ## Packages
 
@@ -23,11 +41,13 @@ Telegram Bot SDK is a TypeScript toolkit for working with the Telegram Bot API. 
 | `@effect-ak/tg-bot`        | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot)](https://www.npmjs.com/package/@effect-ak/tg-bot)               | Bot framework with handlers, polling, and webhooks |
 | `@effect-ak/tg-bot-api`    | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-api)](https://www.npmjs.com/package/@effect-ak/tg-bot-api)       | TypeScript types for the entire Bot API            |
 
-The bot framework (`@effect-ak/tg-bot`) includes the client, so you only need one install if you're building a bot. Use the client package on its own for simpler use cases like sending notifications or integrating Telegram into an existing app.
+Each package builds on the one below it: the bot framework includes the client, and the client includes the types. Install the client on its own for simpler use cases — sending notifications, managing a channel, integrating Telegram into an existing app — and the framework when you're building a full bot.
 
-## Key Features
+## Why this SDK
 
-- **Always Up-to-Date**: Types generated from official Telegram API documentation
-- **Fully Type-Safe**: Complete TypeScript support for all API methods and types
-- **Zero Config**: Works out of the box with sensible defaults
-- **No Webhooks Required**: Uses long polling — run anywhere without public URLs
+- **Always up to date** — types are generated from the official Telegram API documentation, not maintained by hand. New Bot API release → re-run the generator → new types.
+- **Fully type-safe** — every method knows its parameters and return type, every error is a tagged union you can pattern-match on.
+- **Zero runtime dependencies** — native `fetch` and nothing else. Runs on Node.js 18+, Bun, Deno, browsers, and edge runtimes.
+- **No webhooks required** — long polling works from any machine without a public URL. Webhooks are there when you need them for serverless.
+
+Ready to start? Head to the [Quick Start](/getting-started/quick-start/) — your first bot is 4 steps away.

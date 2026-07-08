@@ -1,0 +1,469 @@
+---
+import { Code } from "@astrojs/starlight/components"
+import stats from "../../data/bot-api-stats.json"
+
+const { hero } = Astro.locals.starlightRoute.entry.data
+const tagline = hero?.tagline
+
+const botCode = [
+  'import { createBot } from "@effect-ak/tg-bot"',
+  "",
+  "createBot()",
+  "  .onMessage(({ command, text }) => [",
+  '    command("/start", ({ ctx }) =>',
+  '      ctx.reply("Hello! I\'m your new bot")',
+  "    ),",
+  "    text(({ ctx }) =>",
+  "      ctx.reply(`You said: ${ctx.update.message.text}`)",
+  "    )",
+  "  ])",
+  '  .run({ bot_token: "YOUR_BOT_TOKEN" })'
+].join("\n")
+
+const clientCode = [
+  'import { makeTgBotClient } from "@effect-ak/tg-bot-client"',
+  "",
+  "const client = makeTgBotClient({",
+  '  bot_token: "YOUR_BOT_TOKEN"',
+  "})",
+  "",
+  "// full type safety for params and result",
+  'const message = await client.execute("send_message", {',
+  "  chat_id: 123456,",
+  '  text: "Hello from the client!"',
+  "})",
+  "",
+  'console.log("Sent:", message.message_id)'
+].join("\n")
+
+const webappCode = [
+  'import type { WebApp } from "@effect-ak/tg-bot-api"',
+  "",
+  "declare const Telegram: { WebApp: WebApp }",
+  "",
+  "const app = Telegram.WebApp",
+  "app.ready()",
+  "",
+  'app.MainButton.setText("Submit")',
+  "app.MainButton.onClick(() => {",
+  '  app.sendData(JSON.stringify({ action: "submit" }))',
+  "})",
+  "app.MainButton.show()"
+].join("\n")
+
+const heroTabs = [
+  { id: "client", file: "client.ts", install: "npm install @effect-ak/tg-bot-client", code: clientCode },
+  { id: "bot", file: "bot.ts", install: "npm install @effect-ak/tg-bot", code: botCode },
+  { id: "webapp", file: "webapp.ts", install: "npm install @effect-ak/tg-bot-api", code: webappCode }
+]
+
+const defaultInstall = heroTabs[0].install
+---
+
+<section class="landing-hero not-content" data-hero-tabs>
+  <div class="hero-glow" aria-hidden="true"></div>
+
+  <div class="hero-copy">
+    <a class="hero-badge" href="/api/">
+      <span class="badge-dot" aria-hidden="true"></span>
+      Bot API v{stats.version} &middot; always up to date
+    </a>
+
+    <h1 id="_top">
+      Telegram Bot API for <span class="text-gradient">TypeScript</span>
+    </h1>
+
+    {tagline && <p class="hero-tagline">{tagline}</p>}
+
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="/getting-started/quick-start/">
+        Quick Start
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 12h14M12 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a class="btn btn-ghost" href="/playground/">Try in Playground</a>
+    </div>
+
+    <div class="install-cmd" data-install-cmd>
+      <span class="prompt" aria-hidden="true">$</span>
+      <code data-install-text>{defaultInstall}</code>
+      <button
+        type="button"
+        class="copy-btn"
+        data-copy-btn
+        data-copy-text={defaultInstall}
+        aria-label="Copy install command"
+      >
+        <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+        <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 6 9 17l-5-5" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="hero-code">
+    <div class="code-window">
+      <div class="code-tabs" role="tablist" aria-label="Code examples">
+        {
+          heroTabs.map((tab, index) => (
+            <button
+              type="button"
+              class:list={["code-tab", { active: index === 0 }]}
+              role="tab"
+              aria-selected={index === 0 ? "true" : "false"}
+              data-tab={tab.id}
+              data-install={tab.install}
+            >
+              {tab.file}
+            </button>
+          ))
+        }
+      </div>
+      {
+        heroTabs.map((tab, index) => (
+          <div class="code-panel" role="tabpanel" data-panel={tab.id} hidden={index !== 0}>
+            <Code code={tab.code} lang="ts" />
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<div class="hero-stats not-content">
+  <div class="stat">
+    <span class="stat-value">{stats.typeCount}</span>
+    <span class="stat-label">TypeScript types</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value">{stats.methodCount}</span>
+    <span class="stat-label">API methods</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value">0</span>
+    <span class="stat-label">Runtime dependencies</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value">100%</span>
+    <span class="stat-label">Generated from official docs</span>
+  </div>
+</div>
+
+<script>
+  document.addEventListener("click", (event) => {
+    const target = event.target as HTMLElement | null
+
+    const copyButton = target?.closest<HTMLButtonElement>("[data-copy-btn]")
+    if (copyButton) {
+      navigator.clipboard.writeText(copyButton.dataset.copyText ?? "").then(() => {
+        copyButton.classList.add("copied")
+        setTimeout(() => copyButton.classList.remove("copied"), 1500)
+      })
+      return
+    }
+
+    const tabButton = target?.closest<HTMLButtonElement>(".code-tab")
+    const heroRoot = tabButton?.closest("[data-hero-tabs]")
+    if (!tabButton || !heroRoot) return
+
+    for (const tab of heroRoot.querySelectorAll<HTMLButtonElement>(".code-tab")) {
+      const isActive = tab === tabButton
+      tab.classList.toggle("active", isActive)
+      tab.setAttribute("aria-selected", String(isActive))
+    }
+
+    for (const panel of heroRoot.querySelectorAll<HTMLElement>("[data-panel]")) {
+      panel.hidden = panel.dataset.panel !== tabButton.dataset.tab
+    }
+
+    const install = tabButton.dataset.install
+    const installText = heroRoot.querySelector<HTMLElement>("[data-install-text]")
+    const installCopy = heroRoot.querySelector<HTMLButtonElement>("[data-install-cmd] [data-copy-btn]")
+    if (install && installText && installCopy) {
+      installText.textContent = install
+      installCopy.dataset.copyText = install
+    }
+  })
+</script>
+
+<style>
+  .landing-hero {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    align-items: center;
+    padding: 3.5rem 0 2.5rem;
+  }
+
+  @media (min-width: 62rem) {
+    .landing-hero {
+      grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+      padding: 5rem 0 3.5rem;
+    }
+  }
+
+  .hero-glow {
+    position: absolute;
+    inset: -8rem -20% auto;
+    height: 32rem;
+    pointer-events: none;
+    z-index: -1;
+    background:
+      radial-gradient(36rem 20rem at 20% 30%, rgba(42, 171, 238, 0.16), transparent 70%),
+      radial-gradient(32rem 18rem at 85% 60%, rgba(34, 158, 217, 0.12), transparent 70%);
+  }
+
+  :root[data-theme="light"] .hero-glow {
+    background:
+      radial-gradient(36rem 20rem at 20% 30%, rgba(42, 171, 238, 0.14), transparent 70%),
+      radial-gradient(32rem 18rem at 85% 60%, rgba(34, 158, 217, 0.1), transparent 70%);
+  }
+
+  .hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.85rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--sl-color-accent) 8%, transparent);
+    color: var(--sl-color-text);
+    font-size: var(--sl-text-xs);
+    font-weight: 500;
+    text-decoration: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .hero-badge:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  .badge-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 999px;
+    background: var(--sl-color-accent);
+    box-shadow: 0 0 0 0 rgba(34, 158, 217, 0.5);
+    animation: badge-pulse 2.5s ease-out infinite;
+  }
+
+  @keyframes badge-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(34, 158, 217, 0.5);
+    }
+    70% {
+      box-shadow: 0 0 0 0.4rem rgba(34, 158, 217, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(34, 158, 217, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .badge-dot {
+      animation: none;
+    }
+  }
+
+  h1 {
+    font-size: clamp(2.25rem, 5.5vw, 3.5rem);
+    line-height: 1.1;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--sl-color-white);
+    margin: 0;
+  }
+
+  .text-gradient {
+    background: linear-gradient(100deg, #2aabee, #229ed9 55%, #1b86bd);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero-tagline {
+    font-size: var(--sl-text-lg);
+    line-height: 1.6;
+    color: var(--sl-color-gray-2);
+    max-width: 34rem;
+    margin: 0;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1.4rem;
+    border-radius: 999px;
+    font-size: var(--sl-text-base);
+    font-weight: 600;
+    text-decoration: none;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease,
+      border-color 0.15s ease;
+  }
+
+  .btn svg {
+    width: 1.1em;
+    height: 1.1em;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #2aabee, #229ed9);
+    color: #fff;
+    box-shadow: 0 8px 24px -8px rgba(34, 158, 217, 0.6);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 28px -8px rgba(34, 158, 217, 0.7);
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--sl-color-hairline);
+    color: var(--sl-color-white);
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--sl-color-accent);
+  }
+
+  .install-cmd {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--sl-color-gray-6) 60%, transparent);
+    font-family: var(--sl-font-mono, var(--__sl-font-mono));
+    font-size: var(--sl-text-sm);
+    color: var(--sl-color-text);
+  }
+
+  .install-cmd .prompt {
+    color: var(--sl-color-accent);
+    user-select: none;
+  }
+
+  .install-cmd code {
+    background: none;
+    padding: 0;
+  }
+
+  .hero-code {
+    min-width: 0;
+  }
+
+  .code-window {
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.04) inset,
+      0 24px 60px -24px rgba(2, 60, 90, 0.55);
+  }
+
+  :root[data-theme="light"] .code-window {
+    box-shadow: 0 24px 50px -28px rgba(2, 60, 90, 0.35);
+  }
+
+  .code-tabs {
+    display: flex;
+    align-items: stretch;
+    overflow-x: auto;
+    background: var(--ec-frm-edTabBarBg, var(--sl-color-gray-6));
+    border-bottom: 1px solid var(--ec-frm-edTabBarBrdBtmCol, var(--sl-color-hairline));
+  }
+
+  .code-tab {
+    padding: 0.55rem 1.15rem;
+    border: none;
+    border-top: 2px solid transparent;
+    border-right: 1px solid var(--ec-frm-edTabBarBrdBtmCol, var(--sl-color-hairline));
+    background: transparent;
+    color: var(--sl-color-gray-3);
+    font-family: var(--sl-font-mono, var(--__sl-font-mono));
+    font-size: var(--sl-text-xs);
+    cursor: pointer;
+    transition: color 0.15s ease;
+  }
+
+  .code-tab:hover {
+    color: var(--sl-color-white);
+  }
+
+  .code-tab.active {
+    border-top-color: var(--sl-color-accent);
+    background: var(--ec-frm-edActTabBg, var(--sl-color-bg));
+    color: var(--ec-frm-edActTabFg, var(--sl-color-white));
+  }
+
+  .code-panel :global(.expressive-code .frame) {
+    box-shadow: none;
+  }
+
+  .code-panel :global(.expressive-code pre) {
+    border: none;
+    border-radius: 0;
+  }
+
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    margin: 1rem 0 0;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.9rem;
+    overflow: hidden;
+    background: var(--sl-color-hairline);
+  }
+
+  @media (min-width: 48rem) {
+    .hero-stats {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--sl-color-bg);
+  }
+
+  .stat-value {
+    font-size: var(--sl-text-2xl);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--sl-color-white);
+  }
+
+  .stat-label {
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-gray-3);
+  }
+</style>

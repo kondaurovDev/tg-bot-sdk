@@ -1,0 +1,130 @@
+---
+title: Quick Start
+description: Build and run your first Telegram bot in under 5 minutes
+---
+
+import { Steps, Tabs, TabItem, LinkCard, CardGrid, Aside } from "@astrojs/starlight/components"
+import StarCta from "../../../components/StarCta.astro"
+
+Build and run your first bot in under 5 minutes. All you need is Node.js 18+ (or Bun / Deno) and a Telegram account.
+
+:::tip[Try it live]
+Don't want to install anything? [Open the Playground](/playground/) and run a bot right in your browser.
+:::
+
+<Steps>
+
+1. **Get a bot token from BotFather**
+
+   Open [@BotFather](https://t.me/BotFather) in Telegram, send `/newbot`, and follow the prompts. BotFather replies with a token like `123456:ABC-DEF1234...` — keep it secret.
+
+2. **Install the SDK**
+
+   <Tabs syncKey="pkg">
+     <TabItem label="npm">
+       ```bash
+       npm install @effect-ak/tg-bot
+       ```
+     </TabItem>
+     <TabItem label="pnpm">
+       ```bash
+       pnpm add @effect-ak/tg-bot
+       ```
+     </TabItem>
+     <TabItem label="bun">
+       ```bash
+       bun add @effect-ak/tg-bot
+       ```
+     </TabItem>
+   </Tabs>
+
+3. **Write the bot**
+
+   ```typescript title="bot.ts"
+   import { createBot } from "@effect-ak/tg-bot"
+
+   createBot()
+     .onMessage(({ command, text }) => [
+       command("/start", ({ ctx }) => ctx.reply("Welcome!")),
+       text(({ update, ctx }) => ctx.reply(`You said: ${update.text}`))
+     ])
+     .run({
+       bot_token: "YOUR_BOT_TOKEN"
+     })
+   ```
+
+4. **Run it**
+
+   ```bash
+   npx tsx bot.ts
+   ```
+
+   The bot uses long polling, so it works from your laptop — no public URL, no SSL, no tunnels. Open your bot in Telegram and send `/start`.
+
+</Steps>
+
+## Only need the client?
+
+If you just want to call Bot API methods — send notifications, manage a channel, integrate Telegram into an existing app — the lightweight client is enough:
+
+```bash
+npm install @effect-ak/tg-bot-client
+```
+
+```typescript
+import { makeTgBotClient } from "@effect-ak/tg-bot-client"
+
+const client = makeTgBotClient({
+  bot_token: "YOUR_BOT_TOKEN"
+})
+
+// throws TgBotClientError on failure
+const message = await client.execute("send_message", {
+  chat_id: "123456789",
+  text: "Hello, World!"
+})
+
+console.log("Sent:", message.message_id)
+
+// or handle errors as values with the non-throwing variant
+const result = await client.executeSafe("get_me", {})
+
+if (result.ok) {
+  console.log("Bot:", result.data.first_name)
+}
+```
+
+## Only need the types?
+
+Zero runtime code — just TypeScript definitions for every Bot API method and object, plus `Telegram.WebApp` types for Mini Apps:
+
+```bash
+npm install @effect-ak/tg-bot-api
+```
+
+## Next steps
+
+<CardGrid>
+  <LinkCard
+    title="How to Write Bots"
+    description="Handlers, matchers, and responses — the full bot-building guide."
+    href="/bot-runner/writing-bots/"
+  />
+  <LinkCard
+    title="How to Use Client"
+    description="Send messages, upload files, and handle errors with the client."
+    href="/client/usage/"
+  />
+  <LinkCard
+    title="Running Bots"
+    description="Long polling for development, webhooks for serverless."
+    href="/bot-runner/running-bots/"
+  />
+  <LinkCard
+    title="Examples"
+    description="Ready-to-run bots: echo, commands, files."
+    href="/bot-runner/examples/"
+  />
+</CardGrid>
+
+<StarCta />

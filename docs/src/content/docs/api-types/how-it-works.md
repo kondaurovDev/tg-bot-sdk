@@ -33,7 +33,7 @@ core.telegram.org/bots/api          core.telegram.org/bots/webapps
 1. **Fetch** — `PageProviderService` downloads HTML from `core.telegram.org` and caches it locally in `input/`.
 2. **Parse** — HTML is parsed into a DOM tree using `node-html-parser`. Each entity is located by its `<a class="anchor">` tag.
 3. **Extract** — the extraction pipeline walks the DOM and deterministically converts HTML into typed structures.
-4. **Generate TypeScript** — a string-based emitter + prettier emits `.ts` files.
+4. **Generate TypeScript** — a string-based emitter produces `.ts` files, formatted with oxfmt.
 5. **Generate Markdown** — extracted data is converted into browsable `.md` files with cross-linked types.
 
 ```bash
@@ -144,11 +144,12 @@ codegen/
 │   ├── type-system.ts   type representation & conversion
 │   ├── entity.ts        single-entity extraction from HTML
 │   ├── page.ts          DocPage & WebAppPage — HTML page models
-│   └── entities.ts      batch extraction — walks full page
+│   ├── entities.ts      batch extraction — walks full page
+│   └── overrides.ts     manual type/return-type overrides
 │
 └── service/
     ├── page-provider.ts  fetches & caches HTML
     ├── code-writers.ts   emitter-backed TypeScript generation
-    ├── emitter.ts        string-based TS emitter + prettier
+    ├── emitter.ts        string-based TS emitter + oxfmt
     └── markdown.ts       markdown docs generation
 ```

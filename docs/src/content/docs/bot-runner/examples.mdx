@@ -3,6 +3,8 @@ title: Examples
 description: Practical bot examples with increasing complexity
 ---
 
+import StarCta from "../../../components/StarCta.astro"
+
 :::tip[Try it live]
 Run these examples in the browser — [open the Playground](/playground/) and pick an example from the dropdown.
 :::
@@ -13,7 +15,7 @@ These examples show only the bot definition. See [Running Bots](/bot-runner/runn
 
 ## Echo Bot
 
-Echoes back any text message. [Try in Playground →](/playground/)
+The smallest possible bot — echoes back any text message. [Try in Playground →](/playground/)
 
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
@@ -25,7 +27,7 @@ export default createBot().onMessage(({ text }) => [
 
 ## Command Bot
 
-Handles `/start`, `/help`, and `/echo`. The `/echo` command dumps the raw update as JSON — handy for debugging. [Try in Playground →](/playground/)
+Handles `/start`, `/help`, and `/echo`. The `/echo` command dumps the raw update as JSON — handy for debugging and for learning what Telegram actually sends you. [Try in Playground →](/playground/)
 
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
@@ -48,7 +50,7 @@ export default createBot().onMessage(({ command, text }) => [
 
 ## File Bot
 
-Converts any text message into a `.txt` file and sends it back. Shows how to use `ctx.replyWithDocument`. [Try in Playground →](/playground/)
+Converts any text message into a `.txt` file and sends it back. Shows how to use `ctx.replyWithDocument` — file uploads are just `{ file_content, file_name }`, no streams or form-data boilerplate. [Try in Playground →](/playground/)
 
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
@@ -66,3 +68,5 @@ export default createBot().onMessage(({ command, text }) => [
   )
 ])
 ```
+
+<StarCta text="More examples live in the repository — and a star helps other developers find the project." />

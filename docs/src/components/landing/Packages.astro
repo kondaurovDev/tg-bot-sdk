@@ -1,0 +1,200 @@
+---
+import Section from "./Section.astro"
+
+const packages = [
+  {
+    name: "@effect-ak/tg-bot-client",
+    label: "HTTP client",
+    description: "Call any Bot API method with full type safety. Includes all types.",
+    points: ["execute() for every API method", "Automatic FormData for file uploads", "Typed errors and request timeouts"],
+    install: "npm install @effect-ak/tg-bot-client",
+    href: "/client/usage/"
+  },
+  {
+    name: "@effect-ak/tg-bot",
+    label: "Bot framework",
+    description: "Fluent builder API, long polling, and webhooks. Includes the client and all types.",
+    points: ["createBot() builder with guarded handlers", "Long polling with offset management", "Webhook support for serverless"],
+    install: "npm install @effect-ak/tg-bot",
+    href: "/bot-runner/writing-bots/"
+  },
+  {
+    name: "@effect-ak/tg-bot-api",
+    label: "Types only",
+    description: "Pure TypeScript types for the Bot API and Mini Apps. Zero runtime code.",
+    points: ["Full Bot API type coverage", "Telegram.WebApp types for Mini Apps", "Nothing shipped to your bundle"],
+    install: "npm install @effect-ak/tg-bot-api",
+    href: "/api-types/bot-api/"
+  }
+]
+---
+
+<Section
+  eyebrow="Packages"
+  title="Pick your layer"
+  description="Take just the client, the whole framework, or only the types — each package builds on the one below it."
+>
+  <div class="package-grid not-content">
+    {
+      packages.map((pkg) => (
+        <article class="package-card">
+          <div class="package-head">
+            <span class="package-label">{pkg.label}</span>
+          </div>
+          <h3>{pkg.name}</h3>
+          <p class="package-desc">{pkg.description}</p>
+          <ul>
+            {pkg.points.map((point) => (
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                {point}
+              </li>
+            ))}
+          </ul>
+          <div class="package-install">
+            <code>{pkg.install}</code>
+            <button type="button" class="copy-btn" data-copy-btn data-copy-text={pkg.install} aria-label={`Copy install command for ${pkg.name}`}>
+              <svg class="icon-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+              </svg>
+              <svg class="icon-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </button>
+          </div>
+          <a class="package-link" href={pkg.href}>
+            Read the docs
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </a>
+        </article>
+      ))
+    }
+  </div>
+</Section>
+
+<style>
+  .package-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 62rem) {
+    .package-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .package-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--sl-color-gray-6) 45%, transparent);
+  }
+
+  .package-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .package-label {
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--sl-color-gray-3);
+  }
+
+  .package-card h3 {
+    margin: 0;
+    font-family: var(--sl-font-mono, var(--__sl-font-mono));
+    font-size: var(--sl-text-base);
+    font-weight: 600;
+    color: var(--sl-color-white);
+    word-break: break-word;
+  }
+
+  .package-desc {
+    margin: 0;
+    font-size: var(--sl-text-sm);
+    line-height: 1.6;
+    color: var(--sl-color-gray-3);
+  }
+
+  .package-card ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0.25rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .package-card li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: var(--sl-text-sm);
+    line-height: 1.5;
+    color: var(--sl-color-gray-2);
+  }
+
+  .package-card li svg {
+    flex-shrink: 0;
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.2rem;
+    color: var(--sl-color-accent);
+  }
+
+  .package-install {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: auto;
+    padding: 0.45rem 0.45rem 0.45rem 0.85rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--sl-color-bg) 70%, transparent);
+  }
+
+  .package-install code {
+    font-size: var(--sl-text-xs);
+    color: var(--sl-color-text);
+    background: none;
+    padding: 0;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .package-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--sl-text-sm);
+    font-weight: 600;
+    color: var(--sl-color-text-accent);
+    text-decoration: none;
+  }
+
+  .package-link svg {
+    width: 1em;
+    height: 1em;
+    transition: transform 0.15s ease;
+  }
+
+  .package-link:hover svg {
+    transform: translateX(3px);
+  }
+</style>

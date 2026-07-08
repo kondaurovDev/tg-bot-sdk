@@ -3,11 +3,13 @@ title: Running Bots
 description: Long polling, webhooks, stopping and hot-reloading handlers
 ---
 
-There are two ways to run a bot: **long polling** (pulls updates from Telegram) and **webhooks** (Telegram pushes updates to your server).
+import { Steps } from "@astrojs/starlight/components"
+
+There are two ways to run a bot: **long polling** (your bot pulls updates from Telegram) and **webhooks** (Telegram pushes updates to your server). Handlers are identical in both modes — you only change how the bot starts.
 
 ## Long Polling
 
-No public URL or SSL certificate needed — the bot pulls updates from Telegram in a loop.
+The simplest way to run a bot. No public URL, no SSL certificate — works from your laptop, a VPS, or a container:
 
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
@@ -19,28 +21,21 @@ const instance = await createBot()
 
 ### How It Works
 
-```mermaid
-graph TD
-  User[User] -->|Sends message| TgBot[Telegram Bot]
-  TgBot -->|Stores for 24h| Queue[Updates Queue]
+<Steps>
 
-  subgraph Your Code
-    Runner[Bot Runner]
-    Handler[Your Handler]
-  end
+1. A user sends a message to your bot.
 
-  Runner -->|Long polling| Queue
-  Runner -->|Invokes| Handler
-  Handler -->|BotResponse| Runner
-  Runner -->|Sends response| TgBot
-```
+2. Telegram stores the update in a queue, where it waits for up to 24 hours.
 
-1. User sends a message to your bot
-2. Telegram stores the update in a queue for 24 hours
-3. Bot runner polls the queue using long polling
-4. Runner invokes your handler with the update
-5. Handler returns a `BotResponse`
-6. Runner sends the response back to Telegram
+3. The bot runner polls the queue with the `get_updates` method, holding each request open until updates arrive (long polling).
+
+4. The runner picks the first matching handler and invokes it with the update.
+
+5. The handler returns a `BotResponse`, and the runner sends it back to Telegram.
+
+</Steps>
+
+Up to 10 updates are processed concurrently. If one handler fails, the others keep running.
 
 ### Stopping the Bot
 
@@ -55,7 +50,7 @@ instance.stop()
 
 ### Hot Reload
 
-Replace handlers without restarting the process. The next polling iteration picks up the new behavior:
+Replace handlers without restarting the process — the next polling iteration picks up the new behavior. This is how the [Playground](/playground/) applies your code changes instantly:
 
 ```typescript
 instance.reload({
@@ -66,7 +61,7 @@ instance.reload({
 
 ## Webhooks
 
-For serverless deployments (Vercel, Cloudflare Workers, Bun.serve, etc.), use `.webhook()` instead of `.run()`. It returns a handler that accepts a standard `Request` and returns a `Response`:
+For serverless deployments (Cloudflare Workers, Vercel, AWS Lambda, `Bun.serve`), use `.webhook()` instead of `.run()`. It returns a handler that accepts a standard `Request` and returns a `Response`:
 
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
@@ -84,6 +79,22 @@ You can also process a raw `Update` object directly:
 ```typescript
 await handler.handleUpdate(update)
 ```
+
+:::note[Register your webhook]
+Telegram needs to know where to push updates. After deploying, register your endpoint once with the [`set_webhook`](/api/methods/set-webhook/) method:
+
+```typescript
+import { makeTgBotClient } from "@effect-ak/tg-bot-client"
+
+const client = makeTgBotClient({ bot_token: "YOUR_BOT_TOKEN" })
+
+await client.execute("set_webhook", {
+  url: "https://your-app.example.com/webhook"
+})
+```
+
+To switch back to long polling, remove it with `delete_webhook`.
+:::
 
 ### Vercel Example
 
@@ -139,3 +150,5 @@ createBot()
 | Hosting  | Any machine, VPS, local dev     | Serverless / always-on server |
 | Latency  | ~1s polling interval            | Instant push from Telegram    |
 | Best for | Development, simple deployments | Production, serverless        |
+
+A common path: develop with long polling, deploy to serverless with webhooks — your handlers don't change.

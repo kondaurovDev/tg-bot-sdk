@@ -1,3 +1,58 @@
+/* Telegram-blue accent palette (dark theme). */
+:root {
+  --sl-color-accent-low: #103a52;
+  --sl-color-accent: #229ed9;
+  --sl-color-accent-high: #a8d9f2;
+}
+
+/* Telegram-blue accent palette (light theme). */
+:root[data-theme="light"] {
+  --sl-color-accent-low: #cdeaf8;
+  --sl-color-accent: #0c7bb3;
+  --sl-color-accent-high: #0a3d57;
+}
+
 .site-title {
   gap: 0.25rem !important;
+}
+
+/* Shared copy-to-clipboard button used across landing components. */
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 0.45rem;
+  background: transparent;
+  color: var(--sl-color-gray-3);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.copy-btn:hover {
+  background: color-mix(in srgb, var(--sl-color-accent) 12%, transparent);
+  color: var(--sl-color-accent);
+}
+
+.copy-btn svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.copy-btn .icon-check {
+  display: none;
+  color: var(--sl-color-green, #4ade80);
+}
+
+.copy-btn.copied .icon-copy {
+  display: none;
+}
+
+.copy-btn.copied .icon-check {
+  display: block;
 }

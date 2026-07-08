@@ -1,0 +1,147 @@
+---
+import Section from "./Section.astro"
+import stats from "../../data/bot-api-stats.json"
+
+const features = [
+  {
+    title: "Auto-generated types",
+    description: `${stats.typeCount} types and ${stats.methodCount} methods scraped from the official Telegram docs — regenerated on every Bot API release.`,
+    href: "/api-types/how-it-works/",
+    icon: "M23 4v6h-6 M1 20v-6h6 M3.51 9a9 9 0 0 1 14.85-3.36L23 10 M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+  },
+  {
+    title: "End-to-end type safety",
+    description: "Every method knows its params and return type. Autocomplete in your editor instead of hopping to the docs.",
+    href: "/api-types/bot-api/",
+    icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4"
+  },
+  {
+    title: "Zero dependencies",
+    description: "Native fetch, no runtime deps. Runs on Node.js, Bun, Deno, and edge runtimes like Cloudflare Workers.",
+    href: "/client/usage/",
+    icon: "M16.5 9.4 7.55 4.24 M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z M3.27 6.96 12 12.01l8.73-5.05 M12 22.08V12"
+  },
+  {
+    title: "Long polling & webhooks",
+    description: "Develop locally with long polling, deploy to serverless with webhooks — same handlers, no code changes.",
+    href: "/bot-runner/running-bots/",
+    icon: "M13 2 3 14h9l-1 8 10-12h-9l1-8z"
+  },
+  {
+    title: "Typed error handling",
+    description: "Discriminated unions instead of thrown surprises. Match on error tags and let the compiler check every branch.",
+    href: "/client/usage/",
+    icon: "M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z M12 9v4 M12 17h.01"
+  },
+  {
+    title: "Mini Apps support",
+    description: "Typed Telegram.WebApp API for building Mini Apps — buttons, haptics, themes, and more.",
+    href: "/api-types/webapp/",
+    icon: "M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z M12 18h.01"
+  }
+]
+---
+
+<Section
+  eyebrow="Why this SDK"
+  title="Everything typed, nothing heavy"
+  description="Three small packages that cover the whole Bot API surface — from raw types to a full bot runner."
+>
+  <div class="feature-grid not-content">
+    {
+      features.map((feature) => (
+        <a class="feature-card" href={feature.href}>
+          <span class="feature-icon">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              {feature.icon.split(" M").map((d, i) => (
+                <path d={i === 0 ? d : `M${d}`} />
+              ))}
+            </svg>
+          </span>
+          <h3>{feature.title}</h3>
+          <p>{feature.description}</p>
+        </a>
+      ))
+    }
+  </div>
+</Section>
+
+<style>
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 40rem) {
+    .feature-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 62rem) {
+    .feature-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .feature-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1.4rem;
+    border: 1px solid var(--sl-color-hairline);
+    border-radius: 0.9rem;
+    background: color-mix(in srgb, var(--sl-color-gray-6) 45%, transparent);
+    text-decoration: none;
+    transition:
+      border-color 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .feature-card:hover {
+    border-color: color-mix(in srgb, var(--sl-color-accent) 60%, var(--sl-color-hairline));
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px -16px rgba(34, 158, 217, 0.35);
+  }
+
+  .feature-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.6rem;
+    background: color-mix(in srgb, var(--sl-color-accent) 12%, transparent);
+    color: var(--sl-color-accent);
+    margin-bottom: 0.25rem;
+  }
+
+  .feature-icon svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .feature-card h3 {
+    margin: 0;
+    font-size: var(--sl-text-base);
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .feature-card p {
+    margin: 0;
+    font-size: var(--sl-text-sm);
+    line-height: 1.6;
+    color: var(--sl-color-gray-3);
+  }
+</style>
