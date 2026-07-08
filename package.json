@@ -3,27 +3,20 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "codegen": "pnpm --filter @effect-ak/tg-bot-api gen",
-    "build": "pnpm codegen && pnpm -r build",
+    "dev": "mprocs",
+    "build": "pnpm --filter @effect-ak/tg-bot-api gen && pnpm -r build",
     "lint": "oxlint",
-    "lint:fix": "oxlint --fix",
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "typecheck": "pnpm run --parallel -r typecheck",
-    "test": "pnpm run --parallel -r test",
-    "docs:dev": "pnpm --filter tg-bot-docs dev",
-    "docs:build": "pnpm --filter tg-bot-docs build",
-    "docs:preview:cf": "pnpm --filter tg-bot-docs run preview:cf",
-    "docs:deploy": "pnpm --filter tg-bot-docs run deploy",
-    "changeset": "changeset",
-    "version-packages": "changeset version",
-    "release": "pnpm codegen && pnpm build && changeset publish"
+    "test": "pnpm run --parallel -r test"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
     "@types/node": "^25.6.1",
     "dotenv": "17.4.2",
     "effect": "3.21.2",
+    "mprocs": "^0.9.6",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.67.0",
     "tsup": "^8.5.1",
@@ -32,11 +25,5 @@
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.5"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "sharp",
-      "workerd"
-    ]
-  }
+  "packageManager": "pnpm@11.10.0"
 }

@@ -10,20 +10,20 @@
     "deploy": "pnpm build && wrangler deploy"
   },
   "devDependencies": {
-    "@astrojs/alpinejs": "^0.5.0",
-    "@astrojs/starlight": "^0.39.1",
+    "@astrojs/alpinejs": "^1.0.0",
+    "@astrojs/starlight": "^0.41.3",
     "@effect-ak/tg-bot": "workspace:^",
     "@effect-ak/tg-bot-api": "workspace:^",
     "@effect-ak/tg-bot-client": "workspace:^",
     "@monaco-editor/loader": "^1.6.1",
-    "@tailwindcss/vite": "^4.2.4",
+    "@tailwindcss/vite": "^4.3.2",
     "@types/alpinejs": "^3.13.11",
     "alpinejs": "^3.15.12",
-    "astro": "^6.3.1",
-    "monaco-editor": "^0.55.1",
-    "sharp": "^0.34.5",
-    "tailwindcss": "^4.2.4",
+    "astro": "^7.0.6",
+    "monaco-editor": "^0.54.0",
+    "sharp": "^0.35.3",
+    "tailwindcss": "^4.3.2",
     "typescript": "^5.9.0",
-    "wrangler": "^4.90.1"
+    "wrangler": "^4.107.0"
   }
 }

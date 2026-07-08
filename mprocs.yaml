@@ -1,0 +1,16 @@
+procs:
+  docs:
+    shell: pnpm --filter tg-bot-docs dev
+    autostart: true
+  deploy-docs:
+    shell: pnpm --filter tg-bot-docs run deploy
+    autostart: false
+    autorestart: false
+  test:
+    shell: pnpm test
+    autostart: false
+    autorestart: false
+  typecheck:
+    shell: pnpm typecheck
+    autostart: false
+    autorestart: false
