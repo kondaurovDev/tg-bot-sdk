@@ -1,0 +1,27 @@
+name: Deploy Docs
+
+on:
+  workflow_dispatch:
+
+concurrency: deploy-docs
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build
+        run: pnpm build
+
+      - name: Deploy
+        run: pnpm --filter tg-bot-docs exec wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
