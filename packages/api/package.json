@@ -1,6 +1,6 @@
 {
   "name": "@effect-ak/tg-bot-api",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "TypeScript types for Telegram Bot Api and Telegram Mini Apps",
   "keywords": [
     "mini-app",
