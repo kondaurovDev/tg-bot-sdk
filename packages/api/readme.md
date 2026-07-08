@@ -2,7 +2,7 @@
 
 [![NPM Version](https://img.shields.io/npm/v/%40effect-ak%2Ftg-bot-api)](https://www.npmjs.com/package/@effect-ak/tg-bot-api)
 ![Telegram Bot API](https://img.shields.io/badge/BotApi-10.1-blue)
-![Telegram WebApp](https://img.shields.io/badge/Telegram.WebApp-9.5-orange)
+![Telegram WebApp](https://img.shields.io/badge/Telegram.WebApp-9.6-orange)
 
 Complete TypeScript types for Telegram Bot API and Mini Apps, auto-generated from official documentation.
 

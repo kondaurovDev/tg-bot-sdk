@@ -42,15 +42,23 @@ type TitleExtractor = (node: import("~/types").HtmlElement) => string | undefine
 
 const extractTypesFromPage = (
   page: HtmlPageDocumentation,
-  getTitle: TitleExtractor
+  getTitle: TitleExtractor,
+  sectionAnchor?: string
 ): Either.Either<ExtractedType[], ExtractError> => {
-  const nodes = page.node.querySelectorAll("h4")
+  const nodes = page.node.querySelectorAll(sectionAnchor ? "h3, h4" : "h4")
 
   if (nodes.length == 0) return Either.left(ExtractedEntitiesError.make("NodesNotFound"))
 
   const result: ExtractedType[] = []
+  let inSection = sectionAnchor == null
 
   for (const node of nodes) {
+    if (node.tagName == "H3") {
+      inSection = node.querySelector("a.anchor")?.getAttribute("name") == sectionAnchor
+      continue
+    }
+    if (!inSection) continue
+
     const title = getTitle(node)
     if (!title || !method_type_name_regex.test(title)) continue
     if (!isComplexType(title)) continue
@@ -140,7 +148,9 @@ const extractFromPage = (page: WebAppPage) => {
     })
   }
 
-  const types = extractTypesFromPage(page, webAppTitle)
+  // Mini App types all live under the "Initializing Mini Apps" section;
+  // other sections (Telegram Login, OpenID Connect, FAQ) must not be scraped.
+  const types = extractTypesFromPage(page, webAppTitle, "initializing-mini-apps")
 
   if (types._tag == "Left") {
     return Either.left(types)
