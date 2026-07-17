@@ -1,6 +1,6 @@
 {
   "name": "@effect-ak/tg-bot",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Telegram bot framework with long polling, webhooks, and fluent builder API",
   "keywords": [
     "bot-framework",

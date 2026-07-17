@@ -1,6 +1,6 @@
 {
   "name": "@effect-ak/tg-bot-client",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Type-safe HTTP client for Telegram Bot API",
   "keywords": [
     "http-client",
