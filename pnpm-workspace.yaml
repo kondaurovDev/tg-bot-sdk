@@ -4,7 +4,9 @@ packages:
   - docs
 
 overrides:
-  dompurify: 3.4.2
+  dompurify: ^3.4.12
+  esbuild: ^0.28.1
+  js-yaml@4: ^4.2.0
 
 allowBuilds:
   esbuild: true
