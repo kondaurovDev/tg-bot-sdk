@@ -9,24 +9,80 @@ import type { Api, Update } from "@effect-ak/tg-bot-api"
 // BotResponse
 // ---------------------------------------------------------------------------
 
-type BotResult = {
+/** Input parameters of a Bot API method. */
+export type ApiParams<K extends keyof Api> = Parameters<Api[K]>[0]
+
+/**
+ * Shorthand for `send_*` methods: `{ type: "message", text }` maps to
+ * `send_message`. `chat_id` is resolved from the incoming update.
+ */
+export type BotResult = {
   [K in keyof Api]: K extends `send_${infer R}`
-    ? { type: R } & Omit<Parameters<Api[K]>[0], "chat_id">
+    ? { type: R } & Omit<ApiParams<K>, "chat_id">
     : never
 }[keyof Api]
 
-export class BotResponse {
-  readonly response: BotResult | undefined
+/** Any Bot API method call with its full parameters. */
+export type BotApiCall = {
+  [K in keyof Api]: { method: K; params: ApiParams<K> }
+}[keyof Api]
 
-  constructor(response?: BotResult) {
-    this.response = response
+/**
+ * A single action the runner performs after a handler returns:
+ * either a `send_*` shorthand or an explicit API call.
+ */
+export type BotAction = { send: BotResult } | { call: BotApiCall }
+
+export class BotResponse {
+  readonly actions: readonly BotAction[]
+
+  constructor(response?: BotResult | readonly BotAction[]) {
+    if (response === undefined) {
+      this.actions = []
+    } else if (Array.isArray(response)) {
+      this.actions = response
+    } else {
+      this.actions = [{ send: response as BotResult }]
+    }
   }
 
+  /**
+   * First `send_*` shorthand of this response, if any.
+   * Kept for backward compatibility — prefer {@link BotResponse.actions}.
+   */
+  get response(): BotResult | undefined {
+    for (const action of this.actions) {
+      if ("send" in action) return action.send
+    }
+    return undefined
+  }
+
+  /** `true` when the response performs no API calls. */
+  get isEmpty(): boolean {
+    return this.actions.length === 0
+  }
+
+  /** Respond with a `send_*` method; `chat_id` is taken from the update. */
   static make(result: BotResult): BotResponse {
     return new BotResponse(result)
   }
 
+  /** Respond with an arbitrary Bot API method call. */
+  static call<K extends keyof Api>(method: K, params: ApiParams<K>): BotResponse {
+    return new BotResponse([{ call: { method, params } as BotApiCall }])
+  }
+
+  /** Combine several responses; their actions run sequentially in order. */
+  static all(...responses: BotResponse[]): BotResponse {
+    return new BotResponse(responses.flatMap((r) => r.actions))
+  }
+
   static readonly ignore = new BotResponse()
+
+  /** Append another response's actions after this one. */
+  and(other: BotResponse): BotResponse {
+    return new BotResponse([...this.actions, ...other.actions])
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -74,11 +130,26 @@ export type ExtractedUpdate<K extends AvailableUpdateTypes> = {
 } & Update[K]
 export type AvailableUpdateTypes = Exclude<keyof Update, "update_id">
 
-export type HandleUpdateFunction<U> = (update: U) => BotResponse | PromiseLike<BotResponse>
+/**
+ * What a handler may return: one `BotResponse` or several — an array is
+ * executed in order, exactly like `BotResponse.all(...)`.
+ */
+export type HandlerResult = BotResponse | readonly BotResponse[]
+export type HandlerOutput = HandlerResult | PromiseLike<HandlerResult>
 
-type BotResponseParams<T extends string> = Extract<
-  Parameters<typeof BotResponse.make>[0],
-  { type: T }
+/** Normalize a handler's return value into a single response. */
+export const toBotResponse = (result: HandlerResult): BotResponse =>
+  Array.isArray(result)
+    ? BotResponse.all(...(result as readonly BotResponse[]))
+    : (result as BotResponse)
+
+export type HandleUpdateFunction<U> = (payload: U) => HandlerOutput
+
+type BotResponseParams<T extends string> = Extract<BotResult, { type: T }>
+
+type WithoutTarget<K extends keyof Api> = Omit<
+  ApiParams<K>,
+  "chat_id" | "message_id" | "inline_message_id" | "callback_query_id"
 >
 
 export interface BotContext {
@@ -95,17 +166,45 @@ export interface BotContext {
     photo: BotResponseParams<"photo">["photo"],
     options?: Omit<BotResponseParams<"photo">, "photo" | "type">
   ) => BotResponse
+  /**
+   * Answer the callback query that produced this update (stops the loading
+   * spinner on the tapped inline button). Only meaningful for
+   * `callback_query` updates. If a `callback_query` handler responds without
+   * calling this, the runner answers the query automatically with no text.
+   */
+  readonly answerCallbackQuery: (options?: WithoutTarget<"answer_callback_query">) => BotResponse
+  /**
+   * Edit the text of the message this update refers to — for a
+   * `callback_query` that is the message with the tapped inline keyboard.
+   */
+  readonly editMessageText: (
+    text: string,
+    options?: Omit<WithoutTarget<"edit_message_text">, "text">
+  ) => BotResponse
+  /** Replace the inline keyboard of the message this update refers to. */
+  readonly editMessageReplyMarkup: (
+    options?: WithoutTarget<"edit_message_reply_markup">
+  ) => BotResponse
+  /** Delete the message this update refers to. */
+  readonly deleteMessage: () => BotResponse
+  /** Respond with an arbitrary Bot API method call. */
+  readonly call: <K extends keyof Api>(method: K, params: ApiParams<K>) => BotResponse
   readonly ignore: BotResponse
 }
 
+/**
+ * What every handler receives: the typed payload of the update
+ * (`Message`, `CallbackQuery`, `InlineQuery`, … — never the `Update`
+ * envelope) and the response helpers.
+ */
 export interface HandlerInput<U> {
-  readonly update: U
+  readonly payload: U
   readonly ctx: BotContext
 }
 
 export interface GuardedHandler<U> {
   readonly match?: (input: HandlerInput<U>) => boolean | PromiseLike<boolean>
-  readonly handle: (input: HandlerInput<U>) => BotResponse | PromiseLike<BotResponse>
+  readonly handle: (input: HandlerInput<U>) => HandlerOutput
 }
 
 export type UpdateHandler<U> = HandleUpdateFunction<U> | GuardedHandler<U> | GuardedHandler<U>[]
@@ -129,7 +228,7 @@ export interface BotBatchBehavior extends HandleBatchUpdateFunction {
 export type BotBehavior = BotSingleBehavior | BotBatchBehavior
 
 // ---------------------------------------------------------------------------
-// BotContext factory
+// Update introspection helpers
 // ---------------------------------------------------------------------------
 
 interface UpdateWithEntities {
@@ -141,13 +240,75 @@ const extractCommand = (update: unknown): string | undefined => {
   if (typeof update !== "object" || update === null) return undefined
   const u = update as UpdateWithEntities
   if (!u.entities || !u.text) return undefined
-  const entity = u.entities.find((e) => e.type === "bot_command")
+  const entity = u.entities.find((e) => e.type === "bot_command" && e.offset === 0)
   if (!entity) return undefined
-  return u.text.slice(entity.offset, entity.offset + entity.length)
+  // In groups Telegram sends "/start@my_bot" — drop the mention so that
+  // `command("/start")` matches everywhere. Commands are case-insensitive.
+  const raw = u.text.slice(entity.offset, entity.offset + entity.length)
+  return raw.replace(/@\S+$/, "").toLowerCase()
 }
+
+interface UpdateShape {
+  id?: unknown
+  chat?: { id?: number }
+  message_id?: number
+  message?: { chat?: { id?: number }; message_id?: number }
+  inline_message_id?: string
+}
+
+const asShape = (update: unknown): UpdateShape =>
+  typeof update === "object" && update !== null ? (update as UpdateShape) : {}
+
+/**
+ * Chat id a `send_*` response should go to: the update's own chat
+ * (message, channel_post, …) or the chat of the message it refers to
+ * (callback_query).
+ */
+export const resolveChatId = (update: unknown): number | undefined => {
+  const u = asShape(update)
+  return u.chat?.id ?? u.message?.chat?.id
+}
+
+/**
+ * Target of an `edit_message_*` / `delete_message` call: the message the
+ * update refers to (for callback_query) or the update's own message.
+ */
+export type MessageTarget = { chat_id: number; message_id: number } | { inline_message_id: string }
+
+export const resolveMessageTarget = (update: unknown): MessageTarget | undefined => {
+  const u = asShape(update)
+  if (u.message?.chat?.id !== undefined && u.message.message_id !== undefined) {
+    return { chat_id: u.message.chat.id, message_id: u.message.message_id }
+  }
+  if (u.inline_message_id !== undefined) {
+    return { inline_message_id: u.inline_message_id }
+  }
+  if (u.chat?.id !== undefined && u.message_id !== undefined) {
+    return { chat_id: u.chat.id, message_id: u.message_id }
+  }
+  return undefined
+}
+
+/** `callback_query.id` when the update is a callback query. */
+export const resolveCallbackQueryId = (update: unknown): string | undefined => {
+  const u = asShape(update)
+  return typeof u.id === "string" && "chat_instance" in u ? u.id : undefined
+}
+
+// ---------------------------------------------------------------------------
+// BotContext factory
+// ---------------------------------------------------------------------------
 
 export const createBotContext = (update: unknown): BotContext => {
   const command = extractCommand(update)
+
+  const messageTarget = (method: string): MessageTarget => {
+    const target = resolveMessageTarget(update)
+    if (!target) {
+      throw new Error(`ctx.${method}: cannot resolve target message from this update`)
+    }
+    return target
+  }
 
   return {
     command,
@@ -155,6 +316,32 @@ export const createBotContext = (update: unknown): BotContext => {
     replyWithDocument: (document, options) =>
       BotResponse.make({ type: "document", document, ...options }),
     replyWithPhoto: (photo, options) => BotResponse.make({ type: "photo", photo, ...options }),
+    answerCallbackQuery: (options) => {
+      const callback_query_id = resolveCallbackQueryId(update)
+      if (!callback_query_id) {
+        throw new Error("ctx.answerCallbackQuery: update is not a callback_query")
+      }
+      return BotResponse.call("answer_callback_query", { callback_query_id, ...options })
+    },
+    editMessageText: (text, options) =>
+      BotResponse.call("edit_message_text", {
+        ...messageTarget("editMessageText"),
+        text,
+        ...options
+      }),
+    editMessageReplyMarkup: (options) =>
+      BotResponse.call("edit_message_reply_markup", {
+        ...messageTarget("editMessageReplyMarkup"),
+        ...options
+      }),
+    deleteMessage: () => {
+      const target = messageTarget("deleteMessage")
+      if (!("chat_id" in target)) {
+        throw new Error("ctx.deleteMessage: inline messages cannot be deleted")
+      }
+      return BotResponse.call("delete_message", target)
+    },
+    call: (method, params) => BotResponse.call(method, params),
     ignore: BotResponse.ignore
   }
 }

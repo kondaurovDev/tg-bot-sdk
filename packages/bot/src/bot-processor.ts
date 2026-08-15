@@ -16,9 +16,16 @@ import type {
   GuardedHandler,
   BotContext,
   BotLogger,
-  BotBehavior
+  BotBehavior,
+  BotAction
 } from "./types"
-import { createBotContext, BotResponse } from "./types"
+import {
+  createBotContext,
+  BotResponse,
+  resolveChatId,
+  resolveCallbackQueryId,
+  toBotResponse
+} from "./types"
 import type { PollSettings } from "./polling"
 
 export interface BatchUpdateResult {
@@ -34,12 +41,12 @@ const executeSingleGuard = async <U>(
   update: U,
   ctx: BotContext
 ): Promise<BotResponse | null> => {
-  const input = { update, ctx }
+  const input = { payload: update, ctx }
   if (guard.match) {
     const matched = await guard.match(input)
     if (!matched) return null
   }
-  return await guard.handle(input)
+  return toBotResponse(await guard.handle(input))
 }
 
 const executeGuards = async <U>(
@@ -60,7 +67,7 @@ const executeHandler = async <U>(
   ctx: BotContext
 ): Promise<BotResponse> => {
   if (typeof handler === "function") {
-    return await handler(update)
+    return toBotResponse(await handler(update))
   }
   if (Array.isArray(handler)) {
     return await executeGuards(handler, update, ctx)
@@ -212,30 +219,81 @@ const handleOneUpdate = async (
     return undefined
   }
 
-  if ("chat" in update && handleResult.response) {
-    const responsePayload = handleResult.response
-    const result = await client.executeSafe(
-      `send_${responsePayload.type}` as any,
-      {
-        ...responsePayload,
-        chat_id: update.chat.id
-      } as any
-    )
-    if (!result.ok) {
-      log.warn("failed to send response", result.error)
-    } else if (settings.log_level === "debug") {
-      log.debug("bot response", result.data)
-    }
+  const actions = withAutoCallbackAnswer(update, handleResult)
+
+  for (const action of actions) {
+    await executeAction(action, update, client, settings, log)
   }
+
+  const responseType = describeResponseType(handleResult)
 
   onHandleResult?.({
     update: updateObject,
     updateType: update.type,
-    status: hasError ? "error" : handleResult.response ? "handled" : "ignored",
-    ...(handleResult.response ? { responseType: handleResult.response.type } : {}),
+    status: hasError ? "error" : handleResult.isEmpty ? "ignored" : "handled",
+    ...(responseType ? { responseType } : {}),
     ...(errorMessage ? { error: errorMessage } : {}),
     duration
   })
 
   return undefined
+}
+
+/**
+ * A `callback_query` must be answered or the tapped button keeps spinning.
+ * When a handler responds to a callback query without an explicit
+ * `answer_callback_query`, prepend one with no text.
+ */
+const withAutoCallbackAnswer = (
+  update: ExtractedUpdate<AvailableUpdateTypes>,
+  response: BotResponse
+): readonly BotAction[] => {
+  if (update.type !== "callback_query" || response.isEmpty) return response.actions
+  const alreadyAnswered = response.actions.some(
+    (a) => "call" in a && a.call.method === "answer_callback_query"
+  )
+  if (alreadyAnswered) return response.actions
+  const callback_query_id = resolveCallbackQueryId(update)
+  if (!callback_query_id) return response.actions
+  return [
+    { call: { method: "answer_callback_query", params: { callback_query_id } } },
+    ...response.actions
+  ]
+}
+
+const executeAction = async (
+  action: BotAction,
+  update: ExtractedUpdate<AvailableUpdateTypes>,
+  client: TgBotClient,
+  settings: PollSettings,
+  log: BotLogger
+): Promise<void> => {
+  let method: string
+  let params: unknown
+
+  if ("send" in action) {
+    const chat_id = resolveChatId(update)
+    if (chat_id === undefined) {
+      log.warn("cannot send response: update has no chat", { updateType: update.type })
+      return
+    }
+    method = `send_${action.send.type}`
+    params = { ...action.send, chat_id }
+  } else {
+    method = action.call.method
+    params = action.call.params
+  }
+
+  const result = await client.executeSafe(method as any, params as any)
+  if (!result.ok) {
+    log.warn(`failed to execute ${method}`, result.error)
+  } else if (settings.log_level === "debug") {
+    log.debug(`bot response (${method})`, result.data)
+  }
+}
+
+const describeResponseType = (response: BotResponse): string | undefined => {
+  const first = response.actions[0]
+  if (!first) return undefined
+  return "send" in first ? first.send.type : first.call.method
 }

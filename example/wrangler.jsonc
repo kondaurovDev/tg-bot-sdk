@@ -1,0 +1,19 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "tg-bot-sdk-demo",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-07-08",
+  "observability": {
+    "enabled": true
+  },
+  // Per-chat state (which demo bot is active). Provisioned automatically on first deploy.
+  "kv_namespaces": [
+    {
+      "binding": "STATE",
+      "id": "d5f6dfc3f5fd411c8340ba035dc620a1"
+    }
+  ]
+  // Secrets (set once with `wrangler secret put`):
+  //   BOT_TOKEN      — from @BotFather
+  //   WEBHOOK_SECRET — 1-256 chars of A-Z a-z 0-9 _ -, e.g. `openssl rand -hex 32`
+}

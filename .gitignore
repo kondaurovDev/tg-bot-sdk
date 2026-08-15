@@ -4,3 +4,4 @@ dist
 *.tgz
 .env
 .wrangler
+.dev.vars

@@ -21,13 +21,13 @@ The smallest possible bot — echoes back any text message. [Try in Playground �
 import { createBot } from "@effect-ak/tg-bot"
 
 export default createBot().onMessage(({ text }) => [
-  text(({ update, ctx }) => ctx.reply(update.text!))
+  text(({ payload, ctx }) => ctx.reply(payload.text!))
 ])
 ```
 
 ## Command Bot
 
-Handles `/start`, `/help`, and `/echo`. The `/echo` command dumps the raw update as JSON — handy for debugging and for learning what Telegram actually sends you. [Try in Playground →](/playground/)
+Handles `/start`, `/help`, and `/echo`. The `/echo` command dumps the raw message as JSON — handy for debugging and for learning what Telegram actually sends you. [Try in Playground →](/playground/)
 
 ```typescript
 import { createBot } from "@effect-ak/tg-bot"
@@ -39,8 +39,8 @@ export default createBot().onMessage(({ command, text }) => [
       "Available commands:\n/start — welcome message\n/help — this message\n/echo — your message as JSON"
     )
   ),
-  command("/echo", ({ update, ctx }) =>
-    ctx.reply(`<pre language="json">${JSON.stringify(update, null, 2)}</pre>`, {
+  command("/echo", ({ payload, ctx }) =>
+    ctx.reply(`<pre language="json">${JSON.stringify(payload, null, 2)}</pre>`, {
       parse_mode: "HTML"
     })
   ),
@@ -57,16 +57,55 @@ import { createBot } from "@effect-ak/tg-bot"
 
 export default createBot().onMessage(({ command, text }) => [
   command("/start", ({ ctx }) => ctx.reply("Send me any text and I'll save it as a file")),
-  text(({ update, ctx }) =>
+  text(({ payload, ctx }) =>
     ctx.replyWithDocument(
       {
-        file_content: new TextEncoder().encode(update.text!),
+        file_content: new TextEncoder().encode(payload.text!),
         file_name: "message.txt"
       },
       { caption: "Here's your text as a file" }
     )
   )
 ])
+```
+
+## Menu Bot (Inline Keyboard)
+
+The whole UI is one message that gets rewritten in place as the user taps buttons. The navigation is declared as data with [`defineScreens`](/bot-runner/screens/): `next` is type-checked against screen ids, Back buttons, edit-in-place and `answer_callback_query` come for free. This bot runs live in the [Cloudflare Workers demo](https://github.com/kondaurovDev/tg-bot-sdk/tree/main/example).
+
+```typescript
+import { createBot, defineScreens } from "@effect-ak/tg-bot"
+
+const screens = defineScreens({
+  root: {
+    text: "🏠 Main menu\n\nPick a section:",
+    buttons: [
+      [
+        { label: "📋 Services", next: "services" },
+        { label: "🕒 Hours", next: "hours" }
+      ],
+      [{ label: "☎️ Contacts", next: "contacts" }]
+    ]
+  },
+  services: {
+    text: "📋 Services\n\n• Consultation\n• Diagnostics",
+    parent: "root",
+    buttons: [
+      {
+        label: "📅 Book",
+        action: ({ ctx }) => ctx.answerCallbackQuery({ text: "Not in the demo", show_alert: true })
+      }
+    ]
+  },
+  hours: { text: "🕒 Mon–Fri 9:00–18:00", parent: "root" },
+  contacts: {
+    text: "☎️ +1 555 0100",
+    parent: "root",
+    buttons: [{ label: "🌐 Website", url: "https://tg-bot-sdk.website" }]
+  }
+})
+
+export default createBot().use(screens)
 ```
 
 <StarCta text="More examples live in the repository — and a star helps other developers find the project." />

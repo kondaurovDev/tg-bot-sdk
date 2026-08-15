@@ -18,9 +18,41 @@ npm install @effect-ak/tg-bot-api
 - **WebApp Types** — types for `Telegram.WebApp` included
 - **Smart Type Mapping** — `Integer` → `number`, `True` → `boolean`, enums → union literals, etc.
 
+## What's Exported
+
+```typescript
+import type {
+  Api,
+  Update,
+  Message,
+  CallbackQuery,
+  InlineKeyboardMarkup,
+  SendMessageInput,
+  WebApp
+} from "@effect-ak/tg-bot-api"
+
+// Api — one method per Bot API method, snake_case, typed input → typed result
+interface Api {
+  send_message(_: SendMessageInput): Message
+  answer_callback_query(_: AnswerCallbackQueryInput): boolean
+  // … every Bot API method
+}
+// Every Bot API type as an interface (Update, Message, Chat, User, …)
+// <Method>Input — parameter object of each method (SendMessageInput, EditMessageTextInput, …)
+// WebApp, WebAppInitData, ThemeParams, … — Telegram.WebApp (Mini Apps) surface
+// verifyLoginData(...) — validate Telegram Login Widget / Mini App init data hash
+```
+
+Field names, optionality and descriptions are taken verbatim from the official docs, so anything you read at https://core.telegram.org/bots/api applies as is. `InputFile` parameters additionally accept `{ file_content: Uint8Array, file_name: string }` (used by the client for uploads).
+
+Machine-readable versions of the same spec are published with the docs: [bot-api.json](https://tg-bot-sdk.website/bot-api.json), [mini-app.json](https://tg-bot-sdk.website/mini-app.json).
+
 ## Documentation
 
-Full documentation, codegen internals, and API reference: **[tg-bot-sdk.website](https://tg-bot-sdk.website)**
+- Bot API types: **[tg-bot-sdk.website/api-types/bot-api](https://tg-bot-sdk.website/api-types/bot-api/)**, Mini Apps: [/api-types/webapp](https://tg-bot-sdk.website/api-types/webapp/)
+- Reference, one page per method/type: https://tg-bot-sdk.website/api/
+- How the generator works: [/api-types/how-it-works](https://tg-bot-sdk.website/api-types/how-it-works/)
+- For LLMs / coding agents: https://tg-bot-sdk.website/llms.txt
 
 ## Updating Telegram Bot API Types
 

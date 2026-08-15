@@ -112,6 +112,7 @@ export default defineConfig({
             { label: "How to Use Client", slug: "client/usage" },
             { label: "How to Write Bots", slug: "bot-runner/writing-bots" },
             { label: "How to Run Bots", slug: "bot-runner/running-bots" },
+            { label: "Screens: Inline-Keyboard UI", slug: "bot-runner/screens" },
             { label: "Examples", slug: "bot-runner/examples" }
           ]
         },

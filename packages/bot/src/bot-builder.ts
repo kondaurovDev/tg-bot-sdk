@@ -10,6 +10,7 @@ import type {
   BotUpdatesHandlers,
   GuardedHandler,
   HandlerInput,
+  HandlerOutput,
   AvailableUpdateTypes,
   BotLogger,
   HandleResult
@@ -23,9 +24,7 @@ import { runBot, createWebhook } from "./run"
 // Handler function shorthand
 // ---------------------------------------------------------------------------
 
-type HandlerFn<U> = (
-  input: HandlerInput<U>
-) => import("./types").BotResponse | PromiseLike<import("./types").BotResponse>
+export type HandlerFn<U> = (input: HandlerInput<U>) => HandlerOutput
 
 // ---------------------------------------------------------------------------
 // Helper interfaces — injected into onXxx callbacks
@@ -58,10 +57,13 @@ export interface GenericHelpers<U> {
 }
 
 // ---------------------------------------------------------------------------
-// Registration input: callback with helpers OR direct array
+// Registration input: callback with helpers, a guard, or a list of guards
 // ---------------------------------------------------------------------------
 
-type HandlerRegistration<U, H> = ((helpers: H) => GuardedHandler<U>[]) | GuardedHandler<U>[]
+export type HandlerRegistration<U, H> =
+  | ((helpers: H) => GuardedHandler<U>[])
+  | GuardedHandler<U>
+  | GuardedHandler<U>[]
 
 // ---------------------------------------------------------------------------
 // Bot config for run / webhook
@@ -77,6 +79,8 @@ export interface BotRunConfig {
 
 export interface BotWebhookConfig {
   bot_token: string
+  /** Secret token verified against `X-Telegram-Bot-Api-Secret-Token`; see `WebhookBotConfig`. */
+  secret_token?: string
   onHandleResult?: (result: HandleResult) => void
   logger?: BotLogger
 }
@@ -86,6 +90,20 @@ export interface BotWebhookConfig {
 // ---------------------------------------------------------------------------
 
 export interface Bot {
+  /**
+   * Shortcut for the most common case — one command, one handler:
+   * `bot.command("/start", ({ ctx }) => ctx.reply("Hi"))`.
+   * Equivalent to `onMessage(({ command }) => [command(cmd, handler)])`.
+   */
+  command(cmd: string, handler: HandlerFn<Message>): Bot
+  /** Shortcut: handle any text message (`onMessage(({ text }) => [text(handler)])`). */
+  onText(handler: HandlerFn<Message>): Bot
+  /**
+   * Shortcut: handle a callback query whose `data` equals the string or
+   * matches the RegExp (`onCallbackQuery(({ data }) => [data(pattern, handler)])`).
+   */
+  onCallback(pattern: string | RegExp, handler: HandlerFn<CallbackQuery>): Bot
+
   onMessage(input: HandlerRegistration<Message, MessageHelpers>): Bot
   onEditedMessage(input: HandlerRegistration<Message, GenericHelpers<Message>>): Bot
   onChannelPost(input: HandlerRegistration<Message, GenericHelpers<Message>>): Bot
@@ -100,6 +118,9 @@ export interface Bot {
     input: HandlerRegistration<NonNullable<Update[K]>, GenericHelpers<NonNullable<Update[K]>>>
   ): Bot
 
+  /** Apply a plugin — a function that registers handlers and returns the bot (e.g. `defineScreens(...)`). */
+  use(plugin: (bot: Bot) => Bot): Bot
+
   run(config: BotRunConfig): Promise<BotInstance>
   webhook(config: BotWebhookConfig): WebhookHandler
 }
@@ -110,24 +131,28 @@ export interface Bot {
 
 function makeMessageHelpers(): MessageHelpers {
   return {
-    command: (cmd, handler) => ({
-      match: ({ ctx }) => ctx.command === cmd,
-      handle: handler
-    }),
+    command: (cmd, handler) => {
+      // Accept "start" and "/START" alike; ctx.command is always "/lowercase".
+      const expected = (cmd.startsWith("/") ? cmd : `/${cmd}`).toLowerCase()
+      return {
+        match: ({ ctx }) => ctx.command === expected,
+        handle: handler
+      }
+    },
     text: (handler) => ({
-      match: ({ update }) => !!update.text,
+      match: ({ payload }) => !!payload.text,
       handle: handler
     }),
     photo: (handler) => ({
-      match: ({ update }) => !!update.photo,
+      match: ({ payload }) => !!payload.photo,
       handle: handler
     }),
     document: (handler) => ({
-      match: ({ update }) => !!update.document,
+      match: ({ payload }) => !!payload.document,
       handle: handler
     }),
     sticker: (handler) => ({
-      match: ({ update }) => !!update.sticker,
+      match: ({ payload }) => !!payload.sticker,
       handle: handler
     }),
     fallback: (handler) => ({ handle: handler })
@@ -137,8 +162,8 @@ function makeMessageHelpers(): MessageHelpers {
 function makeCallbackQueryHelpers(): CallbackQueryHelpers {
   return {
     data: (pattern, handler) => ({
-      match: ({ update }) =>
-        typeof pattern === "string" ? update.data === pattern : pattern.test(update.data ?? ""),
+      match: ({ payload }) =>
+        typeof pattern === "string" ? payload.data === pattern : pattern.test(payload.data ?? ""),
       handle: handler
     }),
     fallback: (handler) => ({ handle: handler })
@@ -148,8 +173,8 @@ function makeCallbackQueryHelpers(): CallbackQueryHelpers {
 function makeInlineQueryHelpers(): InlineQueryHelpers {
   return {
     query: (pattern, handler) => ({
-      match: ({ update }) =>
-        typeof pattern === "string" ? update.query === pattern : pattern.test(update.query),
+      match: ({ payload }) =>
+        typeof pattern === "string" ? payload.query === pattern : pattern.test(payload.query),
       handle: handler
     }),
     fallback: (handler) => ({ handle: handler })
@@ -173,7 +198,7 @@ function resolve<U, H>(
   if (typeof input === "function") {
     return input(makeHelpers())
   }
-  return input
+  return Array.isArray(input) ? input : [input]
 }
 
 // ---------------------------------------------------------------------------
@@ -197,6 +222,18 @@ export function createBot(): Bot {
   }
 
   const bot: Bot = {
+    command(cmd, handler) {
+      return bot.onMessage(({ command }) => [command(cmd, handler)])
+    },
+
+    onText(handler) {
+      return bot.onMessage(({ text }) => [text(handler)])
+    },
+
+    onCallback(pattern, handler) {
+      return bot.onCallbackQuery(({ data }) => [data(pattern, handler)])
+    },
+
     onMessage(input) {
       register("message", resolve(makeMessageHelpers, input))
       return bot
@@ -240,6 +277,10 @@ export function createBot(): Bot {
     on(type, input) {
       register(type, resolve(makeGenericHelpers, input))
       return bot
+    },
+
+    use(plugin) {
+      return plugin(bot)
     },
 
     async run(config) {

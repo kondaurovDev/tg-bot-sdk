@@ -15,7 +15,7 @@ The simplest way to run a bot. No public URL, no SSL certificate — works from 
 import { createBot } from "@effect-ak/tg-bot"
 
 const instance = await createBot()
-  .onMessage(({ text }) => [text(({ update, ctx }) => ctx.reply(update.text!))])
+  .onMessage(({ text }) => [text(({ payload, ctx }) => ctx.reply(payload.text!))])
   .run({ bot_token: "YOUR_BOT_TOKEN" })
 ```
 
@@ -68,51 +68,122 @@ import { createBot } from "@effect-ak/tg-bot"
 
 const handler = createBot()
   .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("Hello!"))])
-  .webhook({ bot_token: "YOUR_BOT_TOKEN" })
+  .webhook({
+    bot_token: "YOUR_BOT_TOKEN",
+    secret_token: "YOUR_WEBHOOK_SECRET"
+  })
 
 // Export as your HTTP handler
 export default handler
 ```
 
-You can also process a raw `Update` object directly:
+You can also process a raw `Update` object directly (this skips the secret token check — use it only when your platform has already authenticated the request):
 
 ```typescript
 await handler.handleUpdate(update)
 ```
 
-:::note[Register your webhook]
-Telegram needs to know where to push updates. After deploying, register your endpoint once with the [`set_webhook`](/api/methods/set-webhook/) method:
+### Secret Token
+
+A webhook URL is not a credential — `*.workers.dev` and similar hostnames are guessable, and URLs leak into logs and error reporters. Anyone who learns the URL can POST a forged `Update` and drive your bot as any user.
+
+Telegram solves this with a **secret token**: you pass it to `set_webhook`, and Telegram sends it back on every delivery in the `X-Telegram-Bot-Api-Secret-Token` header. When you set `secret_token` in `.webhook()`, the handler rejects requests whose header is missing or different with `403 Forbidden` before parsing the body. The comparison is constant-time.
+
+The token is any string of 1–256 characters from `A-Z`, `a-z`, `0-9`, `_` and `-`. Generate one and keep it next to your bot token:
+
+```bash
+openssl rand -hex 32
+```
+
+:::caution
+`secret_token` is optional for backward compatibility, but the handler logs a warning when it is omitted. Treat it as required for anything public.
+:::
+
+### Registering the Webhook
+
+Telegram needs to know where to push updates. The handler exposes `setWebhook()`, which calls [`set_webhook`](/api/methods/set-webhook/) with the same `secret_token` the handler verifies — so both ends always agree:
 
 ```typescript
-import { makeTgBotClient } from "@effect-ak/tg-bot-client"
-
-const client = makeTgBotClient({ bot_token: "YOUR_BOT_TOKEN" })
-
-await client.execute("set_webhook", {
-  url: "https://your-app.example.com/webhook"
+await handler.setWebhook({
+  url: "https://your-app.example.com/webhook",
+  allowed_updates: ["message", "callback_query"]
 })
 ```
 
-To switch back to long polling, remove it with `delete_webhook`.
-:::
+Call it once after deploying (from a script, a protected `/setup` route, or a CI step). To switch back to long polling, remove the webhook with [`delete_webhook`](/api/methods/delete-webhook/).
 
-### Vercel Example
+### Cloudflare Workers Example
+
+Secrets come from `env`, which is only available inside `fetch`, so build the handler there — it is cheap (no connections are opened until an update arrives):
 
 ```typescript
-import { createBot } from "@effect-ak/tg-bot"
-import type { VercelRequest, VercelResponse } from "@vercel/node"
+import { createBot, SECRET_TOKEN_HEADER } from "@effect-ak/tg-bot"
+
+interface Env {
+  BOT_TOKEN: string
+  WEBHOOK_SECRET: string
+}
+
+const bot = createBot().onMessage(({ command }) => [
+  command("/start", ({ ctx }) => ctx.reply("Hello from Workers!"))
+])
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const webhook = bot.webhook({
+      bot_token: env.BOT_TOKEN,
+      secret_token: env.WEBHOOK_SECRET
+    })
+
+    const url = new URL(request.url)
+
+    // One-off registration: GET /setup, protected by the same secret
+    if (request.method === "GET" && url.pathname === "/setup") {
+      if (request.headers.get(SECRET_TOKEN_HEADER) !== env.WEBHOOK_SECRET) {
+        return new Response("forbidden", { status: 403 })
+      }
+      await webhook.setWebhook({ url: `${url.origin}/webhook` })
+      return new Response("webhook registered")
+    }
+
+    if (request.method === "POST" && url.pathname === "/webhook") {
+      return webhook(request)
+    }
+
+    return new Response("not found", { status: 404 })
+  }
+}
+```
+
+Deploy and register:
+
+```bash
+wrangler secret put BOT_TOKEN
+wrangler secret put WEBHOOK_SECRET
+wrangler deploy
+curl -H "X-Telegram-Bot-Api-Secret-Token: $WEBHOOK_SECRET" https://<worker>.workers.dev/setup
+```
+
+A complete, deployable demo — one Worker hosting several demo bots with an inline menu to switch between them, state in KV — lives in [`example`](https://github.com/kondaurovDev/tg-bot-sdk/tree/main/example). Its README walks through `wrangler login` → secrets → `deploy` → `/setup`.
+
+### Platforms Without a `Request` Object
+
+Some runtimes (Express, AWS Lambda with API Gateway, Vercel's Node functions) hand you a parsed body instead of a `Request`. Verify the header yourself and call `handleUpdate`:
+
+```typescript
+import { createBot, SECRET_TOKEN_HEADER } from "@effect-ak/tg-bot"
 
 const bot = createBot()
-  .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("Hello from Vercel!"))])
-  .webhook({ bot_token: process.env.BOT_TOKEN! })
+  .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("Hello!"))])
+  .webhook({ bot_token: process.env.BOT_TOKEN!, secret_token: process.env.WEBHOOK_SECRET! })
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== "POST") {
-    return res.status(405).send("Method not allowed")
+app.post("/webhook", async (req, res) => {
+  if (req.get(SECRET_TOKEN_HEADER) !== process.env.WEBHOOK_SECRET) {
+    return res.status(403).send("forbidden")
   }
   await bot.handleUpdate(req.body)
   res.status(200).send("ok")
-}
+})
 ```
 
 ## Poll Settings

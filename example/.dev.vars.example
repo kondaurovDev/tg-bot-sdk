@@ -1,0 +1,4 @@
+BOT_TOKEN=
+WEBHOOK_SECRET=
+# Public URL of the running worker (tunnel or workers.dev), used by `make set-webhook`
+WEBHOOK_URL=

@@ -7,8 +7,8 @@ export default createBot().onMessage(({ command, text }) => [
       "Available commands:\n/start — welcome message\n/help — this message\n/echo — your message as JSON"
     )
   ),
-  command("/echo", ({ update, ctx }) =>
-    ctx.reply(`<pre language="json">${JSON.stringify(update, null, 2)}</pre>`, {
+  command("/echo", ({ payload, ctx }) =>
+    ctx.reply(`<pre language="json">${JSON.stringify(payload, null, 2)}</pre>`, {
       parse_mode: "HTML"
     })
   ),

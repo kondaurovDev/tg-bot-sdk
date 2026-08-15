@@ -3,14 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "client": "tsx ./src/client.ts",
-    "simple-bot": "tsx ./src/bots/simple-bot.ts",
-    "echo-bot": "tsx ./src/bots/echo-bot.ts",
-    "batch-bot": "tsx ./src/bots/batch-bot.ts",
-    "reload-bot": "tsx ./src/bots/reload-bot.ts",
-    "set-webhook": "tsx ./src/set-webhook.ts",
-    "typecheck": "tsc",
-    "deploy:vercel": "tsup && vercel deploy dist --prod"
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail",
+    "polling": "tsx ./src/polling/run.ts",
+    "polling:batch": "tsx ./src/polling/batch-bot.ts",
+    "polling:reload": "tsx ./src/polling/reload-bot.ts",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@effect-ak/tg-bot": "workspace:*",
@@ -18,6 +17,7 @@
     "@effect-ak/tg-bot-client": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "wrangler": "^4.107.0"
   }
 }

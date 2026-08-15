@@ -69,8 +69,8 @@ import Cta from "../../components/landing/Cta.astro"
           command("/start", ({ ctx }) =>
             ctx.reply("Hello! I'm your new bot.")
           ),
-          text(({ ctx }) =>
-            ctx.reply(`You said: ${ctx.update.message.text}`)
+          text(({ payload, ctx }) =>
+            ctx.reply(`You said: ${payload.text}`)
           )
         ])
         .run({ bot_token: "YOUR_BOT_TOKEN" })

@@ -1,7 +1,8 @@
 import { createBot } from "@effect-ak/tg-bot"
 
-export default createBot().onMessage(({ command, text }) => [
-  command("/start", ({ ctx }) => ctx.reply("Send me any text and I'll save it as a file")),
+export const description = "Turns any text message into a .txt file"
+
+export default createBot().onMessage(({ text, fallback }) => [
   text(({ payload, ctx }) =>
     ctx.replyWithDocument(
       {
@@ -10,5 +11,6 @@ export default createBot().onMessage(({ command, text }) => [
       },
       { caption: "Here's your text as a file" }
     )
-  )
+  ),
+  fallback(({ ctx }) => ctx.reply("Send me any text and I'll save it as a file"))
 ])

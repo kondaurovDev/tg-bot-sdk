@@ -3,7 +3,7 @@
  * Bot execution entry points: long-polling runner ({@link runBot})
  * and webhook handler ({@link createWebhook}).
  */
-import type { Update } from "@effect-ak/tg-bot-api"
+import type { Update, SetWebhookInput } from "@effect-ak/tg-bot-api"
 import { makeTgBotClient } from "@effect-ak/tg-bot-client"
 import type { BotUpdatesHandlers, BotLogger, RunBotInput, HandleResult, BotBehavior } from "./types"
 import { makePollSettings, UpdateFetcher } from "./polling"
@@ -111,20 +111,59 @@ export const defineBot = (input: BotUpdatesHandlers) => {
 
 export interface WebhookBotConfig extends BotUpdatesHandlers {
   bot_token: string
+  /**
+   * Secret passed to `set_webhook`. Telegram echoes it back in the
+   * `X-Telegram-Bot-Api-Secret-Token` header on every delivery; requests
+   * whose header is missing or different are rejected with `403`.
+   * Strongly recommended — without it anyone who learns the webhook URL
+   * can post forged updates. 1-256 characters: `A-Z`, `a-z`, `0-9`, `_`, `-`.
+   */
+  secret_token?: string
   onHandleResult?: (result: HandleResult) => void
   logger?: BotLogger
 }
 
+export const SECRET_TOKEN_HEADER = "X-Telegram-Bot-Api-Secret-Token"
+
+export type SetWebhookParams = Omit<SetWebhookInput, "secret_token">
+
 export interface WebhookHandler {
+  /** Verify the secret token (if configured), parse the update and handle it. */
   (request: Request): Promise<Response>
+  /** Handle a raw `Update` object. Bypasses secret token verification. */
   handleUpdate: (update: Update) => Promise<void>
+  /**
+   * Register this webhook with Telegram (`set_webhook`), passing the same
+   * `secret_token` the handler verifies. Throws `TgBotClientError` on failure.
+   */
+  setWebhook: (params: SetWebhookParams) => Promise<boolean>
+}
+
+/** Compares two strings without leaking their common-prefix length. */
+const timingSafeEqual = (a: string, b: string): boolean => {
+  const encoder = new TextEncoder()
+  const bytesA = encoder.encode(a)
+  const bytesB = encoder.encode(b)
+  const length = Math.max(bytesA.length, bytesB.length)
+  let diff = bytesA.length ^ bytesB.length
+  for (let i = 0; i < length; i++) {
+    diff |= (bytesA[i] ?? 0) ^ (bytesB[i] ?? 0)
+  }
+  return diff === 0
 }
 
 export const createWebhook = (config: WebhookBotConfig): WebhookHandler => {
-  const { bot_token, onHandleResult, logger, ...handlers } = config
+  const { bot_token, secret_token, onHandleResult, logger, ...handlers } = config
   const log = logger ?? consoleLogger
   const client = makeTgBotClient({ bot_token })
   const settings = makePollSettings({}, log)
+
+  if (!secret_token) {
+    log.warn(
+      "webhook: secret_token is not set — anyone who knows the URL can send forged updates. " +
+        "Pass `secret_token` to createWebhook / .webhook() and register it via handler.setWebhook()."
+    )
+  }
 
   const handleUpdate = async (update: Update): Promise<void> => {
     await handleUpdates(
@@ -137,7 +176,17 @@ export const createWebhook = (config: WebhookBotConfig): WebhookHandler => {
     )
   }
 
+  const isAuthorized = (request: Request): boolean => {
+    if (!secret_token) return true
+    const header = request.headers.get(SECRET_TOKEN_HEADER)
+    return header !== null && timingSafeEqual(header, secret_token)
+  }
+
   const handler = async (request: Request): Promise<Response> => {
+    if (!isAuthorized(request)) {
+      log.warn("webhook: rejected request with missing or invalid secret token")
+      return new Response("forbidden", { status: 403 })
+    }
     try {
       const update = (await request.json()) as Update
       await handleUpdate(update)
@@ -149,6 +198,11 @@ export const createWebhook = (config: WebhookBotConfig): WebhookHandler => {
   }
 
   handler.handleUpdate = handleUpdate
+  handler.setWebhook = (params: SetWebhookParams) =>
+    client.execute("set_webhook", {
+      ...params,
+      ...(secret_token ? { secret_token } : {})
+    })
 
   return handler
 }

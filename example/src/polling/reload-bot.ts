@@ -9,7 +9,7 @@ const bot = await runBot({
   mode: "single",
   on_message: [
     {
-      match: ({ update }) => !!update.text,
+      match: ({ payload }) => !!payload.text,
       handle: ({ ctx }) => ctx.reply("hey :)")
     }
   ]
@@ -21,7 +21,7 @@ setTimeout(() => {
     type: "single",
     on_message: [
       {
-        match: ({ update }) => !!update.text,
+        match: ({ payload }) => !!payload.text,
         handle: ({ ctx }) => ctx.reply("reloaded hey :)")
       }
     ]

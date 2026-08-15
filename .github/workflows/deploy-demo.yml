@@ -1,0 +1,59 @@
+name: Deploy Demo Bot
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/**"
+      - "example/src/bots/**"
+      - "example/src/worker.ts"
+      - "example/wrangler.jsonc"
+      - ".github/workflows/deploy-demo.yml"
+  workflow_dispatch:
+
+concurrency: deploy-demo
+
+jobs:
+  deploy:
+    name: Deploy to Cloudflare Workers
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      WRANGLER: pnpm --filter example exec wrangler
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Build packages
+        run: pnpm --filter @effect-ak/tg-bot-api gen && pnpm --filter "./packages/**" build
+
+      - name: Deploy Worker
+        id: deploy
+        run: |
+          $WRANGLER deploy 2>&1 | tee deploy.log
+          url=$(grep -oE 'https://[a-z0-9.-]+\.workers\.dev' deploy.log | head -n1)
+          if [ -z "$url" ]; then echo "::error::could not find worker URL in deploy output"; exit 1; fi
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Push bot secrets
+        run: |
+          printf '%s' "$DEMO_BOT_TOKEN" | $WRANGLER secret put BOT_TOKEN
+          printf '%s' "$DEMO_WEBHOOK_SECRET" | $WRANGLER secret put WEBHOOK_SECRET
+        env:
+          DEMO_BOT_TOKEN: ${{ secrets.DEMO_BOT_TOKEN }}
+          DEMO_WEBHOOK_SECRET: ${{ secrets.DEMO_WEBHOOK_SECRET }}
+
+      - name: Register Telegram webhook
+        run: |
+          curl --fail --silent --show-error \
+            -H "X-Telegram-Bot-Api-Secret-Token: $DEMO_WEBHOOK_SECRET" \
+            "${{ steps.deploy.outputs.url }}/setup"
+          echo
+          echo "Webhook set to ${{ steps.deploy.outputs.url }}/webhook"
+        env:
+          DEMO_WEBHOOK_SECRET: ${{ secrets.DEMO_WEBHOOK_SECRET }}

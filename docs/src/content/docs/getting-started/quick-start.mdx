@@ -46,7 +46,7 @@ Don't want to install anything? [Open the Playground](/playground/) and run a bo
    createBot()
      .onMessage(({ command, text }) => [
        command("/start", ({ ctx }) => ctx.reply("Welcome!")),
-       text(({ update, ctx }) => ctx.reply(`You said: ${update.text}`))
+       text(({ payload, ctx }) => ctx.reply(`You said: ${payload.text}`))
      ])
      .run({
        bot_token: "YOUR_BOT_TOKEN"

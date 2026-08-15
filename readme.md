@@ -4,23 +4,17 @@
 ![Telegram Bot API](https://img.shields.io/badge/BotApi-10.2-blue)
 ![Telegram WebApp](https://img.shields.io/badge/Telegram.WebApp-9.6-orange)
 
-Type-safe TypeScript SDK for building Telegram bots, automatically generated from official Telegram Bot API documentation.
+Type-safe TypeScript SDK for building Telegram bots. Types are generated from the official Bot API documentation; everything else is a thin layer over native `fetch` with zero runtime dependencies.
 
 ## 📦 Packages
 
-This monorepo contains three packages:
+| Package                                         | What it is                                                                                                         | Use it when                                                               |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| [`@effect-ak/tg-bot-api`](./packages/api)       | TypeScript types for the whole Bot API + Mini Apps (`Telegram.WebApp`), regenerated from https://core.telegram.org | You only need types (own client, Mini App front-end)                      |
+| [`@effect-ak/tg-bot-client`](./packages/client) | HTTP client: `client.execute("send_message", { … })` for every method, typed errors, automatic file uploads        | Sending notifications, managing channels, integrating Telegram in an app  |
+| [`@effect-ak/tg-bot`](./packages/bot)           | Bot framework: fluent builder, guarded handlers, long polling **or** webhooks, inline-keyboard screens as data     | Building a bot — locally, on a VPS, or on Cloudflare Workers / Bun / Deno |
 
-### [@effect-ak/tg-bot-api](./packages/api)
-
-TypeScript types for Telegram Bot API and Mini Apps, auto-generated from official documentation.
-
-### [@effect-ak/tg-bot-client](./packages/client)
-
-Lightweight HTTP client for Telegram Bot API with full type safety.
-
-### [@effect-ak/tg-bot](./packages/bot)
-
-Bot framework with fluent builder API, long polling, webhooks, and hot reload.
+Dependency chain: `api` ← `client` ← `bot`. Method names are `snake_case` exactly as in the official docs.
 
 ## 🚀 Quick Start
 
@@ -34,10 +28,8 @@ npm install @effect-ak/tg-bot
 import { createBot } from "@effect-ak/tg-bot"
 
 await createBot()
-  .onMessage(({ command, text }) => [
-    command("/start", ({ ctx }) => ctx.reply("Welcome!")),
-    text(({ update, ctx }) => ctx.reply(`You said: ${update.text}`))
-  ])
+  .command("/start", ({ ctx }) => ctx.reply("Welcome!"))
+  .onText(({ payload, ctx }) => ctx.reply(`You said: ${payload.text}`))
   .run({ bot_token: "YOUR_BOT_TOKEN" })
 ```
 
@@ -54,18 +46,39 @@ const client = makeTgBotClient({
   bot_token: "YOUR_BOT_TOKEN"
 })
 
-await client.execute("sendMessage", {
-  chat_id: "123456789",
+await client.execute("send_message", {
+  chat_id: 123456789,
   text: "Hello, World!"
 })
 ```
 
+### Webhook on Cloudflare Workers, inline-keyboard UI as data
+
+```typescript
+import { createBot, defineScreens } from "@effect-ak/tg-bot"
+
+const screens = defineScreens({
+  root: { text: "Main menu", buttons: [[{ label: "Hours", next: "hours" }]] },
+  hours: { text: "Mon–Fri 9–18", parent: "root" }
+})
+
+const bot = createBot().use(screens)
+
+export default {
+  fetch: (request: Request, env: Env) =>
+    bot.webhook({ bot_token: env.BOT_TOKEN, secret_token: env.WEBHOOK_SECRET })(request)
+}
+```
+
+A complete, deployable demo (several bots behind one token, KV state, GitHub Actions deploy) lives in [`example/`](./example).
+
 ## 🎯 Key Features
 
 - **Always Up-to-Date**: Types generated from official Telegram API documentation
-- **Fully Type-Safe**: Complete TypeScript support for all API methods and types
-- **Zero Config**: Works out of the box with sensible defaults
-- **No Webhooks Required**: Uses long polling - run anywhere without public URLs
+- **Fully Type-Safe**: Complete TypeScript support for all API methods and types; errors are tagged unions
+- **Runs Anywhere**: native `fetch`, no dependencies — Node.js 18+, Bun, Deno, Cloudflare Workers, browsers
+- **Polling or Webhooks**: long polling needs no public URL; webhooks verify Telegram's secret token out of the box
+- **Screens**: inline-keyboard navigation declared as data (`defineScreens`) — Back, actions, edit-in-place handled for you
 
 ## 📚 Documentation
 
@@ -74,6 +87,12 @@ Full documentation and API reference: **[tg-bot-sdk.website](https://tg-bot-sdk.
 - [Introduction](https://tg-bot-sdk.website/getting-started/introduction/)
 - [Quick Start](https://tg-bot-sdk.website/getting-started/quick-start/)
 - [API Reference](https://tg-bot-sdk.website/api/)
+
+## 🤖 For LLMs and Coding Agents
+
+- **[tg-bot-sdk.website/llms.txt](https://tg-bot-sdk.website/llms.txt)** — index of the docs with the conventions that matter; **[llms-full.txt](https://tg-bot-sdk.website/llms-full.txt)** — all guides in one file
+- **[bot-api.json](https://tg-bot-sdk.website/bot-api.json)** / **[mini-app.json](https://tg-bot-sdk.website/mini-app.json)** — machine-readable Bot API and Mini Apps specs
+- Each package README documents its full API surface; repo conventions for agents are in [`.claude/CLAUDE.md`](./.claude/CLAUDE.md)
 
 ## 🎮 Playground
 
