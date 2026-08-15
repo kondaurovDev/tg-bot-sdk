@@ -1,5 +1,7 @@
 # @effect-ak/tg-bot-api
 
+## 1.10.0
+
 ## 1.9.0
 
 ### Minor Changes
