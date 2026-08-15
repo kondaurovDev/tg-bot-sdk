@@ -1,5 +1,11 @@
 # @effect-ak/tg-bot-client
 
+## 1.10.0
+
+### Patch Changes
+
+- @effect-ak/tg-bot-api@1.10.0
+
 ## 1.9.0
 
 ### Patch Changes
