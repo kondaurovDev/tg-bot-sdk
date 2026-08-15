@@ -49,11 +49,22 @@ jobs:
           DEMO_WEBHOOK_SECRET: ${{ secrets.DEMO_WEBHOOK_SECRET }}
 
       - name: Register Telegram webhook
+        # `wrangler secret put` rolls out a new Worker version; the first
+        # requests after it may still hit the previous one (403 on a fresh
+        # Worker that had no secrets yet), so retry for a short while.
         run: |
-          curl --fail --silent --show-error \
-            -H "X-Telegram-Bot-Api-Secret-Token: $DEMO_WEBHOOK_SECRET" \
-            "${{ steps.deploy.outputs.url }}/setup"
-          echo
-          echo "Webhook set to ${{ steps.deploy.outputs.url }}/webhook"
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error \
+              -H "X-Telegram-Bot-Api-Secret-Token: $DEMO_WEBHOOK_SECRET" \
+              "${{ steps.deploy.outputs.url }}/setup"; then
+              echo
+              echo "Webhook set to ${{ steps.deploy.outputs.url }}/webhook"
+              exit 0
+            fi
+            echo "attempt $attempt failed, retrying in 5s..."
+            sleep 5
+          done
+          echo "::error::/setup kept failing — check that DEMO_WEBHOOK_SECRET matches the deployed WEBHOOK_SECRET"
+          exit 1
         env:
           DEMO_WEBHOOK_SECRET: ${{ secrets.DEMO_WEBHOOK_SECRET }}
