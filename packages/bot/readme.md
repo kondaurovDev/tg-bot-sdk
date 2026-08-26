@@ -11,6 +11,16 @@ Telegram bot framework for TypeScript: fluent builder, typed handlers for every 
 npm install @effect-ak/tg-bot
 ```
 
+That's the only package you need. The client and the Bot API types are re-exported under subpaths:
+
+```typescript
+import { createBot } from "@effect-ak/tg-bot"
+import type { Message, Update } from "@effect-ak/tg-bot/api"
+import { makeTgBotClient } from "@effect-ak/tg-bot/client"
+```
+
+Installing [`@effect-ak/tg-bot-api`](https://www.npmjs.com/package/@effect-ak/tg-bot-api) or [`@effect-ak/tg-bot-client`](https://www.npmjs.com/package/@effect-ak/tg-bot-client) directly still works and resolves to the same declarations — the subpaths are re-exports, not copies.
+
 ## Quick Start
 
 ```typescript

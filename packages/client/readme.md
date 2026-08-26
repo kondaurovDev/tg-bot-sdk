@@ -13,6 +13,13 @@ Types come from [`@effect-ak/tg-bot-api`](https://www.npmjs.com/package/@effect-
 npm install @effect-ak/tg-bot-client
 ```
 
+The Bot API types are re-exported under a subpath, so this is the only package you need:
+
+```typescript
+import { makeTgBotClient } from "@effect-ak/tg-bot-client"
+import type { Message, Update } from "@effect-ak/tg-bot-client/api"
+```
+
 ## Quick Start
 
 ```typescript

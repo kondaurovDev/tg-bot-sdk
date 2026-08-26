@@ -43,6 +43,8 @@ Telegram Bot SDK is a TypeScript toolkit for working with the [Telegram Bot API]
 
 Each package builds on the one below it: the bot framework includes the client, and the client includes the types. Install the client on its own for simpler use cases — sending notifications, managing a channel, integrating Telegram into an existing app — and the framework when you're building a full bot.
 
+You never have to install more than one of them. `@effect-ak/tg-bot` re-exports the other two under subpaths — `@effect-ak/tg-bot/api` and `@effect-ak/tg-bot/client` — and `@effect-ak/tg-bot-client` re-exports the types as `@effect-ak/tg-bot-client/api`. These are re-exports of the same declarations, not copies, so mixing subpath imports with a direct dependency gives you identical types.
+
 ## Why this SDK
 
 - **Always up to date** — types are generated from the official Telegram API documentation, not maintained by hand. New Bot API release → re-run the generator → new types.

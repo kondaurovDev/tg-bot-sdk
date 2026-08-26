@@ -63,6 +63,18 @@ Don't want to install anything? [Open the Playground](/playground/) and run a bo
 
 </Steps>
 
+## One package, three entry points
+
+`@effect-ak/tg-bot` is the only dependency a bot needs. The Bot API types and the HTTP client are re-exported under subpaths:
+
+```typescript
+import { createBot, BotResponse } from "@effect-ak/tg-bot"
+import type { Message, Update, InlineKeyboardButton } from "@effect-ak/tg-bot/api"
+import { makeTgBotClient } from "@effect-ak/tg-bot/client"
+```
+
+The client does the same for the types, as `@effect-ak/tg-bot-client/api`. Nothing is duplicated — the subpaths re-export the very same declarations, so adding `@effect-ak/tg-bot-api` as a direct dependency later gives you identical, interchangeable types.
+
 ## Only need the client?
 
 If you just want to call Bot API methods — send notifications, manage a channel, integrate Telegram into an existing app — the lightweight client is enough:

@@ -1,6 +1,6 @@
 {
   "$schema": "https://cdn.jsdelivr.net/npm/tsup/schema.json",
-  "entry": ["src/index.ts"],
+  "entry": ["src/index.ts", "src/api.ts", "src/client.ts"],
   "outDir": "dist",
   "format": ["esm", "cjs"],
   "splitting": false,
