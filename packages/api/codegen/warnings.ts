@@ -8,7 +8,7 @@
  */
 
 export interface GenerationWarning {
-  kind: "field-dropped" | "no-return-type"
+  kind: "field-dropped" | "no-return-type" | "no-description"
   entityName: string
   fieldName?: string
   reason: string

@@ -177,30 +177,43 @@ const extractEntityDescription = (
     lines.push(plainLine)
   }
 
-  if (Array.isNonEmptyArray(lines) && lines[0].length != 0) {
-    if (returnTypeOverridden) {
-      return Either.right({ lines, returns: returnTypeOverridden })
-    }
-    const deduped = dedupeSpecTypes(returnTypes)
-    if (deduped.length === 1) {
-      return Either.right({ lines, returns: deduped[0] })
-    }
-    if (deduped.length > 1) {
-      return Either.right({
-        lines,
-        returns: union(deduped[0], deduped[1], ...deduped.slice(2))
+  const hasDescription = Array.isNonEmptyArray(lines) && lines[0].length != 0
+
+  // Methods without a description carry no return type either, so they stay fatal.
+  // Types may legitimately have none — Telegram sometimes ships a bare field table.
+  if (!hasDescription && !startsWithUpperCase(entityName)) {
+    if (returnTypes.length == 0) {
+      collectWarning({
+        kind: "no-return-type",
+        entityName,
+        reason: "no return type detected in description"
       })
     }
-    return Either.right({ lines, returns: undefined })
-  } else if (returnTypes.length == 0 && !startsWithUpperCase(entityName)) {
+    return ExtractEntityError.left("Description:Empty", { entityName })
+  }
+
+  if (!hasDescription) {
     collectWarning({
-      kind: "no-return-type",
+      kind: "no-description",
       entityName,
-      reason: "no return type detected in description"
+      reason: "entity has no description in the documentation"
     })
   }
 
-  return ExtractEntityError.left("Description:Empty", { entityName })
+  if (returnTypeOverridden) {
+    return Either.right({ lines, returns: returnTypeOverridden })
+  }
+  const deduped = dedupeSpecTypes(returnTypes)
+  if (deduped.length === 1) {
+    return Either.right({ lines, returns: deduped[0] })
+  }
+  if (deduped.length > 1) {
+    return Either.right({
+      lines,
+      returns: union(deduped[0], deduped[1], ...deduped.slice(2))
+    })
+  }
+  return Either.right({ lines, returns: undefined })
 }
 
 export const extractFieldDescription = (input: HtmlElement) =>

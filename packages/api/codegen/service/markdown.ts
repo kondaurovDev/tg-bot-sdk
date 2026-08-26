@@ -320,10 +320,17 @@ const makeMethodMetaDescription = (method: ExtractedMethodShape): string => {
   return meta
 }
 
+/** Telegram occasionally ships a type as a bare field table, with no prose at all. */
+const typeDescriptionFallback = (typeName: string) => `${typeName} is a Telegram Bot API type.`
+
+const hasDescription = (parts: string[]) => parts.some((_) => _.trim().length > 0)
+
 const makeTypeMetaDescription = (extracted: ExtractedTypeShape): string => {
   const desc = extracted.description.map(removeHtmlTags).join(" ").replace(/\.+$/, "")
 
-  let meta = `${extracted.typeName} – Telegram Bot API type. ${desc}.`
+  let meta = hasDescription(extracted.description)
+    ? `${extracted.typeName} – Telegram Bot API type. ${desc}.`
+    : `${extracted.typeName} – Telegram Bot API type.`
 
   if (extracted.type instanceof EntityFields) {
     const total = extracted.type.fields.length
@@ -450,7 +457,9 @@ const makeMethodJsonLd = (method: ExtractedMethodShape): string => {
 
 const makeTypeJsonLd = (extracted: ExtractedTypeShape): string => {
   const slug = toKebab(extracted.typeName)
-  const desc = extracted.description.map(removeHtmlTags).join(" ")
+  const desc = hasDescription(extracted.description)
+    ? extracted.description.map(removeHtmlTags).join(" ")
+    : typeDescriptionFallback(extracted.typeName)
   const data = {
     "@context": "https://schema.org",
     "@type": "TechArticle",
@@ -572,7 +581,9 @@ const buildTypeUsageMap = (methods: ExtractedMethodShape[]): TypeUsageMap => {
 // ── Type page ──
 
 const makeTypePage = (extracted: ExtractedTypeShape, usageMap: TypeUsageMap): string => {
-  const description = joinSentences(extracted.description)
+  const description = hasDescription(extracted.description)
+    ? joinSentences(extracted.description)
+    : typeDescriptionFallback(extracted.typeName)
   const metaDescription = makeTypeMetaDescription(extracted)
   const tgLink = `[↗](https://core.telegram.org/bots/api#${extracted.typeName.toLowerCase()})`
   const lines: string[] = [
