@@ -438,3 +438,23 @@
 .msg-media {
   font-size: 0.8rem;
 }
+
+/* --- Reply quote inside a bubble --- */
+.msg-reply {
+  display: block;
+  border-left: 2px solid #2481cc;
+  background: rgba(36, 129, 204, 0.08);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-bottom: 3px;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.msg-reply-name {
+  display: block;
+  color: #2481cc;
+  font-weight: 500;
+}

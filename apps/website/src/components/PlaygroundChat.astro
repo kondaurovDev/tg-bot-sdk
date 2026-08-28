@@ -38,8 +38,7 @@
                 class="bubble"
                 :class="isBotMessage(m) ? 'bubble-in' : 'bubble-out'"
                 @click="onBubbleClick($event, m)"
-                @dblclick.prevent="toggleReaction(m)"
-                title="Double-click to react"
+                @contextmenu.prevent="openContextMenu($event, m)"
               >
                 <span x-html="renderMessageHtml(m)"></span>
                 <span class="inline-flex items-baseline gap-0.5 text-[10px] text-gray-400 ml-1.5 whitespace-nowrap">
@@ -93,6 +92,15 @@
         </div>
       </div>
 
+      <!-- Reply bar -->
+      <div x-show="replyTo" x-cloak class="px-3 py-1.5 bg-white border-t border-gray-200 flex items-center gap-2">
+        <div class="flex-1 min-w-0 border-l-2 border-blue-500 pl-2">
+          <div class="text-[11px] font-medium text-blue-600" x-text="'Reply to ' + (replyTo?.from?.is_bot ? 'Bot' : 'You')"></div>
+          <div class="text-[11px] text-gray-500 truncate" x-text="replyPreview(replyTo)"></div>
+        </div>
+        <button @click="replyTo = null" class="text-gray-400 hover:text-gray-600 text-sm px-1" title="Cancel reply">&times;</button>
+      </div>
+
       <!-- Input -->
       <div class="px-2.5 py-2 bg-white border-t border-gray-200 flex items-center gap-2">
         <input type="file" class="hidden" x-ref="chatFile" @change="attachChatFile($event.target)" />
@@ -125,6 +133,44 @@
       <div class="h-4 bg-white flex items-center justify-center">
         <div class="w-24 h-1 rounded-full bg-gray-300"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Message context menu (right-click, like the desktop client) -->
+  <div
+    x-show="ctxMenu.open"
+    x-cloak
+    @click.outside="closeContextMenu()"
+    @contextmenu.prevent
+    @keydown.escape.window="closeContextMenu()"
+    class="fixed z-50"
+    :style="`left: ${ctxMenu.x}px; top: ${ctxMenu.y}px`"
+  >
+    <div class="flex items-center gap-0.5 px-1.5 py-1 mb-1.5 bg-white rounded-full shadow-xl border border-gray-100 w-max">
+      <template x-for="emoji in quickReactions" :key="emoji">
+        <button
+          @click="menuReact(emoji)"
+          class="w-8 h-8 rounded-full text-lg leading-none hover:bg-gray-100 hover:scale-125 transition-transform"
+          :class="(chatReactions[ctxMenu.message?.message_id] ?? []).includes(emoji) ? 'bg-blue-50' : ''"
+          x-text="emoji"
+        ></button>
+      </template>
+    </div>
+    <div class="w-44 bg-white rounded-xl shadow-xl border border-gray-100 py-1 text-sm text-gray-800">
+      <button @click="menuReply()" class="w-full text-left px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2.5">
+        <span class="text-gray-400">&#8617;</span> Reply
+      </button>
+      <button
+        x-show="ctxMenu.message?.text || ctxMenu.message?.caption"
+        @click="menuCopy()"
+        class="w-full text-left px-3 py-1.5 hover:bg-gray-50 flex items-center gap-2.5"
+      >
+        <span class="text-gray-400">&#10064;</span> Copy Text
+      </button>
+      <div class="border-t border-gray-100 my-1"></div>
+      <button @click="menuDelete()" class="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-2.5">
+        <span>&#128465;</span> Delete
+      </button>
     </div>
   </div>
 </div>

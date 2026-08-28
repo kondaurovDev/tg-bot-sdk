@@ -137,7 +137,21 @@ self.onmessage = async (msg: MessageEvent<WorkerCommand>) => {
         sendEvent({ type: "error", error: "Emulator is not running" })
         break
       }
-      emulator.sendMessage(data.text)
+      emulator.sendMessage(
+        data.text,
+        data.reply_to !== undefined ? { reply_to: data.reply_to } : {}
+      )
+      break
+    case "delete-message":
+      if (!emulator) {
+        sendEvent({ type: "error", error: "Emulator is not running" })
+        break
+      }
+      try {
+        emulator.deleteMessage(data.message_id)
+      } catch (error) {
+        sendEvent({ type: "error", error: error instanceof Error ? error.message : `${error}` })
+      }
       break
     case "tap-button":
       if (!emulator) {

@@ -71,6 +71,11 @@ export interface UserMediaOptions {
   caption?: string
 }
 
+export interface UserSendOptions {
+  /** Message id to reply to; embedded as `reply_to_message`. */
+  reply_to?: number
+}
+
 export interface TgBotEmulator {
   /** Drop-in client for `bot.run({ client })` / `makeTgBotClient` call sites. */
   readonly client: TgBotClient
@@ -93,7 +98,12 @@ export interface TgBotEmulator {
    * delivered to the bot as a `message` update. Text starting with `/`
    * gets a `bot_command` entity, so command handlers match.
    */
-  sendMessage(text: string): Message
+  sendMessage(text: string, options?: UserSendOptions): Message
+  /**
+   * Remove a message from the chat, like deleting it in the client.
+   * Real Telegram delivers no update for this — neither does the emulator.
+   */
+  deleteMessage(message_id: number): void
   /**
    * Tap an inline keyboard button by its `callback_data`: delivers a
    * `callback_query` update. Throws if no message has such a button.

@@ -20,8 +20,9 @@ export type WorkerCommand =
       token?: string
       logLevel?: "info" | "debug"
     }
-  | { command: "user-message"; text: string }
+  | { command: "user-message"; text: string; reply_to?: number }
   | { command: "tap-button"; data: string; message_id: number }
+  | { command: "delete-message"; message_id: number }
   | {
       command: "user-file"
       file_name: string

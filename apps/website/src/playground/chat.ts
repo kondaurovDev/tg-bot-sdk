@@ -78,11 +78,32 @@ const describeMedia = (message: Message): string | undefined => {
   return undefined
 }
 
+/** Quoted reply preview rendered at the top of a bubble. */
+const replyQuoteHtml = (message: Message): string => {
+  const replied = message.reply_to_message
+  if (!replied) return ""
+  const who = replied.from?.is_bot ? "Bot" : "You"
+  const raw = replied.text ?? replied.caption ?? "…"
+  const preview = raw.length > 70 ? `${raw.slice(0, 70)}…` : raw
+  return `<span class="msg-reply"><span class="msg-reply-name">${who}</span>${escapeHtml(preview)}</span>`
+}
+
+/** The reactions row shown in the message context menu. */
+export const QUICK_REACTIONS = ["👍", "🔥", "❤️", "😁", "🤣", "💩"]
+
 export const chatState = () => ({
   chatMessages: [] as Message[],
   chatInput: "",
   chatDraft: null as EmulatorDraft | null,
-  chatReactions: {} as Record<number, string[]>
+  chatReactions: {} as Record<number, string[]>,
+  replyTo: null as Message | null,
+  ctxMenu: {
+    open: false,
+    x: 0,
+    y: 0,
+    message: null as Message | null
+  },
+  quickReactions: QUICK_REACTIONS
 })
 
 export const chatMethods = {
@@ -100,6 +121,8 @@ export const chatMethods = {
       this.chatMessages = this.chatMessages.filter(
         (m: Message) => m.message_id !== event.message_id
       )
+      delete this.chatReactions[event.message_id]
+      if (this.replyTo?.message_id === event.message_id) this.replyTo = null
     } else if (event.type === "callback_answered" && event.text) {
       this._showToast(event.text, "success")
     } else if (event.type === "draft") {
@@ -131,8 +154,13 @@ export const chatMethods = {
       this._showToast("Bot is not running — press Run", "error")
       return
     }
-    this._sendToWorker({ command: "user-message", text })
+    this._sendToWorker({
+      command: "user-message",
+      text,
+      ...(this.replyTo ? { reply_to: this.replyTo.message_id } : {})
+    })
     this.chatInput = ""
+    this.replyTo = null
     this.botBusy = true
     this._scrollChat()
   },
@@ -163,14 +191,60 @@ export const chatMethods = {
     this.botBusy = true
   },
 
-  /** Double-click on a bubble: toggle the user's 👍 reaction. */
-  toggleReaction(this: any, message: Message) {
+  // -- message context menu (right-click, like the desktop client) --
+
+  openContextMenu(this: any, event: MouseEvent, message: Message) {
+    // Keep the panel inside the viewport (menu is ~230px wide, ~200px tall)
+    this.ctxMenu = {
+      open: true,
+      x: Math.min(event.clientX, window.innerWidth - 240),
+      y: Math.min(event.clientY, window.innerHeight - 220),
+      message
+    }
+  },
+
+  closeContextMenu(this: any) {
+    this.ctxMenu.open = false
+    this.ctxMenu.message = null
+  },
+
+  menuReact(this: any, emoji: string) {
+    const message: Message | null = this.ctxMenu.message
+    this.closeContextMenu()
+    if (!message) return
     const current: string[] = this.chatReactions[message.message_id] ?? []
     this._sendToWorker({
       command: "user-react",
       message_id: message.message_id,
-      emoji: current.includes("👍") ? null : "👍"
+      emoji: current.includes(emoji) ? null : emoji
     })
+  },
+
+  menuReply(this: any) {
+    this.replyTo = this.ctxMenu.message
+    this.closeContextMenu()
+  },
+
+  menuCopy(this: any) {
+    const message: Message | null = this.ctxMenu.message
+    this.closeContextMenu()
+    const text = message?.text ?? (message as any)?.caption
+    if (!text) return
+    navigator.clipboard?.writeText(text)
+    this._showToast("Copied to clipboard", "success")
+  },
+
+  menuDelete(this: any) {
+    const message: Message | null = this.ctxMenu.message
+    this.closeContextMenu()
+    if (!message) return
+    this._sendToWorker({ command: "delete-message", message_id: message.message_id })
+  },
+
+  replyPreview(this: any, message: Message | null): string {
+    if (!message) return ""
+    const raw = message.text ?? (message as any).caption ?? "…"
+    return raw.length > 60 ? `${raw.slice(0, 60)}…` : raw
   },
 
   tapChatButton(this: any, button: InlineKeyboardButton, message: Message) {
@@ -211,7 +285,9 @@ export const chatMethods = {
     const entities = message.entities ?? withCaption.caption_entities ?? []
     const media = describeMedia(message)
     return (
-      (media ? `<span class="msg-media">${media}</span> ` : "") + renderEntitiesHtml(text, entities)
+      replyQuoteHtml(message) +
+      (media ? `<span class="msg-media">${media}</span> ` : "") +
+      renderEntitiesHtml(text, entities)
     )
   },
 

@@ -17,7 +17,7 @@ import type { FileContent } from "@effect-ak/tg-bot-client"
 import { isInlineKeyboard } from "./outgoing"
 import type { EmulatorState } from "./state"
 import { commandEntities } from "./text"
-import type { TapButtonOptions, UserMediaOptions } from "./types"
+import type { TapButtonOptions, UserMediaOptions, UserSendOptions } from "./types"
 
 const hasButton = (message: Message, callback_data: string): boolean =>
   isInlineKeyboard(message.reply_markup) &&
@@ -39,13 +39,26 @@ export const userActions = (state: EmulatorState) => {
     return message
   }
 
-  const sendMessage = (text: string): Message => {
+  const sendMessage = (text: string, options: UserSendOptions = {}): Message => {
     const entities = commandEntities(text)
+    const replyTo =
+      options.reply_to !== undefined
+        ? state.messages.find((m) => m.message_id === options.reply_to)
+        : undefined
     return deliver({
       ...baseMessage(),
       text,
-      ...(entities ? { entities } : {})
+      ...(entities ? { entities } : {}),
+      ...(replyTo ? { reply_to_message: replyTo } : {})
     })
+  }
+
+  const deleteMessage = (message_id: number): void => {
+    const exists = state.messages.some((m) => m.message_id === message_id)
+    if (!exists) throw new Error(`deleteMessage: message ${message_id} not found`)
+    state.messages = state.messages.filter((m) => m.message_id !== message_id)
+    state.reactions.delete(message_id)
+    state.emit({ type: "message_deleted", message_id })
   }
 
   const sendUserMedia = (
@@ -179,6 +192,7 @@ export const userActions = (state: EmulatorState) => {
 
   return {
     sendMessage,
+    deleteMessage,
     sendPhoto,
     sendDocument,
     tapButton,

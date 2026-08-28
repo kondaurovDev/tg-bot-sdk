@@ -114,8 +114,10 @@ instead of hanging it.
 
 ## What Is Emulated
 
-A single private chat between one user and the bot, and the methods a typical
-bot loop needs:
+The emulator deliberately models **one private 1:1 chat** between one user and
+the bot — the mode most bots are built and tested in first. Groups, channels,
+and topics are not modeled. Inside that chat, the methods a typical bot loop
+needs:
 
 | Area             | Methods                                                                                                                                                      |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |

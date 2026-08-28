@@ -23,10 +23,19 @@ console.log(reply.text) // "Hello!"
 bot.stop()
 ```
 
+## Scope: a private chat with your bot
+
+The emulator deliberately models **one private 1:1 conversation** between one
+user and the bot — the mode most bots are built and tested in first, and the
+mode the playground's virtual phone shows. Everything below happens inside
+that single chat. Groups, channels, forum topics, and communities are not
+modeled (yet — see
+[docs/todo.md](https://github.com/kondaurovDev/tg-bot-sdk/blob/main/packages/emulator/docs/todo.md));
+methods that only make sense there return a regular "not supported" error.
+
 ## What it emulates
 
-A single virtual private chat between one user and the bot, plus the Bot API
-surface a typical bot needs:
+Inside that private chat — the Bot API surface a typical bot needs:
 
 - `get_updates` — with real long-poll semantics (a pending call resolves the
   moment an update is pushed) and offset-based confirmation
@@ -60,7 +69,9 @@ emulator.subscribe((event) => {}) // + draft / draft_cleared / chat_action / rea
 
 ```ts
 emulator.sendMessage("/help")        // delivers a `message` update
+emulator.sendMessage("yes", { reply_to: 12 }) // reply — embeds reply_to_message
 emulator.tapButton("color:red")      // taps an inline button → `callback_query` update
+emulator.deleteMessage(12)           // removes from the chat (no update, like real TG)
 emulator.sendPhoto(file)             // media updates; bytes round-trip via getFile
 emulator.sendDocument(file, { caption: "notes" })
 emulator.editMessage(id, "fixed")    // → `edited_message` update

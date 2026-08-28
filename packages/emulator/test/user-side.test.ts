@@ -150,3 +150,33 @@ const silentLogger = {
   warn: () => {},
   error: () => {}
 }
+
+describe("user reply and delete", () => {
+  it("sendMessage with reply_to embeds reply_to_message", async () => {
+    const emulator = makeTgBotEmulator()
+    const original = await emulator.client.execute("send_message", {
+      chat_id: emulator.chat.id,
+      text: "original"
+    })
+
+    emulator.sendMessage("my answer", { reply_to: original.message_id })
+
+    const updates = await emulator.client.execute("get_updates", {})
+    expect(updates[0].message?.reply_to_message?.message_id).toBe(original.message_id)
+  })
+
+  it("deleteMessage removes it from the chat without an update", async () => {
+    const emulator = makeTgBotEmulator()
+    const message = emulator.sendMessage("oops")
+    await emulator.client.execute("get_updates", { offset: 1_000_000 }) // drain
+
+    const events: string[] = []
+    emulator.subscribe((e) => events.push(e.type))
+    emulator.deleteMessage(message.message_id)
+
+    expect(emulator.messages).toEqual([])
+    expect(events).toEqual(["message_deleted"])
+    const updates = await emulator.client.execute("get_updates", {})
+    expect(updates).toEqual([])
+  })
+})
