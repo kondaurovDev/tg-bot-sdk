@@ -70,7 +70,7 @@ export default {
 }
 ```
 
-A complete, deployable demo (several bots behind one token, KV state, GitHub Actions deploy) lives in [`example/`](./example).
+A complete, deployable demo (several bots behind one token, KV state, GitHub Actions deploy) lives in [`apps/example/`](./apps/example).
 
 ## 🎯 Key Features
 

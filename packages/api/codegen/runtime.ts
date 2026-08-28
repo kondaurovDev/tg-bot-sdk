@@ -10,7 +10,7 @@ import { MarkdownWriterService } from "./service/markdown"
 
 const configProvider = ConfigProvider.fromJson({
   "scrapper-out-dir": ["."],
-  "markdown-out-dir": ["..", "..", "docs", "src", "content", "docs", "api"]
+  "markdown-out-dir": ["..", "..", "apps", "website", "src", "content", "docs", "api"]
 })
 
 export const BotApiCodegenRuntime = ManagedRuntime.make(

@@ -1,7 +1,6 @@
 packages:
   - packages/**/*
-  - example
-  - docs
+  - apps/*
 
 overrides:
   dompurify: ^3.4.12

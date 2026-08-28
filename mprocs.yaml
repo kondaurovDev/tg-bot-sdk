@@ -1,9 +1,9 @@
 procs:
-  docs:
-    shell: pnpm --filter tg-bot-docs dev
+  website:
+    shell: pnpm --filter tg-bot-website dev
     autostart: true
-  deploy-docs:
-    shell: pnpm --filter tg-bot-docs run deploy
+  deploy-website:
+    shell: pnpm --filter tg-bot-website run deploy
     autostart: false
     autorestart: false
   test:

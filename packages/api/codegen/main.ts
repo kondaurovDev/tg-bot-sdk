@@ -21,8 +21,9 @@ import { buildBotApiSpec, buildMiniAppSpec, writeSpecJson } from "./service/spec
 
 const rootDir = path.resolve(import.meta.dirname, "..", "..", "..")
 const pkgDir = path.resolve(import.meta.dirname, "..")
-const docsDataDir = path.resolve(rootDir, "docs", "src", "data")
-const docsPublicDir = path.resolve(rootDir, "docs", "public")
+const websiteDir = path.resolve(rootDir, "apps", "website")
+const docsDataDir = path.resolve(websiteDir, "src", "data")
+const docsPublicDir = path.resolve(websiteDir, "public")
 
 const updateReadmeBadge = (pattern: RegExp, replacement: string) => {
   for (const dir of [pkgDir, rootDir]) {
@@ -72,7 +73,7 @@ const generateBotApi = Effect.fn("generate bot api")(function* () {
   )
 
   // Update JSON-LD in faq frontmatter (YAML can't use JS imports)
-  const faqPath = path.resolve(rootDir, "docs", "src", "content", "docs", "faq.mdx")
+  const faqPath = path.resolve(websiteDir, "src", "content", "docs", "faq.mdx")
   if (fs.existsSync(faqPath)) {
     const faqContent = fs.readFileSync(faqPath, "utf-8")
     fs.writeFileSync(

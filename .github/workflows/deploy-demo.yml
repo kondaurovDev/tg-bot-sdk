@@ -5,9 +5,9 @@ on:
     branches: [main]
     paths:
       - "packages/**"
-      - "example/src/bots/**"
-      - "example/src/worker.ts"
-      - "example/wrangler.jsonc"
+      - "apps/example/src/bots/**"
+      - "apps/example/src/worker.ts"
+      - "apps/example/wrangler.jsonc"
       - ".github/workflows/deploy-demo.yml"
   workflow_dispatch:
 
