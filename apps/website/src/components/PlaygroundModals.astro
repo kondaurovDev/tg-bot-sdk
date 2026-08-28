@@ -1,0 +1,36 @@
+<!-- Token input modal -->
+<div x-show="tokenModal.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+  <div class="bg-white rounded-lg shadow-lg w-[420px] p-5" @keydown.escape="cancelToken()">
+    <h3 class="text-sm font-semibold text-gray-800 mb-3">Connect your bot</h3>
+
+    <input
+      x-model="tokenModal.value"
+      @keydown.enter="submitToken()"
+      type="text"
+      placeholder="Paste bot token from BotFather"
+      class="w-full px-3 py-2 border border-gray-300 rounded text-sm focus:outline-none focus:border-blue-500 mb-3"
+      autocomplete="off"
+      spellcheck="false"
+      x-ref="tokenInput"
+    />
+
+    <p x-show="tokenModal.error" x-text="tokenModal.error" class="text-xs text-red-600 mb-2"></p>
+
+    <div class="flex justify-end gap-2">
+      <button @click="cancelToken()" class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+      <button @click="submitToken()" class="px-3 py-1.5 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded">Connect</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm modal (for webhook deletion) -->
+<div x-show="confirmModal.open" x-cloak class="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+  <div class="bg-white rounded-lg shadow-lg w-[420px] p-5">
+    <h3 class="text-sm font-semibold text-gray-800 mb-2">Webhook detected</h3>
+    <p x-text="confirmModal.description" class="text-xs text-gray-600 mb-4 whitespace-pre-line"></p>
+    <div class="flex justify-end gap-2">
+      <button @click="resolveConfirm(false)" class="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+      <button @click="resolveConfirm(true)" class="px-3 py-1.5 text-sm text-white bg-red-600 hover:bg-red-700 rounded">Delete webhook</button>
+    </div>
+  </div>
+</div>

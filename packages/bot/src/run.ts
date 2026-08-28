@@ -4,8 +4,15 @@
  * and webhook handler ({@link createWebhook}).
  */
 import type { Update, SetWebhookInput } from "@effect-ak/tg-bot-api"
-import { makeTgBotClient } from "@effect-ak/tg-bot-client"
-import type { BotUpdatesHandlers, BotLogger, RunBotInput, HandleResult, BotBehavior } from "./types"
+import { makeTgBotClient, type TgBotClient } from "@effect-ak/tg-bot-client"
+import type {
+  BotUpdatesHandlers,
+  BotLogger,
+  RunBotInput,
+  HandleResult,
+  BotBehavior,
+  ClientSource
+} from "./types"
 import { makePollSettings, UpdateFetcher } from "./polling"
 import { handleUpdates } from "./bot-processor"
 
@@ -31,18 +38,33 @@ export interface BotInstance {
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+const resolveClient = (input: ClientSource): TgBotClient => {
+  if (input.client) return input.client
+  if (input.bot_token) return makeTgBotClient({ bot_token: input.bot_token })
+  throw new Error("Either bot_token or client must be provided")
+}
+
 const extractBehavior = (input: RunBotInput): BotBehavior => {
   if (input.mode === "batch") {
     return { type: "batch", on_batch: input.on_batch }
   }
-  const { bot_token, mode, poll, onUpdate: _, onHandleResult: __, logger: ___, ...handlers } = input
+  const {
+    bot_token: _t,
+    client: _c,
+    mode,
+    poll,
+    onUpdate: _,
+    onHandleResult: __,
+    logger: ___,
+    ...handlers
+  } = input
   return { type: "single", ...handlers }
 }
 
 export const runBot = async (input: RunBotInput): Promise<BotInstance> => {
   const log = input.logger ?? consoleLogger
   const settings = makePollSettings(input.poll ?? {}, log)
-  const client = makeTgBotClient({ bot_token: input.bot_token })
+  const client = resolveClient(input)
   const fetcher = new UpdateFetcher(client, settings)
   let behavior = extractBehavior(input)
 
@@ -109,19 +131,19 @@ export const defineBot = (input: BotUpdatesHandlers) => {
 // Webhook
 // ---------------------------------------------------------------------------
 
-export interface WebhookBotConfig extends BotUpdatesHandlers {
-  bot_token: string
-  /**
-   * Secret passed to `set_webhook`. Telegram echoes it back in the
-   * `X-Telegram-Bot-Api-Secret-Token` header on every delivery; requests
-   * whose header is missing or different are rejected with `403`.
-   * Strongly recommended — without it anyone who learns the webhook URL
-   * can post forged updates. 1-256 characters: `A-Z`, `a-z`, `0-9`, `_`, `-`.
-   */
-  secret_token?: string
-  onHandleResult?: (result: HandleResult) => void
-  logger?: BotLogger
-}
+export type WebhookBotConfig = BotUpdatesHandlers &
+  ClientSource & {
+    /**
+     * Secret passed to `set_webhook`. Telegram echoes it back in the
+     * `X-Telegram-Bot-Api-Secret-Token` header on every delivery; requests
+     * whose header is missing or different are rejected with `403`.
+     * Strongly recommended — without it anyone who learns the webhook URL
+     * can post forged updates. 1-256 characters: `A-Z`, `a-z`, `0-9`, `_`, `-`.
+     */
+    secret_token?: string
+    onHandleResult?: (result: HandleResult) => void
+    logger?: BotLogger
+  }
 
 export const SECRET_TOKEN_HEADER = "X-Telegram-Bot-Api-Secret-Token"
 
@@ -153,9 +175,9 @@ const timingSafeEqual = (a: string, b: string): boolean => {
 }
 
 export const createWebhook = (config: WebhookBotConfig): WebhookHandler => {
-  const { bot_token, secret_token, onHandleResult, logger, ...handlers } = config
+  const { bot_token: _t, client: _c, secret_token, onHandleResult, logger, ...handlers } = config
   const log = logger ?? consoleLogger
-  const client = makeTgBotClient({ bot_token })
+  const client = resolveClient(config)
   const settings = makePollSettings({}, log)
 
   if (!secret_token) {

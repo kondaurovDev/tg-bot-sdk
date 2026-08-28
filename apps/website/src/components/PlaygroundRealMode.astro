@@ -1,0 +1,37 @@
+<!-- Real mode: the conversation happens in the actual Telegram app -->
+<div x-show="mode === 'real'" x-cloak class="flex-1 min-h-0 flex items-center justify-center px-4 py-5">
+  <div class="bg-white rounded-2xl shadow-lg border border-gray-200 px-8 py-8 max-w-sm text-center">
+    <div class="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white mb-4">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M2.4 21.6 22.8 12 2.4 2.4l.01 7.2 14.4 2.4-14.4 2.4z"/></svg>
+    </div>
+
+    <template x-if="isConnected">
+      <div>
+        <h2 class="text-base font-semibold text-gray-800 mb-1">Your bot is live</h2>
+        <p class="text-sm text-gray-500 mb-4">
+          Open it in Telegram and send a message — updates show up in the console below.
+        </p>
+        <a
+          :href="'https://t.me/' + botName"
+          target="_blank"
+          rel="noopener"
+          class="inline-block px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
+          x-text="'Open @' + botName"
+        ></a>
+      </div>
+    </template>
+
+    <template x-if="!isConnected">
+      <div>
+        <h2 class="text-base font-semibold text-gray-800 mb-1">Connect your bot</h2>
+        <p class="text-sm text-gray-500 mb-4">
+          Paste a token from BotFather to run the code against your real Telegram bot.
+        </p>
+        <button
+          @click="connectBot()"
+          class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
+        >Connect bot</button>
+      </div>
+    </template>
+  </div>
+</div>

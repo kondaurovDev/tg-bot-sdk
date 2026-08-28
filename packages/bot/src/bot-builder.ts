@@ -13,7 +13,8 @@ import type {
   HandlerOutput,
   AvailableUpdateTypes,
   BotLogger,
-  HandleResult
+  HandleResult,
+  ClientSource
 } from "./types"
 
 import type { PollSettings } from "./polling"
@@ -69,16 +70,14 @@ export type HandlerRegistration<U, H> =
 // Bot config for run / webhook
 // ---------------------------------------------------------------------------
 
-export interface BotRunConfig {
-  bot_token: string
+export type BotRunConfig = ClientSource & {
   poll?: Partial<PollSettings>
   onUpdate?: (update: Update) => void
   onHandleResult?: (result: HandleResult) => void
   logger?: BotLogger
 }
 
-export interface BotWebhookConfig {
-  bot_token: string
+export type BotWebhookConfig = ClientSource & {
   /** Secret token verified against `X-Telegram-Bot-Api-Secret-Token`; see `WebhookBotConfig`. */
   secret_token?: string
   onHandleResult?: (result: HandleResult) => void

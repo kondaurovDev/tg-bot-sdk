@@ -1,0 +1,12 @@
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-2">
+  <template x-for="toast in toasts" :key="toast.id">
+    <div
+      class="px-4 py-2 rounded-lg shadow-lg text-sm font-medium"
+      :class="[
+        toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white',
+        toast.exiting ? 'toast-exit' : 'toast-enter'
+      ]"
+      x-text="toast.text"
+    ></div>
+  </template>
+</div>

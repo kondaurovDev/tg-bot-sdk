@@ -4,6 +4,7 @@
  * Every other module in the package depends on this one.
  */
 import type { Api, Update } from "@effect-ak/tg-bot-api"
+import type { TgBotClient } from "@effect-ak/tg-bot-client"
 
 // ---------------------------------------------------------------------------
 // BotResponse
@@ -27,11 +28,31 @@ export type BotApiCall = {
   [K in keyof Api]: { method: K; params: ApiParams<K> }
 }[keyof Api]
 
+/** What `ctx.stream` accepts: a string (split into words), sync or async chunks. */
+export type StreamSource = string | Iterable<string> | AsyncIterable<string>
+
+export interface StreamOptions {
+  /**
+   * Pause between draft updates in milliseconds — it paces the animation
+   * and keeps `send_message_draft` calls under control. `0` disables
+   * pacing (drafts go out as fast as chunks arrive). Default: `200`.
+   */
+  interval_ms?: number
+  /** Parse mode applied to the FINAL message; drafts stream as plain text. */
+  parse_mode?: "HTML" | "MarkdownV2"
+  /** Reply markup attached to the final message. */
+  reply_markup?: ApiParams<"send_message">["reply_markup"]
+}
+
 /**
  * A single action the runner performs after a handler returns:
- * either a `send_*` shorthand or an explicit API call.
+ * a `send_*` shorthand, an explicit API call, or a streamed reply
+ * (`send_message_draft` per chunk, finalized with `send_message`).
  */
-export type BotAction = { send: BotResult } | { call: BotApiCall }
+export type BotAction =
+  | { send: BotResult }
+  | { call: BotApiCall }
+  | { stream: { source: StreamSource; options?: StreamOptions } }
 
 export class BotResponse {
   readonly actions: readonly BotAction[]
@@ -107,23 +128,29 @@ export interface BotLogger {
 
 export type RunBotInput = RunBotInputSingle | RunBotInputBatch
 
-export interface RunBotInputSingle extends BotUpdatesHandlers {
-  bot_token: string
-  mode: "single"
+/**
+ * Where Bot API calls go: a bot token (the default HTTP client is built
+ * from it) or a ready-made client — e.g. an in-memory emulator for tests
+ * or the playground. When both are given, `client` wins.
+ */
+export type ClientSource =
+  | { bot_token: string; client?: TgBotClient }
+  | { client: TgBotClient; bot_token?: string }
+
+export interface RunBotOptions {
   poll?: Partial<import("./polling").PollSettings>
   onUpdate?: (update: Update) => void
   onHandleResult?: (result: HandleResult) => void
   logger?: BotLogger
 }
 
-export interface RunBotInputBatch extends HandleBatchUpdateFunction {
-  bot_token: string
-  mode: "batch"
-  poll?: Partial<import("./polling").PollSettings>
-  onUpdate?: (update: Update) => void
-  onHandleResult?: (result: HandleResult) => void
-  logger?: BotLogger
-}
+export type RunBotInputSingle = BotUpdatesHandlers &
+  ClientSource &
+  RunBotOptions & { mode: "single" }
+
+export type RunBotInputBatch = HandleBatchUpdateFunction &
+  ClientSource &
+  RunBotOptions & { mode: "batch" }
 
 export type ExtractedUpdate<K extends AvailableUpdateTypes> = {
   type: K
@@ -189,6 +216,14 @@ export interface BotContext {
   readonly deleteMessage: () => BotResponse
   /** Respond with an arbitrary Bot API method call. */
   readonly call: <K extends keyof Api>(method: K, params: ApiParams<K>) => BotResponse
+  /**
+   * Stream the reply the way AI bots do (Bot API 9.3+): a "Thinking…"
+   * placeholder, then a `send_message_draft` per chunk (animated in
+   * place), then a final `send_message` with the full text. Accepts a
+   * string (split into words), an `Iterable<string>`, or an
+   * `AsyncIterable<string>` — e.g. an LLM token stream.
+   */
+  readonly stream: (source: StreamSource, options?: StreamOptions) => BotResponse
   readonly ignore: BotResponse
 }
 
@@ -342,6 +377,8 @@ export const createBotContext = (update: unknown): BotContext => {
       return BotResponse.call("delete_message", target)
     },
     call: (method, params) => BotResponse.call(method, params),
+    stream: (source, options) =>
+      new BotResponse([{ stream: { source, ...(options ? { options } : {}) } }]),
     ignore: BotResponse.ignore
   }
 }

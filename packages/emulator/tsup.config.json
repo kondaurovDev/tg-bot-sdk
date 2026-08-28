@@ -1,0 +1,10 @@
+{
+  "$schema": "https://cdn.jsdelivr.net/npm/tsup/schema.json",
+  "entry": ["src/index.ts"],
+  "outDir": "dist",
+  "format": ["esm", "cjs"],
+  "splitting": false,
+  "sourcemap": false,
+  "clean": true,
+  "dts": true
+}

@@ -1,0 +1,12 @@
+{
+  "$schema": "./node_modules/procdeck/schema.json",
+  "name": "tg-bot-sdk",
+  "port": 4830,
+  "procs": [
+    {
+      "id": "website",
+      "shell": "pnpm --filter tg-bot-website dev --port ${port}",
+      "url": "http://localhost:${port}/playground/"
+    }
+  ]
+}

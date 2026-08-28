@@ -1,0 +1,66 @@
+<header class="flex items-center gap-3 px-4 h-12 bg-white border-b border-gray-200/80">
+  <a href="/" class="text-sm text-gray-400 hover:text-gray-700 whitespace-nowrap">&larr; Docs</a>
+  <span class="text-base font-bold text-gray-800 whitespace-nowrap">Playground</span>
+
+  <!-- Mode: where the bot runs -->
+  <div class="flex items-center bg-gray-100 rounded-lg p-0.5 text-sm whitespace-nowrap ml-2">
+    <button
+      @click="setMode('virtual')"
+      class="flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors"
+      :class="mode === 'virtual' ? 'bg-white shadow-sm text-gray-900 font-medium' : 'text-gray-500 hover:text-gray-800'"
+      title="Run the bot in an in-browser emulator — no token needed"
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="3"/><path d="M11 18h2" stroke-linecap="round"/></svg>
+      Emulator
+    </button>
+    <button
+      @click="setMode('real')"
+      class="flex items-center gap-1.5 px-3 py-1 rounded-md transition-colors"
+      :class="mode === 'real' ? 'bg-white shadow-sm text-gray-900 font-medium' : 'text-gray-500 hover:text-gray-800'"
+      title="Run against your real Telegram bot via its token"
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M2.4 21.6 22.8 12 2.4 2.4l.01 7.2 14.4 2.4-14.4 2.4z"/></svg>
+      Real bot
+    </button>
+  </div>
+
+  <button
+    x-show="mode === 'real' && canRun"
+    x-cloak
+    @click="botDot === 'running' ? stopBot() : runCurrentCode()"
+    class="px-3.5 py-1.5 text-sm font-medium text-white rounded-lg whitespace-nowrap flex items-center gap-1.5 transition-colors"
+    :class="botDot === 'running'
+      ? 'bg-red-500 hover:bg-red-600'
+      : 'bg-green-600 hover:bg-green-700'"
+  >
+    <span x-text="botDot === 'running' ? '■ Stop' : '▶ Run'"></span>
+    <span x-show="botDot !== 'running'" class="text-[10px] text-white/60 font-mono" x-text="shortcutHint"></span>
+  </button>
+
+  <div x-show="mode === 'real'" x-cloak class="ml-auto flex items-center gap-2 text-sm">
+    <span class="flex items-center gap-1.5" :class="statusClass">
+      <span class="w-2 h-2 rounded-full inline-block" :class="dotClass"></span>
+      <span x-html="statusText"></span>
+    </span>
+    <button
+      @click="connectBot()"
+      class="px-3 py-1.5 rounded-lg whitespace-nowrap text-sm transition-colors"
+      :class="isConnected
+        ? 'text-gray-500 hover:text-gray-800 hover:bg-gray-100'
+        : 'text-white bg-blue-600 hover:bg-blue-700 font-medium'"
+      x-text="isConnected ? 'Reconnect' : 'Connect bot'"
+    ></button>
+    <button
+      x-show="hasSavedToken && isConnected"
+      x-cloak
+      @click="forgetToken()"
+      class="px-2 py-1 text-xs text-gray-400 hover:text-red-500 whitespace-nowrap"
+      title="Remove saved token"
+    >Forget</button>
+  </div>
+
+  <div x-show="mode === 'virtual'" x-cloak class="ml-auto flex items-center gap-1.5 text-xs text-gray-400">
+    <span class="w-1.5 h-1.5 rounded-full inline-block" :class="dotClass"></span>
+    <span>in-browser emulator</span>
+  </div>
+</header>

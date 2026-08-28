@@ -45,6 +45,19 @@ export const typeAliasOverrides: Record<string, SpecType> = {
   ])
 }
 
+// ── Union extension overrides ──
+
+/**
+ * Members appended to a union entity scraped from a subtype list. Some
+ * docs pages describe extra leaves only in prose — e.g. RichText:
+ * "Currently, it can be either a String for plain text, an Array of
+ * RichText, or any of the following types" — which the list parser
+ * cannot see.
+ */
+export const unionExtensionOverrides: Record<string, SpecType[]> = {
+  RichText: [P.string, array(ref("RichText"))]
+}
+
 // ── Global field overrides ──
 
 export interface GlobalFieldOverride {

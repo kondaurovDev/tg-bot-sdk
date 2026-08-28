@@ -39,7 +39,7 @@ Handlers are checked in order, top to bottom. The first match wins — the rest 
 
 Every handler receives `{ payload, ctx }`:
 
-- **`payload`** — the typed content of the update: a `Message` for `onMessage`, a `CallbackQuery` for `onCallbackQuery`, and so on. It is *not* the `Update` envelope, so `payload.text`, `payload.chat.id`, `payload.data` are right there.
+- **`payload`** — the typed content of the update: a `Message` for `onMessage`, a `CallbackQuery` for `onCallbackQuery`, and so on. It is _not_ the `Update` envelope, so `payload.text`, `payload.chat.id`, `payload.data` are right there.
 - **`ctx`** — helpers that build the response (`ctx.reply`, `ctx.editMessageText`, …) plus `ctx.command`.
 
 ### Shortcuts
@@ -134,7 +134,10 @@ All Telegram `send_*` methods are supported via `BotResponse.make`: `message`, `
 A handler may return an **array** of responses; the calls run sequentially in the given order. `.and()` and `BotResponse.all()` do the same when you compose responses elsewhere:
 
 ```typescript
-data("save", ({ ctx }) => [ctx.answerCallbackQuery({ text: "Done" }), ctx.editMessageText("Saved ✅")])
+data("save", ({ ctx }) => [
+  ctx.answerCallbackQuery({ text: "Done" }),
+  ctx.editMessageText("Saved ✅")
+])
 
 command("/two", ({ ctx }) => ctx.reply("one").and(ctx.reply("two")))
 ```
@@ -203,6 +206,26 @@ createBot()
   .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("Welcome!"))])
   .onCallbackQuery(({ data }) => [data("confirm", ({ ctx }) => ctx.editMessageText("Confirmed!"))])
 ```
+
+## Streaming Replies
+
+`ctx.stream` sends the reply the way AI bots do (Bot API 9.3+): a "Thinking…"
+placeholder, then a live draft that grows with every chunk
+(`send_message_draft`, animated in place), then a final `send_message` with
+the full text.
+
+```typescript
+createBot()
+  // a string is split into words — handy for demos
+  .command("/story", ({ ctx }) => ctx.stream("Once upon a time…", { interval_ms: 120 }))
+  // any AsyncIterable<string> works — e.g. an LLM token stream
+  .onText(({ payload, ctx }) => ctx.stream(askLlm(payload.text!)))
+```
+
+Options: `interval_ms` paces the draft updates (default `200`, `0` disables
+pacing), `parse_mode` and `reply_markup` apply to the final message. If the
+source throws mid-stream, whatever was buffered is still finalized. Try it
+live in the [playground](/playground/) — the "Streaming" example.
 
 ## Error Handling
 

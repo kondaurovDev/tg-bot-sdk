@@ -1,0 +1,55 @@
+{
+  "name": "@effect-ak/tg-bot-emulator",
+  "version": "1.11.0",
+  "description": "In-memory Telegram Bot API emulator: test bots without a token, network, or BotFather",
+  "keywords": [
+    "emulator",
+    "mock",
+    "telegram",
+    "telegram-bot",
+    "testing",
+    "typescript"
+  ],
+  "homepage": "https://tg-bot-sdk.website",
+  "license": "MIT",
+  "author": {
+    "name": "Aleksandr Kondaurov",
+    "email": "kondaurov.dev@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kondaurovDev/tg-bot-sdk",
+    "directory": "packages/emulator"
+  },
+  "files": [
+    "dist/*.js",
+    "dist/*.cjs",
+    "dist/*.d.ts"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./dist/*": "./dist/*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@effect-ak/tg-bot-api": "workspace:^",
+    "@effect-ak/tg-bot-client": "workspace:^"
+  },
+  "devDependencies": {
+    "@effect-ak/tg-bot": "workspace:^"
+  }
+}

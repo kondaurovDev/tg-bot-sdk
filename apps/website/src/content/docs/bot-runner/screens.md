@@ -49,10 +49,10 @@ createBot().use(screens).webhook({ bot_token: BOT_TOKEN, secret_token: WEBHOOK_S
 
 ## Buttons
 
-| Shape                        | Behaviour                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| `{ label, next: "id" }`      | Navigate: the message is edited to show screen `id`                       |
-| `{ label, url }`             | Open a link                                                               |
+| Shape                        | Behaviour                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------- |
+| `{ label, next: "id" }`      | Navigate: the message is edited to show screen `id`                        |
+| `{ label, url }`             | Open a link                                                                |
 | `{ label, action: handler }` | Run `handler({ payload, ctx })` and send whatever it returns; screen stays |
 
 `buttons` is either an array of rows (`[[a, b], [c]]`) or a flat list (`[a, b, c]` — one button per row).
@@ -64,7 +64,8 @@ createBot().use(screens).webhook({ bot_token: BOT_TOKEN, secret_token: WEBHOOK_S
 ```typescript
 const screens = defineScreens({
   root: {
-    text: async ({ payload }) => `Hello, ${"from" in payload ? payload.from?.first_name : "there"}!`,
+    text: async ({ payload }) =>
+      `Hello, ${"from" in payload ? payload.from?.first_name : "there"}!`,
     buttons: async () => ((await isOpen()) ? [{ label: "Book", next: "book" }] : [])
   },
   book: { text: "…", parent: "root" }

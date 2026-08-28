@@ -18,7 +18,11 @@ import he from "he"
 
 import type { HtmlElement } from "~/types"
 import { collectWarning } from "~/warnings"
-import { returnTypeOverrides, typeAliasOverrides } from "~/scrape/overrides"
+import {
+  returnTypeOverrides,
+  typeAliasOverrides,
+  unionExtensionOverrides
+} from "~/scrape/overrides"
 import {
   NormalType,
   EntityFields,
@@ -384,10 +388,20 @@ const extractFromNode = (
 
   if (type._tag == "Left") return Either.left(type.left)
 
+  let entityType = type.right
+  // Union leaves the list parser cannot see (documented only in prose)
+  const extension = unionExtensionOverrides[entityName]
+  if (extension && entityType instanceof NormalType && entityType.spec.kind === "union") {
+    entityType = NormalType.fromSpec({
+      kind: "union",
+      members: [...extension, ...entityType.spec.members]
+    })
+  }
+
   return Either.right({
     entityName,
     entityDescription: entityDescription.right,
-    type: type.right
+    type: entityType
   })
 }
 

@@ -1,0 +1,63 @@
+<!-- Console: a slim status strip with a slide-up logs drawer -->
+<div class="relative z-10">
+  <!-- Drawer -->
+  <div
+    x-show="logsOpen"
+    x-cloak
+    x-transition:enter="logs-drawer-enter"
+    x-transition:enter-start="translate-y-4 opacity-0"
+    x-transition:enter-end="translate-y-0 opacity-100"
+    class="absolute bottom-full left-0 right-0 h-72 bg-white border-t border-gray-200 shadow-[0_-12px_24px_-16px_rgba(15,23,42,0.35)] flex flex-col"
+  >
+    <div class="flex items-center justify-end gap-2 px-3 py-1.5 border-b border-gray-100">
+      <button
+        @click="toggleVerbose()"
+        class="text-[10px] px-1.5 py-0.5 rounded"
+        :class="verbose ? 'bg-blue-100 text-blue-700' : 'text-gray-400 hover:text-gray-600'"
+      >Verbose</button>
+      <button
+        @click="logs = []"
+        class="text-xs text-gray-400 hover:text-gray-600"
+      >Clear</button>
+    </div>
+    <div
+      x-ref="logsContainer"
+      class="flex-1 min-h-0 overflow-y-auto hide-scrollbar p-2 font-mono text-xs"
+    >
+      <template x-for="(log, i) in filteredLogs" :key="i">
+        <div
+          class="px-2 py-1.5 border-b border-gray-200 border-l-2 whitespace-pre-wrap"
+          :class="[logBorderClass(log), _isCollapsible(log) ? 'cursor-pointer hover:bg-gray-100' : '']"
+          @click="toggleLog(i)"
+        >
+          <span class="text-gray-400 select-none" x-text="log.time + '  '"></span>
+          <span
+            x-show="_isCollapsible(log)"
+            class="text-gray-400 select-none"
+            x-text="log.collapsed ? '▶ ' : '▼ '"
+          ></span>
+          <span :class="log.isUpdate ? 'text-blue-700' : ''" x-text="logDisplayText(log)"></span>
+        </div>
+      </template>
+      <div x-show="filteredLogs.length === 0" class="text-center text-gray-400 mt-6">No logs yet</div>
+    </div>
+  </div>
+
+  <!-- Status strip -->
+  <button
+    @click="logsOpen = !logsOpen"
+    class="w-full h-9 flex items-center gap-4 px-3 bg-white border-t border-gray-200 text-xs font-mono hover:bg-gray-50"
+  >
+    <span class="flex items-center gap-1.5 font-sans font-semibold text-gray-500 uppercase tracking-wide text-[10px]">
+      <span
+        class="inline-block transition-transform text-gray-400"
+        :class="logsOpen ? 'rotate-180' : ''"
+      >&#9650;</span>
+      Console<span x-show="filteredLogs.length > 0" class="text-gray-400 normal-case" x-text="'(' + filteredLogs.length + ')'"></span>
+    </span>
+    <span class="text-green-700">handled <span x-text="stats.handled"></span></span>
+    <span class="text-gray-400">ignored <span x-text="stats.ignored"></span></span>
+    <span class="text-yellow-600">no handler <span x-text="stats.noHandler"></span></span>
+    <span :class="stats.errors > 0 ? 'text-red-600 font-semibold' : 'text-gray-400'">errors <span x-text="stats.errors"></span></span>
+  </button>
+</div>

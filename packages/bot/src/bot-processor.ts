@@ -261,6 +261,60 @@ const withAutoCallbackAnswer = (
   ]
 }
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+// Draft ids must be non-zero; reusing one animates the update in place,
+// so each stream gets its own id.
+let nextStreamDraftId = 1
+
+/**
+ * Execute a `ctx.stream` action: "Thinking…" placeholder, a
+ * `send_message_draft` per chunk (paced by `interval_ms`), then the
+ * final `send_message` with the accumulated text.
+ */
+const executeStream = async (
+  stream: Extract<BotAction, { stream: unknown }>["stream"],
+  update: ExtractedUpdate<AvailableUpdateTypes>,
+  client: TgBotClient,
+  log: BotLogger
+): Promise<void> => {
+  const chat_id = resolveChatId(update)
+  if (chat_id === undefined) {
+    log.warn("cannot stream response: update has no chat", { updateType: update.type })
+    return
+  }
+  const { source, options } = stream
+  const interval = options?.interval_ms ?? 200
+  const draft_id = nextStreamDraftId++
+  const chunks = typeof source === "string" ? source.split(/(?<=\s)/) : source
+
+  // Show "Thinking…" while the first chunk is on its way. Draft failures
+  // are not fatal: against a Bot API without drafts the final message
+  // still goes out.
+  let buffer = ""
+  await client.executeSafe("send_message_draft", { chat_id, draft_id })
+  try {
+    for await (const chunk of chunks) {
+      buffer += chunk
+      await client.executeSafe("send_message_draft", { chat_id, draft_id, text: buffer })
+      if (interval > 0) await delay(interval)
+    }
+  } catch (error) {
+    log.warn("stream source failed", error instanceof Error ? error.message : error)
+  }
+
+  if (buffer.length === 0) return
+  const result = await client.executeSafe("send_message", {
+    chat_id,
+    text: buffer,
+    ...(options?.parse_mode ? { parse_mode: options.parse_mode } : {}),
+    ...(options?.reply_markup ? { reply_markup: options.reply_markup } : {})
+  })
+  if (!result.ok) {
+    log.warn("failed to finalize stream", result.error)
+  }
+}
+
 const executeAction = async (
   action: BotAction,
   update: ExtractedUpdate<AvailableUpdateTypes>,
@@ -270,6 +324,11 @@ const executeAction = async (
 ): Promise<void> => {
   let method: string
   let params: unknown
+
+  if ("stream" in action) {
+    await executeStream(action.stream, update, client, log)
+    return
+  }
 
   if ("send" in action) {
     const chat_id = resolveChatId(update)
@@ -295,5 +354,6 @@ const executeAction = async (
 const describeResponseType = (response: BotResponse): string | undefined => {
   const first = response.actions[0]
   if (!first) return undefined
+  if ("stream" in first) return "stream"
   return "send" in first ? first.send.type : first.call.method
 }

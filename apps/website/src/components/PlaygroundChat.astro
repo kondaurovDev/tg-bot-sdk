@@ -1,0 +1,130 @@
+<!-- Virtual Telegram client: an iPhone-style mockup running the emulator chat -->
+<div x-show="mode === 'virtual'" x-cloak class="flex-1 min-h-0 flex items-center justify-center px-4 py-5">
+  <div class="phone-frame">
+    <div class="phone-screen">
+      <div class="phone-notch"></div>
+
+      <!-- Status bar + chat header -->
+      <div class="pt-2.5 pb-2 px-4 bg-white/95 backdrop-blur border-b border-gray-200 z-10">
+        <div class="flex justify-between items-center text-[11px] font-semibold text-gray-800 px-1 mb-2">
+          <span x-text="phoneTime"></span>
+          <span class="flex items-center gap-1 text-gray-700">
+            <!-- signal -->
+            <svg width="15" height="10" viewBox="0 0 15 10" fill="currentColor"><rect x="0" y="6" width="2.5" height="4" rx="0.5"/><rect x="4" y="4" width="2.5" height="6" rx="0.5"/><rect x="8" y="2" width="2.5" height="8" rx="0.5"/><rect x="12" y="0" width="2.5" height="10" rx="0.5" opacity="0.3"/></svg>
+            <!-- battery -->
+            <svg width="20" height="10" viewBox="0 0 20 10" fill="none" stroke="currentColor"><rect x="0.5" y="0.5" width="16" height="9" rx="2.5" stroke-opacity="0.4"/><rect x="2" y="2" width="11" height="6" rx="1.5" fill="currentColor" stroke="none"/><path d="M18.5 3.5v3" stroke-opacity="0.4" stroke-linecap="round"/></svg>
+          </span>
+        </div>
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center text-white text-sm font-semibold shrink-0">B</div>
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-semibold text-gray-900 truncate">Playground Bot</div>
+            <div class="text-[11px]" :class="botBusy ? 'text-blue-600' : 'text-gray-400'" x-text="botBusy ? 'typing…' : 'bot'"></div>
+          </div>
+          <button
+            @click="runCurrentCode()"
+            class="text-gray-400 hover:text-gray-600 text-base leading-none"
+            title="Restart the bot and clear the chat"
+          >&#8635;</button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div x-ref="chatContainer" class="flex-1 min-h-0 overflow-y-auto hide-scrollbar chat-wallpaper px-3 py-3 space-y-1.5">
+        <template x-for="m in chatMessages" :key="m.message_id">
+          <div class="flex" :class="isBotMessage(m) ? 'justify-start' : 'justify-end'">
+            <div class="max-w-[82%]">
+              <div
+                class="bubble"
+                :class="isBotMessage(m) ? 'bubble-in' : 'bubble-out'"
+                @click="onBubbleClick($event, m)"
+                @dblclick.prevent="toggleReaction(m)"
+                title="Double-click to react"
+              >
+                <span x-html="renderMessageHtml(m)"></span>
+                <span class="inline-flex items-baseline gap-0.5 text-[10px] text-gray-400 ml-1.5 whitespace-nowrap">
+                  <span x-text="messageTime(m)"></span>
+                  <span x-show="!isBotMessage(m)" class="text-green-600">&#10003;&#10003;</span>
+                </span>
+              </div>
+              <div x-show="chatReactions[m.message_id]" class="flex gap-1 mt-0.5 px-1">
+                <template x-for="r in chatReactions[m.message_id] ?? []" :key="r">
+                  <span class="reaction-chip" x-text="r"></span>
+                </template>
+              </div>
+              <template x-for="(row, ri) in keyboardRows(m)" :key="ri">
+                <div class="flex gap-1 mt-1">
+                  <template x-for="btn in row" :key="btn.text">
+                    <button
+                      @click="tapChatButton(btn, m)"
+                      class="flex-1 px-2 py-1.5 text-xs rounded-md bg-white/70 hover:bg-white active:bg-white/90 text-[#3a76a8] shadow-sm truncate"
+                      x-text="btn.text"
+                    ></button>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+
+        <!-- Streaming draft (send_message_draft / send_rich_message_draft) -->
+        <div x-show="chatDraft" class="flex justify-start">
+          <div class="bubble bubble-in max-w-[82%]">
+            <span x-html="renderDraftHtml()"></span><span class="draft-cursor"></span>
+          </div>
+        </div>
+
+        <div x-show="botBusy && !chatDraft" class="flex justify-start">
+          <div class="bubble bubble-in flex items-center gap-1 px-3 py-2.5">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+        </div>
+
+        <div x-show="chatMessages.length === 0 && !botBusy" class="flex justify-center pt-10">
+          <div class="bg-white/70 backdrop-blur rounded-xl px-4 py-3 text-center text-xs text-gray-500 shadow-sm">
+            <p>Your bot runs right here in the browser.</p>
+            <p class="mt-1">
+              Try
+              <button @click="sendQuickCommand('/start')" class="text-blue-600 hover:underline font-medium">/start</button>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="px-2.5 py-2 bg-white border-t border-gray-200 flex items-center gap-2">
+        <input type="file" class="hidden" x-ref="chatFile" @change="attachChatFile($event.target)" />
+        <button
+          @click="$refs.chatFile.click()"
+          class="w-8 h-8 shrink-0 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center"
+          title="Attach a file (typed text becomes the caption)"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.5 12.6 20.9a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></svg>
+        </button>
+        <input
+          x-model="chatInput"
+          @keydown.enter="sendChatMessage()"
+          type="text"
+          placeholder="Message"
+          class="flex-1 min-w-0 px-3.5 py-1.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:bg-gray-50 focus:ring-1 focus:ring-blue-400"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button
+          @click="sendChatMessage()"
+          class="w-8 h-8 shrink-0 rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white flex items-center justify-center"
+          title="Send"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M2.4 21.6 22.8 12 2.4 2.4l.01 7.2 14.4 2.4-14.4 2.4z"/></svg>
+        </button>
+      </div>
+
+      <!-- Home indicator -->
+      <div class="h-4 bg-white flex items-center justify-center">
+        <div class="w-24 h-1 rounded-full bg-gray-300"></div>
+      </div>
+    </div>
+  </div>
+</div>
