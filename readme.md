@@ -8,13 +8,14 @@ Type-safe TypeScript SDK for building Telegram bots. Types are generated from th
 
 ## 📦 Packages
 
-| Package                                         | What it is                                                                                                         | Use it when                                                               |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| [`@effect-ak/tg-bot-api`](./packages/api)       | TypeScript types for the whole Bot API + Mini Apps (`Telegram.WebApp`), regenerated from https://core.telegram.org | You only need types (own client, Mini App front-end)                      |
-| [`@effect-ak/tg-bot-client`](./packages/client) | HTTP client: `client.execute("send_message", { … })` for every method, typed errors, automatic file uploads        | Sending notifications, managing channels, integrating Telegram in an app  |
-| [`@effect-ak/tg-bot`](./packages/bot)           | Bot framework: fluent builder, guarded handlers, long polling **or** webhooks, inline-keyboard screens as data     | Building a bot — locally, on a VPS, or on Cloudflare Workers / Bun / Deno |
+| Package                                             | What it is                                                                                                                       | Use it when                                                                |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [`@effect-ak/tg-bot-api`](./packages/api)           | TypeScript types for the whole Bot API + Mini Apps (`Telegram.WebApp`), regenerated from https://core.telegram.org               | You only need types (own client, Mini App front-end)                       |
+| [`@effect-ak/tg-bot-client`](./packages/client)     | HTTP client: `client.execute("send_message", { … })` for every method, typed errors, automatic file uploads                      | Sending notifications, managing channels, integrating Telegram in an app   |
+| [`@effect-ak/tg-bot`](./packages/bot)               | Bot framework: fluent builder, guarded handlers, long polling **or** webhooks, inline-keyboard screens as data                   | Building a bot — locally, on a VPS, or on Cloudflare Workers / Bun / Deno  |
+| [`@effect-ak/tg-bot-emulator`](./packages/emulator) | In-memory Bot API emulator: a drop-in client for `bot.run()` — send messages, tap buttons, await replies, in Node or the browser | Unit-testing a bot without a token, network, or BotFather (dev dependency) |
 
-Dependency chain: `api` ← `client` ← `bot`. Method names are `snake_case` exactly as in the official docs.
+Dependency chain: `api` ← `client` ← `bot`; the emulator plugs into `bot` as a client. Method names are `snake_case` exactly as in the official docs.
 
 ## 🚀 Quick Start
 
@@ -72,6 +73,31 @@ export default {
 
 A complete, deployable demo (several bots behind one token, KV state, GitHub Actions deploy) lives in [`apps/example/`](./apps/example).
 
+### Test without a token
+
+```bash
+npm install -D @effect-ak/tg-bot-emulator
+```
+
+```typescript
+import { createBot } from "@effect-ak/tg-bot"
+import { makeTgBotEmulator } from "@effect-ak/tg-bot-emulator"
+
+const emulator = makeTgBotEmulator()
+
+const bot = await createBot()
+  .command("/start", ({ ctx }) => ctx.reply("Welcome!"))
+  .run({ client: emulator.client })
+
+emulator.sendMessage("/start")
+const reply = await emulator.nextBotMessage()
+expect(reply.text).toBe("Welcome!")
+
+bot.stop()
+```
+
+The same handlers, the same polling loop — every API call stays in memory. The emulator also models inline buttons, drafts (`ctx.stream`), reactions, media and inline mode; see [Testing Bots](https://tg-bot-sdk.website/bot-runner/testing-bots/).
+
 ## 🎯 Key Features
 
 - **Always Up-to-Date**: Types generated from official Telegram API documentation
@@ -79,6 +105,8 @@ A complete, deployable demo (several bots behind one token, KV state, GitHub Act
 - **Runs Anywhere**: native `fetch`, no dependencies — Node.js 18+, Bun, Deno, Cloudflare Workers, browsers
 - **Polling or Webhooks**: long polling needs no public URL; webhooks verify Telegram's secret token out of the box
 - **Screens**: inline-keyboard navigation declared as data (`defineScreens`) — Back, actions, edit-in-place handled for you
+- **Streaming replies**: `ctx.stream(source)` sends a "Thinking…" placeholder, a live draft per chunk, then the final message — feed it a string or an LLM token stream
+- **Testable**: `@effect-ak/tg-bot-emulator` runs your bot against an in-memory Bot API — no token, no network, works in unit tests and in the browser
 
 ## 📚 Documentation
 
@@ -97,6 +125,8 @@ Full documentation and API reference: **[tg-bot-sdk.website](https://tg-bot-sdk.
 ## 🎮 Playground
 
 Try it in your browser: **[Telegram Bot Playground](https://tg-bot-sdk.website/playground/)**
+
+Edit a bot in Monaco and chat with it in a virtual Telegram client powered by the emulator — no token needed. Switch to "real" mode with a bot token to talk to your actual bot.
 
 ## 🛠️ Development
 

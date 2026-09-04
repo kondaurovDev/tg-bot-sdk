@@ -25,6 +25,14 @@ const packages = [
     points: ["Full Bot API type coverage", "Telegram.WebApp types for Mini Apps", "Nothing shipped to your bundle"],
     install: "npm install @effect-ak/tg-bot-api",
     href: "/api-types/bot-api/"
+  },
+  {
+    name: "@effect-ak/tg-bot-emulator",
+    label: "Testing",
+    description: "In-memory Bot API emulator. Run your bot in tests without a token or network.",
+    points: ["Drop-in client for bot.run()", "Send messages, tap buttons, await replies", "Drafts, reactions, inline mode, media"],
+    install: "npm install -D @effect-ak/tg-bot-emulator",
+    href: "/bot-runner/testing-bots/"
   }
 ]
 ---
@@ -32,7 +40,7 @@ const packages = [
 <Section
   eyebrow="Packages"
   title="Pick your layer"
-  description="Take just the client, the whole framework, or only the types — each package builds on the one below it."
+  description="Take just the client, the whole framework, or only the types — each package builds on the one below it. Add the emulator to test any of them."
 >
   <div class="package-grid not-content">
     {
@@ -84,9 +92,15 @@ const packages = [
     gap: 1rem;
   }
 
+  @media (min-width: 40rem) {
+    .package-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   @media (min-width: 62rem) {
     .package-grid {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
     }
   }
 

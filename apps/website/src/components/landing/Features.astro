@@ -38,6 +38,18 @@ const features = [
     description: "Typed Telegram.WebApp API for building Mini Apps — buttons, haptics, themes, and more.",
     href: "/api-types/webapp/",
     icon: "M17 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z M12 18h.01"
+  },
+  {
+    title: "Test without a token",
+    description: "An in-memory Bot API emulator runs your bot unchanged in unit tests and in the browser playground — no token, no network.",
+    href: "/bot-runner/testing-bots/",
+    icon: "M9 3h6 M10 3v6.5L4.5 19a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3 M7 15h10"
+  },
+  {
+    title: "Streaming replies",
+    description: "ctx.stream() sends a reply the way AI bots do — a live draft that fills in chunk by chunk, then a final message.",
+    href: "/bot-runner/writing-bots/#streaming-replies",
+    icon: "M4 12h16 M4 6h10 M4 18h13"
   }
 ]
 ---
@@ -45,7 +57,7 @@ const features = [
 <Section
   eyebrow="Why this SDK"
   title="Everything typed, nothing heavy"
-  description="Three small packages that cover the whole Bot API surface — from raw types to a full bot runner."
+  description="Small packages that cover the whole Bot API surface — from raw types to a full bot runner, plus an emulator to test it all."
 >
   <div class="feature-grid not-content">
     {

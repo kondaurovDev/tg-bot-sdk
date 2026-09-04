@@ -35,7 +35,7 @@ export const GET: APIRoute = async () => {
   const body = [
     "# Telegram Bot SDK",
     "",
-    "> Type-safe TypeScript SDK for Telegram bots. Three npm packages: `@effect-ak/tg-bot-api` (types generated from the official Bot API docs), `@effect-ak/tg-bot-client` (HTTP client over native fetch, zero deps), `@effect-ak/tg-bot` (bot framework: fluent builder, long polling, webhooks with secret token, inline-keyboard screens as data).",
+    "> Type-safe TypeScript SDK for Telegram bots. Three npm packages: `@effect-ak/tg-bot-api` (types generated from the official Bot API docs), `@effect-ak/tg-bot-client` (HTTP client over native fetch, zero deps), `@effect-ak/tg-bot` (bot framework: fluent builder, long polling, webhooks with secret token, inline-keyboard screens as data, `ctx.stream` for streaming replies). Plus `@effect-ak/tg-bot-emulator` (in-memory Bot API emulator for tests: `bot.run({ client: emulator.client })`, no token or network).",
     "",
     "Conventions that matter when writing code against these packages:",
     '- Bot API methods are called in snake_case exactly as in the official docs: `client.execute("send_message", { chat_id, text })`.',
@@ -44,6 +44,7 @@ export const GET: APIRoute = async () => {
     "- Errors are discriminated unions (`{ ok: true, data } | { ok: false, error }` from `executeSafe`), or `TgBotClientError` when using `execute`.",
     "- Files are uploaded as `{ file_content: Uint8Array, file_name: string }` anywhere the API accepts `InputFile`.",
     "- Webhook handlers should always be created with `secret_token`; the handler returns 403 when the `X-Telegram-Bot-Api-Secret-Token` header does not match.",
+    "- To test a bot, pass `{ client: emulator.client }` to `run()` instead of `bot_token`, then drive it with `emulator.sendMessage(...)`, `emulator.tapButton(...)` and `await emulator.nextBotMessage()`.",
     "",
     "Source: https://github.com/kondaurovDev/tg-bot-sdk — repo conventions for agents are in `.claude/CLAUDE.md`; a runnable Cloudflare Workers demo is in `example/`.",
     "",

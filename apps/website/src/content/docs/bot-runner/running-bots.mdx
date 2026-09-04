@@ -213,6 +213,28 @@ createBot()
 | `poll_timeout`        | `10`        | Long polling timeout in seconds (2–120)                         |
 | `max_empty_responses` | `undefined` | Stop after N consecutive empty responses (useful for testing)   |
 
+## Custom Client
+
+Both `run()` and `webhook()` accept a `client` instead of `bot_token`. Anything
+with the `TgBotClient` shape works — a client you built with custom `fetch`,
+`base_url` or timeouts, or the in-memory emulator for tests:
+
+```typescript
+import { makeTgBotEmulator } from "@effect-ak/tg-bot-emulator"
+
+const emulator = makeTgBotEmulator()
+
+const instance = await createBot()
+  .command("/start", ({ ctx }) => ctx.reply("Welcome!"))
+  .run({ client: emulator.client })
+
+emulator.sendMessage("/start")
+const reply = await emulator.nextBotMessage() // { text: "Welcome!", ... }
+```
+
+`bot_token` and `client` are mutually exclusive. See [Testing Bots](/bot-runner/testing-bots/)
+for the full emulator API.
+
 ## Polling vs Webhooks
 
 |          | Long Polling                    | Webhooks                      |

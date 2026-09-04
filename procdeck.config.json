@@ -5,7 +5,7 @@
   "procs": [
     {
       "id": "website",
-      "shell": "pnpm --filter tg-bot-website dev --port ${port}",
+      "shell": "pnpm --filter website dev --port ${port}",
       "url": "http://localhost:${port}/playground/"
     }
   ]

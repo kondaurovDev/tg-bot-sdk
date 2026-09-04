@@ -6,7 +6,7 @@ description: What Telegram Bot SDK is and how its packages work together
 import { LinkCard, CardGrid } from "@astrojs/starlight/components"
 import stats from "../../../data/bot-api-stats.json"
 
-Telegram Bot SDK is a TypeScript toolkit for working with the [Telegram Bot API](https://core.telegram.org/bots/api). It consists of three small packages that can be used independently or together — from raw type definitions to a full bot framework.
+Telegram Bot SDK is a TypeScript toolkit for working with the [Telegram Bot API](https://core.telegram.org/bots/api). It consists of three small packages that can be used independently or together — from raw type definitions to a full bot framework — plus an in-memory emulator for testing bots without a token.
 
 ## What you can do
 
@@ -31,15 +31,26 @@ Telegram Bot SDK is a TypeScript toolkit for working with the [Telegram Bot API]
     description="Typed Telegram.WebApp API — buttons, cloud storage, haptics, themes."
     href="/api-types/webapp/"
   />
+  <LinkCard
+    title="Test your bot"
+    description="Run the bot against an in-memory Bot API emulator: send messages, tap buttons, assert replies. No token, no network."
+    href="/bot-runner/testing-bots/"
+  />
+  <LinkCard
+    title="Stream replies like an AI bot"
+    description="ctx.stream() turns a string or an LLM token stream into a live draft followed by a final message."
+    href="/bot-runner/writing-bots/#streaming-replies"
+  />
 </CardGrid>
 
 ## Packages
 
-| Package                    | npm                                                                                                                     | What it does                                       |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| `@effect-ak/tg-bot-client` | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-client)](https://www.npmjs.com/package/@effect-ak/tg-bot-client) | Type-safe client for calling Bot API methods       |
-| `@effect-ak/tg-bot`        | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot)](https://www.npmjs.com/package/@effect-ak/tg-bot)               | Bot framework with handlers, polling, and webhooks |
-| `@effect-ak/tg-bot-api`    | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-api)](https://www.npmjs.com/package/@effect-ak/tg-bot-api)       | TypeScript types for the entire Bot API            |
+| Package                      | npm                                                                                                                         | What it does                                                 |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `@effect-ak/tg-bot-client`   | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-client)](https://www.npmjs.com/package/@effect-ak/tg-bot-client)     | Type-safe client for calling Bot API methods                 |
+| `@effect-ak/tg-bot`          | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot)](https://www.npmjs.com/package/@effect-ak/tg-bot)                   | Bot framework with handlers, polling, and webhooks           |
+| `@effect-ak/tg-bot-api`      | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-api)](https://www.npmjs.com/package/@effect-ak/tg-bot-api)           | TypeScript types for the entire Bot API                      |
+| `@effect-ak/tg-bot-emulator` | [![npm](https://img.shields.io/npm/v/@effect-ak/tg-bot-emulator)](https://www.npmjs.com/package/@effect-ak/tg-bot-emulator) | In-memory Bot API emulator for testing bots (dev dependency) |
 
 Each package builds on the one below it: the bot framework includes the client, and the client includes the types. Install the client on its own for simpler use cases — sending notifications, managing a channel, integrating Telegram into an existing app — and the framework when you're building a full bot.
 
@@ -51,5 +62,6 @@ You never have to install more than one of them. `@effect-ak/tg-bot` re-exports 
 - **Fully type-safe** — every method knows its parameters and return type, every error is a tagged union you can pattern-match on.
 - **Zero runtime dependencies** — native `fetch` and nothing else. Runs on Node.js 18+, Bun, Deno, browsers, and edge runtimes.
 - **No webhooks required** — long polling works from any machine without a public URL. Webhooks are there when you need them for serverless.
+- **Testable without a token** — `bot.run({ client: emulator.client })` runs the same handlers against an in-memory Bot API. Unit-test the whole conversation, or try it in the [playground](/playground/) right in the browser.
 
 Ready to start? Head to the [Quick Start](/getting-started/quick-start/) — your first bot is 4 steps away.
