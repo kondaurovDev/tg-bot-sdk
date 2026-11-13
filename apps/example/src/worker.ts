@@ -21,7 +21,8 @@ import { makeTgBotClient } from "@effect-ak/tg-bot-client"
 import type { WebhookHandler } from "@effect-ak/tg-bot"
 import type { Update } from "@effect-ak/tg-bot-api"
 
-import { makeHomeBot, isHomeUpdate, HOME_COMMAND_LIST, SOURCE_URL } from "./bots/home"
+import { makeHomeBot, isHomeUpdate, SOURCE_URL } from "./bots/home"
+import { applyBotProfile } from "./profile"
 import type { ModeStore } from "./bots/home"
 import { demos, DEFAULT_DEMO } from "./bots/registry"
 
@@ -107,11 +108,10 @@ export default {
           allowed_updates: ["message", "callback_query", "inline_query", "widget_query"],
           drop_pending_updates: true
         })
-        // Show the home commands in the client's "/" menu
-        await makeTgBotClient({ bot_token: env.BOT_TOKEN }).execute("set_my_commands", {
-          commands: HOME_COMMAND_LIST
-        })
-        return new Response(`webhook registered: ${webhookUrl}`)
+        // Description, short description and the "/" menu (src/profile.ts)
+        const updated = await applyBotProfile(makeTgBotClient({ bot_token: env.BOT_TOKEN }))
+        const profile = updated.length > 0 ? `updated ${updated.join(", ")}` : "unchanged"
+        return new Response(`webhook registered: ${webhookUrl}; profile ${profile}`)
       } catch (error) {
         console.error("set_webhook failed", error)
         const message = error instanceof Error ? error.message : String(error)

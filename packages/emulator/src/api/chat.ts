@@ -5,7 +5,15 @@
 import type {
   AnswerCallbackQueryInput,
   AnswerInlineQueryInput,
+  BotCommand,
+  BotDescription,
+  BotName,
+  BotShortDescription,
   ChatFullInfo,
+  SetMyCommandsInput,
+  SetMyDescriptionInput,
+  SetMyNameInput,
+  SetMyShortDescriptionInput,
   ReactionType,
   SendChatActionInput,
   SetMessageReactionInput
@@ -27,6 +35,32 @@ const reactionEmoji = (reaction: ReactionType): string => {
 
 export const chatMethods = (state: EmulatorState) => ({
   get_me: () => state.bot,
+
+  // Bot profile. `language_code` and command `scope` are accepted and
+  // ignored: the emulator keeps the default-language, default-scope values.
+  get_my_name: (): BotName => ({ name: state.profile.name ?? state.bot.first_name }),
+  set_my_name: (input: SetMyNameInput): boolean => {
+    if (input.name) state.profile.name = input.name
+    else delete state.profile.name
+    return true
+  },
+  get_my_description: (): BotDescription => ({ description: state.profile.description }),
+  set_my_description: (input: SetMyDescriptionInput): boolean => {
+    state.profile.description = input.description ?? ""
+    return true
+  },
+  get_my_short_description: (): BotShortDescription => ({
+    short_description: state.profile.short_description
+  }),
+  set_my_short_description: (input: SetMyShortDescriptionInput): boolean => {
+    state.profile.short_description = input.short_description ?? ""
+    return true
+  },
+  get_my_commands: (): BotCommand[] => [...state.profile.commands],
+  set_my_commands: (input: SetMyCommandsInput): boolean => {
+    state.profile.commands = [...input.commands]
+    return true
+  },
 
   // `get_chat` returns the full info, not the short `Chat` carried by messages:
   // the fields it requires on top get the values of a plain private chat.

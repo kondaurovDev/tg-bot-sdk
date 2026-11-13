@@ -18,6 +18,7 @@ import {
 } from "../src/bots/home"
 import menu from "../src/bots/menu"
 import { demos } from "../src/bots/registry"
+import { applyBotProfile, BOT_PROFILE } from "../src/profile"
 import { ANSWERS, answerFor, makeStreamBot } from "../src/bots/stream"
 import tictactoe, { NEW_GAME, play, WIDGET_HTML } from "../src/bots/tictactoe"
 
@@ -174,5 +175,23 @@ describe("home", () => {
         }
       })
     ).toBe(true)
+  })
+})
+
+describe("bot profile", () => {
+  it("fits Telegram's limits", () => {
+    expect(BOT_PROFILE.short_description.length).toBeLessThanOrEqual(120)
+    expect(BOT_PROFILE.description.length).toBeLessThanOrEqual(512)
+  })
+
+  it("is applied once, and a second deploy changes nothing", async () => {
+    const emulator = makeTgBotEmulator()
+    expect(await applyBotProfile(emulator.client)).toEqual([
+      "description",
+      "short description",
+      "commands"
+    ])
+    expect(await emulator.client.execute("get_my_commands", {})).toEqual(BOT_PROFILE.commands)
+    expect(await applyBotProfile(emulator.client)).toEqual([])
   })
 })

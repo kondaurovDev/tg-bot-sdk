@@ -4,7 +4,14 @@
  * queue with its long-poll waiters, the active draft, reactions, and
  * uploaded files. Method handlers mutate the world only through this.
  */
-import type { Chat, InlineQueryResult, Message, Update, User } from "@effect-ak/tg-bot-api"
+import type {
+  BotCommand,
+  Chat,
+  InlineQueryResult,
+  Message,
+  Update,
+  User
+} from "@effect-ak/tg-bot-api"
 
 import { EmulatorApiError } from "./errors"
 import type { EmulatorDraft, EmulatorEvent, WidgetRequestOutcome } from "./types"
@@ -12,6 +19,14 @@ import type { EmulatorDraft, EmulatorEvent, WidgetRequestOutcome } from "./types
 export interface UploadedFile {
   content: Uint8Array
   file_name: string
+}
+
+/** The bot's profile as `set_my_*` leave it (default language and scope only). */
+export interface BotProfile {
+  name?: string
+  description: string
+  short_description: string
+  commands: BotCommand[]
 }
 
 /** What the server knows about a widget message beyond what `Message.widget` shows. */
@@ -48,6 +63,8 @@ export class EmulatorState {
   readonly widgetQueries = new Map<string, (outcome: WidgetRequestOutcome) => void>()
   /** Messages whose widget has a request in flight (one at a time per widget). */
   readonly busyWidgets = new Set<number>()
+  /** Survives `reset()`: it belongs to the bot, not to the chat. */
+  readonly profile: BotProfile = { description: "", short_description: "", commands: [] }
 
   nextMessageId = 1
   nextUpdateId = 1

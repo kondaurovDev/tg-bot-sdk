@@ -1,12 +1,14 @@
 # Examples & live demo on Cloudflare Workers
 
+**Live:** [@effect_ak_bot](https://t.me/effect_ak_bot)
+
 One Worker, one Telegram bot account, several demo bots inside. `/start` describes the library; `/demo` opens an inline menu to pick the active demo — the choice is stored per chat in KV and all other messages are routed to it.
 
 The bots themselves live in [`src/bots/`](src/bots) — plain `createBot()` definitions. The Worker is the primary way to run them; the same bots can also be started locally with long polling (`pnpm polling <name>`).
 
 ## Deployment (GitHub Actions)
 
-[`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml) builds the packages, deploys the Worker with `wrangler`, pushes the bot secrets and registers the Telegram webhook via the Worker's `/setup` route. It runs after every green Build of a push to `main`, and on manual dispatch. The run's summary names the bot (`t.me/<username>`, from `getMe`) and the Worker URL.
+[`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml) builds the packages, deploys the Worker with `wrangler`, pushes the bot secrets and registers the Telegram webhook via the Worker's `/setup` route. It runs after every green Build of a push to `main`, and on manual dispatch. The run's summary names the bot (`t.me/<username>`, from `getMe`) and the Worker URL. `/setup` also applies the bot's profile from [`src/profile.ts`](src/profile.ts) — description, short description and the "/" menu — writing only what differs; the profile photo is set once in @BotFather (`/setuserpic`).
 
 Repository secrets it needs:
 

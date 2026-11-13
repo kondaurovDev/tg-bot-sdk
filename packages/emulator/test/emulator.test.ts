@@ -288,3 +288,30 @@ describe("ctx.stream integration", () => {
     }
   })
 })
+
+describe("bot profile", () => {
+  it("stores what set_my_* sets, and keeps it across reset()", async () => {
+    const emulator = makeTgBotEmulator()
+    expect(await emulator.client.execute("get_my_name", {})).toEqual({ name: "Bot" })
+    expect(await emulator.client.execute("get_my_description", {})).toEqual({ description: "" })
+
+    await emulator.client.execute("set_my_name", { name: "Demo" })
+    await emulator.client.execute("set_my_description", { description: "What I do" })
+    await emulator.client.execute("set_my_short_description", { short_description: "Short" })
+    await emulator.client.execute("set_my_commands", {
+      commands: [{ command: "start", description: "Start" }]
+    })
+    emulator.reset()
+
+    expect(await emulator.client.execute("get_my_name", {})).toEqual({ name: "Demo" })
+    expect(await emulator.client.execute("get_my_description", {})).toEqual({
+      description: "What I do"
+    })
+    expect(await emulator.client.execute("get_my_short_description", {})).toEqual({
+      short_description: "Short"
+    })
+    expect(await emulator.client.execute("get_my_commands", {})).toEqual([
+      { command: "start", description: "Start" }
+    ])
+  })
+})
