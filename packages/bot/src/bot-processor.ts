@@ -346,9 +346,9 @@ const executeStream = async (
  * `send_<type>` is a real method by construction of `BotResult`, but the
  * compiler cannot follow a method name assembled from a prefix.
  */
-const toSendCall = (send: BotResult, chat_id: number): BotApiCall =>
+const toSendCall = ({ type, ...params }: BotResult, chat_id: number): BotApiCall =>
   // oxlint-disable-next-line typescript/consistent-type-assertions
-  ({ method: `send_${send.type}`, params: { ...send, chat_id } }) as BotApiCall
+  ({ method: `send_${type}`, params: { ...params, chat_id } }) as BotApiCall
 
 /** Generic in the method, so the name and its parameters stay the same type. */
 const executeCall = async <K extends keyof Api>(

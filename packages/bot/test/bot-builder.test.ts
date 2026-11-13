@@ -1,8 +1,10 @@
 import type { Message, Update } from "@effect-ak/tg-bot-api"
+import { readFileSync } from "node:fs"
+import * as Path from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { createBot } from "~/bot-builder"
-import { BotResponse } from "~/types"
+import { BotResponse, type AvailableUpdateTypes } from "~/types"
 
 // ---------------------------------------------------------------------------
 // End-to-end testing strategy
@@ -223,6 +225,42 @@ describe("createBot — message helpers via webhook", () => {
     expect(lastUrl(fetchSpy)).toBe(`https://api.telegram.org/bot${TOKEN}/sendDocument`)
   })
 
+  // The shorthand's `type` picks the method; it is not a parameter of it.
+  it("does not send the shorthand's `type` as a parameter", async () => {
+    const handler = createBot()
+      .onMessage(({ command }) => [command("/hi", ({ ctx }) => ctx.reply("hello"))])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, messageWithCommand("/hi"))
+
+    const sent = decodeFormData(fetchCalls(fetchSpy)[0]?.[1])
+    expect(sent).toMatchObject({ chat_id: "99", text: "hello" })
+    expect(sent).not.toHaveProperty("type")
+  })
+
+  // `send_poll` has a `type` parameter of its own ("quiz" | "regular"):
+  // `type=poll` used to reach Telegram and fail the call.
+  it("sends a poll through the shorthand without a `type` parameter", async () => {
+    const handler = createBot()
+      .onMessage(({ command }) => [
+        command("/poll", () =>
+          BotResponse.make({
+            type: "poll",
+            question: "Q?",
+            options: [{ text: "a" }, { text: "b" }]
+          })
+        )
+      ])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, messageWithCommand("/poll"))
+
+    expect(lastUrl(fetchSpy)).toBe(`https://api.telegram.org/bot${TOKEN}/sendPoll`)
+    const sent = decodeFormData(fetchCalls(fetchSpy)[0]?.[1])
+    expect(sent).toMatchObject({ chat_id: "99", question: "Q?" })
+    expect(sent).not.toHaveProperty("type")
+  })
+
   it("text helper matches messages with text", async () => {
     const handler = createBot()
       .onMessage(({ text }) => [text(({ ctx }) => ctx.reply("got text"))])
@@ -365,6 +403,40 @@ describe("createBot — multiple update types", () => {
 
     await sendUpdate(handler, callbackQueryUpdate("anything"))
     expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  // Every update kind the generated types know, each with a payload that has a
+  // `type` field of its own: the handler for that kind receives the payload
+  // untouched. A kind added by a new Bot API version is covered automatically.
+  const updateKinds = (() => {
+    const source = readFileSync(
+      Path.resolve(import.meta.dirname, "../../api/src/specification/types.ts"),
+      "utf-8"
+    )
+    const body = /export interface Update \{([\s\S]*?)\n\}/.exec(source)?.[1] ?? ""
+    return [...body.matchAll(/^ {2}(\w+)\?:/gm)].map((m) => m[1] ?? "")
+  })()
+
+  it("knows the update kinds", () => {
+    expect(updateKinds).toContain("message")
+    expect(updateKinds).toContain("widget_query")
+  })
+
+  it.each(updateKinds)("routes a `%s` update to its handler, payload untouched", async (kind) => {
+    const payload = { id: "x", type: { own: kind } }
+    const received: unknown[] = []
+    const handler = createBot()
+      .on(kind as AvailableUpdateTypes, ({ fallback }) => [
+        fallback(({ payload }) => {
+          received.push(payload)
+          return BotResponse.ignore
+        })
+      ])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, { update_id: 1, [kind]: payload } as unknown as Update)
+
+    expect(received).toEqual([payload])
   })
 
   // Payloads with a `type` field of their own: the update kind used to be

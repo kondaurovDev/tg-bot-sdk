@@ -24,10 +24,14 @@ export type ApiParams<K extends keyof Api> = MethodInput<K>
 /**
  * Shorthand for `send_*` methods: `{ type: "message", text }` maps to
  * `send_message`. `chat_id` is resolved from the incoming update.
+ *
+ * `type` names the method and is not sent. A method with a `type` parameter
+ * of its own (`send_poll`: `"quiz" | "regular"`) cannot set it through the
+ * shorthand — use `ctx.call("send_poll", { … })`.
  */
 export type BotResult = {
   [K in keyof Api]: K extends `send_${infer R}`
-    ? { type: R } & Omit<ApiParams<K>, "chat_id">
+    ? { type: R } & Omit<ApiParams<K>, "chat_id" | "type">
     : never
 }[keyof Api]
 
