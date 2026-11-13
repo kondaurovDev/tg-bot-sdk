@@ -1,5 +1,16 @@
 # @effect-ak/tg-bot
 
+## 1.14.0
+
+### Minor Changes
+
+- 0a602de: `BotResponse.orElse(fallback)`: answer when Telegram refuses a call. If one of the response's calls fails, the rest of it is skipped and the fallback runs, given the client's error (`(error) => ctx.reply(...)`, or a plain response). Without it a failed call is only logged, as before. Calls inside `orElse` count for auto-answering, so a callback query answered there is not answered twice.
+
+### Patch Changes
+
+- @effect-ak/tg-bot-api@1.14.0
+- @effect-ak/tg-bot-client@1.14.0
+
 ## 1.13.0
 
 ### Minor Changes
