@@ -7,7 +7,7 @@ export interface WebApp {
   initDataUnsafe: WebAppInitData
   version: string
   platform: string
-  colorScheme: string
+  colorScheme: "light" | "dark"
   themeParams: ThemeParams
   isActive: boolean
   isExpanded: boolean
@@ -55,18 +55,21 @@ export interface WebApp {
   onEvent: T.BindOrUnbindEventHandler
   offEvent: T.BindOrUnbindEventHandler
   sendData: (data: string) => void
-  switchInlineQuery: (query: string, chat_type?: "users" | "bots" | "groups" | "channels") => void
+  switchInlineQuery: (
+    query: string,
+    choose_chat_types?: ("users" | "bots" | "groups" | "channels")[]
+  ) => void
   openLink: (url: string, options?: { try_instant_view: boolean }) => void
   openTelegramLink: (url: string) => void
   openInvoice: (url: string, callback?: (invoiceStatus: unknown) => void) => void
-  shareToStory: (mediaUrl: string, options?: StoryShareParams) => void
-  shareMessage: (msg_id: number, options?: (isSent: boolean) => void) => void
+  shareToStory: (media_url: string, params?: StoryShareParams) => void
+  shareMessage: (msg_id: string, callback?: (isSent: boolean) => void) => void
   setEmojiStatus: (
-    custom_emoj_id: string,
+    custom_emoji_id: string,
     params?: EmojiStatusParams,
     callback?: (isStatusSet: boolean) => void
   ) => void
-  requestEmojiStatusAccess: (url: string, callback?: (invoiceStatus: unknown) => void) => void
+  requestEmojiStatusAccess: (callback?: (isGranted: boolean) => void) => void
   downloadFile: (params: DownloadFileParams, callback?: (isAccepted: boolean) => void) => void
   hideKeyboard: () => void
   showPopup: (params: PopupParams, callback?: (buttonId: string) => void) => void
@@ -77,7 +80,7 @@ export interface WebApp {
   readTextFromClipboard: (callback?: (text: string) => void) => void
   requestWriteAccess: (callback?: (isGranted: boolean) => void) => void
   requestContact: (callback?: (isShared: boolean) => void) => void
-  requestChat: unknown
+  requestChat: (req_id: string, callback?: (isSent: boolean) => void) => void
   ready: () => void
   expand: () => void
   close: () => void
@@ -167,7 +170,7 @@ export interface BottomButton {
   hide: () => BottomButton
   enable: () => BottomButton
   disable: () => BottomButton
-  showProgress: (callback: (leaveActive: boolean) => void) => BottomButton
+  showProgress: (leaveActive?: boolean) => BottomButton
   hideProgress: () => BottomButton
   setParams: (params: {
     text: string
@@ -319,7 +322,7 @@ export interface LocationManager {
 /** This object describes the native popup button. */
 export interface PopupButton {
   id?: string
-  type?: "OK" | "Close" | "Cancel"
+  type?: string
   text?: string
 }
 
@@ -376,7 +379,11 @@ export interface SecureStorage {
  * Each call is sent together with the Mini App's initData, which the platform validates before running the endpoint, so the endpoint always knows which user is calling it.
  */
 export interface Serverless {
-  call: unknown
+  call: (
+    name: string,
+    input?: unknown,
+    callback?: (error: T.ServerlessCallError | null, result?: unknown) => void
+  ) => void
 }
 
 /** This object controls the Settings item in the context menu of the Mini App in the Telegram interface. */
@@ -444,7 +451,7 @@ export interface WebAppInitData {
   user?: WebAppUser
   receiver?: WebAppUser
   chat?: WebAppChat
-  chat_type?: string
+  chat_type?: "sender" | "private" | "group" | "supergroup" | "channel"
   chat_instance?: string
   start_param?: string
   can_send_after?: number

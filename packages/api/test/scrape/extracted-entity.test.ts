@@ -47,7 +47,7 @@ describe("extracted-entity", () => {
     assert(e.type._tag == "EntityFields")
     const media = e.type.fields.find((_) => _.name == "media")
     expect(media?.type.getTsType("T")).toEqual(
-      "(T.InputMediaAudio | T.InputMediaDocument | T.InputMediaPhoto | T.InputMediaVideo)[]"
+      "(T.InputMediaAudio | T.InputMediaDocument | T.InputMediaLivePhoto | T.InputMediaPhoto | T.InputMediaVideo)[]"
     )
   })
 
@@ -152,8 +152,9 @@ describe("extracted-entity", () => {
   fixture("logOut", ({ apiPage }) => {
     const e = expectRight(apiPage.getEntity("logOut"), "getEntity(logOut)")
     expect(e.entityName).toEqual("logOut")
+    // No parameters: the empty object, not an impossible value
     assert(e.type._tag == "NormalType")
-    expect(e.type.getTsType()).toEqual("never")
+    expect(e.type.getTsType()).toEqual("Record<string, never>")
     expect(returnAs(e.entityDescription.returns)).toEqual("boolean")
   })
 
@@ -161,7 +162,7 @@ describe("extracted-entity", () => {
     const e = expectRight(apiPage.getEntity("getMe"), "getEntity(getMe)")
     expect(e.entityName).toEqual("getMe")
     assert(e.type._tag == "NormalType")
-    expect(e.type.getTsType()).toEqual("never")
+    expect(e.type.getTsType()).toEqual("Record<string, never>")
   })
 
   fixture("sendChatAction", ({ apiPage }) => {
@@ -171,9 +172,10 @@ describe("extracted-entity", () => {
   })
 
   fixture("ForumTopicClosed", ({ apiPage }) => {
+    // "Currently holds no information": `{}` on the wire, so `forum_topic_closed: {}` must type-check
     const e = expectRight(apiPage.getEntity("forumTopicClosed"), "getEntity(forumTopicClosed)")
     assert(e.type._tag == "NormalType")
-    expect(e.type.getTsType()).toEqual("never")
+    expect(e.type.getTsType()).toEqual("Record<string, never>")
   })
 
   fixture("ChatFullInfo", ({ apiPage }) => {

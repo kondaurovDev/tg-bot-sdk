@@ -30,7 +30,8 @@ import {
   startsWithUpperCase,
   INITIALING_MINI_APPS
 } from "~/scrape/type-system"
-import { array, parsePseudoType, type SpecType, union } from "~/scrape/type"
+import { array, object, parsePseudoType, raw, type SpecType, union } from "~/scrape/type"
+import { parseDocSignature, renderDefaultSignature } from "~/scrape/signature"
 
 // ── ExtractEntityError ──
 
@@ -279,17 +280,20 @@ const extractFromTable = (node: HtmlElement, entityName: string) => {
         columnName: "name",
         entityName
       })
-    let pseudoType = all.at(1)?.text
+    const pseudoType = all.at(1)?.text
     if (!pseudoType)
       return ExtractEntityError.left("NoColumn", {
         columnName: "type",
         entityName
       })
+    let defaultType: SpecType | undefined
     if (pseudoType == "Function") {
+      // Mini Apps write the call signature in the name cell. Methods of a
+      // Mini Apps object return the object for chaining; WebApp's return nothing.
       const returnType = entityName == INITIALING_MINI_APPS ? "void" : entityName
-      pseudoType = fieldName.endsWith("()") ? `() => ${returnType}` : "unknown"
-      const parenIndex = fieldName.indexOf("(")
-      if (parenIndex !== -1) fieldName = fieldName.substring(0, parenIndex)
+      const signature = parseDocSignature(fieldName)
+      defaultType = raw(signature ? renderDefaultSignature(signature, returnType) : "unknown")
+      if (signature) fieldName = signature.name
     }
     const descriptionNode = all.at(all.length - 1) // description is the last column
     if (!descriptionNode)
@@ -326,7 +330,8 @@ const extractFromTable = (node: HtmlElement, entityName: string) => {
       entityName,
       fieldName,
       pseudoType,
-      description
+      description,
+      ...(defaultType ? { defaultType } : {})
     })
 
     if (Either.isLeft(normalType)) {
@@ -369,11 +374,13 @@ const extractFromNode = (
 
   if (Either.isLeft(detailsNode)) {
     if (detailsNode.left.error == "TypeDefinition:StopTagEncountered") {
+      // No field table: either an override says what it is, or the docs
+      // describe it as "Currently holds no information" — an empty object.
       const overridden = typeAliasOverrides[entityName]
       return Either.right({
         entityName,
         entityDescription: entityDescription.right,
-        type: NormalType.fromSpec(overridden ?? { kind: "raw", ts: "never" })
+        type: NormalType.fromSpec(overridden ?? object([]))
       })
     }
     return Either.left({

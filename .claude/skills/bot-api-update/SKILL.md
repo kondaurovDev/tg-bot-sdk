@@ -15,15 +15,16 @@ The types in `packages/api` are generated from the live Telegram docs and are no
 
 ## 2. Generate
 
-From the repo root, exactly this spelling and with no `cd` in the same command (it is excluded from the sandbox in `.claude/settings.json`):
+Codegen reads the committed snapshot in `packages/api/input/`; only a refresh touches the network. From the repo root, exactly this spelling and with no `cd` in the same command (it is excluded from the sandbox in `.claude/settings.json`):
 
 ```bash
-pnpm --filter @effect-ak/tg-bot-api gen   # or gen:bot:api / gen:webapp:api
+pnpm --filter @effect-ak/tg-bot-api gen:refresh   # download the pages into the snapshot, then generate
 ```
 
-- Pages are cached in `packages/api/input/` for 24 h; `FORCE_REFRESH=true` refetches.
-- Read the scraper warnings at the end of the run. A type that fails to parse is fixed in `codegen/scrape/`, not in the generated files.
-- Codegen cannot run sandboxed: Node's `fetch` ignores the sandbox proxy (`ENOTFOUND`; `NODE_USE_ENV_PROXY=1` makes it use the proxy), the `tsx` CLI cannot open its IPC pipe (`node --import tsx <file>` works), and the emitter shells out to `pnpm exec oxfmt`.
+Sandboxed, the same run is `CODEGEN_REFRESH=true NODE_USE_ENV_PROXY=1 MODULE_NAME=bot_api node --import tsx ./codegen/main.ts` (then `MODULE_NAME=webapp`) from `packages/api`, with `core.telegram.org` allowed: Node's `fetch` ignores the sandbox proxy without `NODE_USE_ENV_PROXY=1`, and the `tsx` CLI cannot open its IPC pipe. A plain `gen` needs neither.
+
+- The snapshot and the generated `src/specification/*.ts` are both committed: review the diff of the generated types — it is the update.
+- Read the scraper warnings at the end of the run, then run the `api` tests: `test/scrape/spec-invariants.test.ts` flags new docs constructs the scraper misreads (unparsed type cells, `never` / `unknown`, missed enums, Mini Apps signatures). A type that fails to parse is fixed in `codegen/scrape/`, not in the generated files.
 
 ## 3. Rebuild and check
 

@@ -153,7 +153,7 @@ const extractFromPage = (page: WebAppPage) => {
   const types = extractTypesFromPage(page, webAppTitle, "initializing-mini-apps")
 
   if (types._tag == "Left") {
-    return Either.left(types)
+    return Either.left(types.left)
   }
 
   return Either.right(

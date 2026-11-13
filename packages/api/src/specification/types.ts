@@ -389,7 +389,7 @@ export interface BusinessOpeningHoursInterval {
  * Use BotFather to set up your game.
  * @see https://tg-bot-sdk.website/api/types/callback-game/
  */
-export type CallbackGame = never
+export type CallbackGame = Record<string, never>
 
 /**
  * This object represents an incoming callback query from a callback button in an inline keyboard
@@ -959,7 +959,7 @@ export interface CommunityChatJoined {
  * Currently holds no information.
  * @see https://tg-bot-sdk.website/api/types/community-chat-removed/
  */
-export type CommunityChatRemoved = never
+export type CommunityChatRemoved = Record<string, never>
 
 /**
  * This object represents a phone contact.
@@ -1013,7 +1013,7 @@ export interface DirectMessagesTopic {
  * Currently holds no information.
  * @see https://tg-bot-sdk.website/api/types/disabled-button/
  */
-export type DisabledButton = never
+export type DisabledButton = Record<string, never>
 
 /**
  * This object represents a general file (as opposed to photos, voice messages and audio files).
@@ -1069,7 +1069,20 @@ export interface EncryptedCredentials {
  * @see https://tg-bot-sdk.website/api/types/encrypted-passport-element/
  */
 export interface EncryptedPassportElement {
-  type: string
+  type:
+    | "personal_details"
+    | "passport"
+    | "driver_license"
+    | "identity_card"
+    | "internal_passport"
+    | "address"
+    | "utility_bill"
+    | "bank_statement"
+    | "rental_agreement"
+    | "passport_registration"
+    | "temporary_registration"
+    | "phone_number"
+    | "email"
   hash: string
   data?: string
   phone_number?: string
@@ -1168,7 +1181,7 @@ export interface ForumTopic {
  * Currently holds no information.
  * @see https://tg-bot-sdk.website/api/types/forum-topic-closed/
  */
-export type ForumTopicClosed = never
+export type ForumTopicClosed = Record<string, never>
 
 /**
  * This object represents a service message about a new forum topic created in the chat.
@@ -1195,7 +1208,7 @@ export interface ForumTopicEdited {
  * Currently holds no information.
  * @see https://tg-bot-sdk.website/api/types/forum-topic-reopened/
  */
-export type ForumTopicReopened = never
+export type ForumTopicReopened = Record<string, never>
 
 /**
  * This object represents a game
@@ -1226,14 +1239,14 @@ export interface GameHighScore {
  * Currently holds no information.
  * @see https://tg-bot-sdk.website/api/types/general-forum-topic-hidden/
  */
-export type GeneralForumTopicHidden = never
+export type GeneralForumTopicHidden = Record<string, never>
 
 /**
  * This object represents a service message about General forum topic unhidden in the chat
  * Currently holds no information.
  * @see https://tg-bot-sdk.website/api/types/general-forum-topic-unhidden/
  */
-export type GeneralForumTopicUnhidden = never
+export type GeneralForumTopicUnhidden = Record<string, never>
 
 /**
  * This object represents a gift that can be sent by the bot.
@@ -1395,7 +1408,7 @@ export interface InlineQuery {
   from: User
   query: string
   offset: string
-  chat_type?: string
+  chat_type?: "sender" | "private" | "group" | "supergroup" | "channel"
   location?: Location
 }
 
@@ -1641,7 +1654,7 @@ export interface InlineQueryResultDocument {
   id: string
   title: string
   document_url: string
-  mime_type: string
+  mime_type: "application/pdf" | "application/zip"
   caption?: string
   parse_mode?: "HTML" | "MarkdownV2"
   caption_entities?: MessageEntity[]
@@ -2827,7 +2840,7 @@ export interface ManagedBotUpdated {
  * @see https://tg-bot-sdk.website/api/types/mask-position/
  */
 export interface MaskPosition {
-  point: string
+  point: "forehead" | "eyes" | "mouth" | "chin"
   x_shift: number
   y_shift: number
   scale: number
@@ -3289,7 +3302,7 @@ export interface PaidMessagePriceChanged {
  * Currently holds no information.
  * @see https://tg-bot-sdk.website/api/types/paid-messages-waived/
  */
-export type PaidMessagesWaived = never
+export type PaidMessagesWaived = Record<string, never>
 
 /**
  * Describes Telegram Passport data shared with the bot by the user.
@@ -5019,7 +5032,7 @@ export interface UniqueGiftColors {
  */
 export interface UniqueGiftInfo {
   gift: UniqueGift
-  origin: string
+  origin: "upgrade" | "transfer" | "resale" | "gifted_upgrade" | "offer"
   text?: string
   entities?: MessageEntity[]
   is_private?: boolean
@@ -5222,7 +5235,7 @@ export interface VideoChatScheduled {
  * Currently holds no information.
  * @see https://tg-bot-sdk.website/api/types/video-chat-started/
  */
-export type VideoChatStarted = never
+export type VideoChatStarted = Record<string, never>
 
 /**
  * This object represents a video message.
@@ -5323,7 +5336,7 @@ export interface WidgetQuery {
   chat?: Chat
   message_id?: number
   inline_message_id?: string
-  chat_type?: string
+  chat_type?: "sender" | "private" | "group" | "supergroup" | "channel"
   widget_id?: string
 }
 

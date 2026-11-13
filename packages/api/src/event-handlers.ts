@@ -13,6 +13,7 @@ export interface EventHandlers {
   safeAreaChanged: () => void
   contentSafeAreaChanged: () => void
   mainButtonClicked: () => void
+  secondaryButtonClicked: () => void
   backButtonClicked: () => void
   settingsButtonClicked: () => void
   invoiceClosed: (options: {
@@ -24,6 +25,7 @@ export interface EventHandlers {
   scanQrPopupClosed: () => void
   clipboardTextReceived: (options: { data: string }) => void
   writeAccessRequested: (options: { status: "allowed" | "cancelled" }) => void
+  contactRequested: (options: { status: "sent" | "cancelled" }) => void
   biometricManagerUpdated: () => void
   biometricAuthRequested: (options: {
     isAuthenticated: boolean
@@ -69,4 +71,17 @@ export interface EventHandlers {
   }) => void
   emojiStatusAccessRequested: (options: { status: "allowed" | "cancelled" }) => void
   fileDownloadRequested: (options: { status: "downloading" | "cancelled" }) => void
+}
+
+/**
+ * The error `WebApp.Serverless.call` passes to its callback: an `Error` with
+ * the extra fields the docs list for it.
+ */
+export interface ServerlessCallError extends Error {
+  /** `"ENDPOINT_ERROR"` when the endpoint threw an EndpointError; other values come from the platform. */
+  type?: string
+  /** HTTP status of the response, or `0` when the request could not be completed. */
+  status: number
+  /** Data the endpoint passed along with its EndpointError. */
+  parameters?: unknown
 }

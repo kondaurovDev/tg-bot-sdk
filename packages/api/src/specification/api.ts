@@ -1235,7 +1235,7 @@ export interface AnswerChatJoinRequestQueryInput {
    * Result of the query
    * Must be either “approve” to allow the user to join the chat, “decline” to disallow the user to join the chat, or “queue” to leave the decision to other administrators.
    */
-  result: string
+  result: "approve" | "decline" | "queue"
 }
 
 /**
@@ -4175,7 +4175,13 @@ export interface SendMediaGroupInput {
   /** Unique identifier for the target chat or username of the target bot, supergroup, or channel in the format @username */
   chat_id: number | string
   /** A JSON-serialized Array describing messages to be sent, must include 2-10 items */
-  media: (T.InputMediaAudio | T.InputMediaDocument | T.InputMediaPhoto | T.InputMediaVideo)[]
+  media: (
+    | T.InputMediaAudio
+    | T.InputMediaDocument
+    | T.InputMediaLivePhoto
+    | T.InputMediaPhoto
+    | T.InputMediaVideo
+  )[]
   /** Unique identifier of the business connection on behalf of which the message will be sent */
   business_connection_id?: string
   /** Unique identifier for the target message thread (topic) of a forum; for forum supergroups and private chats of bots with forum topic mode enabled only */
@@ -4467,7 +4473,7 @@ export interface SendPollInput {
   /** True, if the poll needs to be anonymous, defaults to True */
   is_anonymous?: boolean
   /** Poll type, “quiz” or “regular”, defaults to “regular” */
-  type?: string
+  type?: "quiz" | "regular"
   /** Pass True if the poll allows multiple answers, defaults to False */
   allows_multiple_answers?: boolean
   /** Pass True if the poll allows to change chosen answer options, defaults to False for quizzes and to True for regular polls */

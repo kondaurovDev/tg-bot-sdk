@@ -99,10 +99,13 @@ export const renderTypeToTs = (t: SpecType, namespace?: string): string => {
     case "enum":
       return t.values.map((v) => `"${v}"`).join(" | ")
     case "object": {
+      // An object with no fields is `{}` on the wire. TS `{}` would accept any
+      // non-nullish value, so the empty object is spelled out.
+      if (t.fields.length === 0) return "Record<string, never>"
       const body = t.fields
         .map((f) => `${f.name}${f.required ? "" : "?"}: ${renderTypeToTs(f.type, namespace)}`)
         .join(", ")
-      return body.length === 0 ? "{}" : `{ ${body} }`
+      return `{ ${body} }`
     }
     case "raw":
       return t.ts
@@ -123,17 +126,24 @@ const primitiveByPseudo: Record<string, PrimitiveName> = {
 
 const ARRAY_PREFIX = /^array of /i
 
+/** "A or B", and the list form "A, B, C and D" (as in `sendMediaGroup.media`). */
+const UNION_SEPARATOR = / or |, | and /
+
 /**
  * Parse a Telegram pseudo-type string into a {@link SpecType}.
- * Handles unions via " or ", nested "Array of Array of ...", primitives, refs.
+ * Handles unions ("A or B", "A, B and C"), nested "Array of Array of ...",
+ * primitives, refs. "Array of A, B and C" is an array of the union.
  */
 export const parsePseudoType = (pseudo: string): SpecType | null => {
   const trimmed = pseudo.trim()
   if (trimmed.length === 0) return null
 
-  if (trimmed.includes(" or ")) {
+  // "Array of A or Array of B" is a union of arrays; "Array of A, B and C"
+  // (no " or ") is an array of a union, handled by the prefix branch below.
+  const splitHere = trimmed.includes(" or ") || !ARRAY_PREFIX.test(trimmed)
+  if (splitHere && UNION_SEPARATOR.test(trimmed)) {
     const parts = trimmed
-      .split(" or ")
+      .split(UNION_SEPARATOR)
       .map(parsePseudoType)
       .filter((t): t is SpecType => t !== null)
     if (parts.length < 2) return parts[0] ?? null

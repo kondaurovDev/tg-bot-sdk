@@ -24,6 +24,11 @@ export interface ExtractedEntityField {
   fieldName: string
   pseudoType: string
   description: string[]
+  /**
+   * Type to use when no override gives one, instead of parsing `pseudoType` —
+   * for cells that are not a type name, such as the Mini Apps "Function".
+   */
+  defaultType?: SpecType
 }
 
 export const startsWithUpperCase = (input: string) =>
@@ -60,22 +65,32 @@ const regexFallback =
   /(?:must be|always|can be)\s+(?:one\s+of\s+)?["\u201C]?([^"\u201D.,]+)["\u201D]?/i
 const enumRegex = /^[A-Za-z0-9_/\p{Emoji}\u200D]+$/u
 
-const enumPresenceIndicatiors = ["must be", "always", "one of", "can be"]
+const enumIndicatorRegex = /\b(?:must be|always|one of|can be|either)\b/i
 
-const hasEnum = (line: string) =>
-  enumPresenceIndicatiors.map((_) => line.includes(_)).includes(true)
+/**
+ * A quoted list counts only when an indicator is directly followed by its
+ * first value: "One of “forehead”, …", "Must be either “approve”…",
+ * "Currently, always “XTR”". That keeps out sentences that merely mention a
+ * value of another field: "Can be available only for “invoice_payment”
+ * transactions". Case-insensitive, since sentences start with the indicator.
+ */
+const quotedListRegex =
+  /\b(?:must be|always|one of|can be|either)\s+(?:either\s+|one\s+of\s+)?["\u201C]/i
 
 export function extractEnumFromTypeDescription(description: string[]): string[] {
   const enumValues: string[] = []
 
   for (const line of description) {
-    if (!line || !hasEnum(line)) continue
+    if (!line || !enumIndicatorRegex.test(line)) continue
 
-    let match
-    while ((match = regexQuotes.exec(line)) !== null) {
-      enumValues.push(...match[1].split(/",\s*|\u201D,\s*|\u201C|\u201D|,/).map((s) => s.trim()))
+    if (quotedListRegex.test(line)) {
+      let match
+      while ((match = regexQuotes.exec(line)) !== null) {
+        enumValues.push(...match[1].split(/",\s*|\u201D,\s*|\u201C|\u201D|,/).map((s) => s.trim()))
+      }
     }
 
+    // Unquoted single values: "Type of the result, must be article"
     if (enumValues.length === 0) {
       const fallbackMatch = regexFallback.exec(line)
       if (fallbackMatch) {
@@ -89,21 +104,31 @@ export function extractEnumFromTypeDescription(description: string[]): string[] 
 
 // ── NormalType factory ──
 
+/**
+ * What the docs alone say about a field, before any override: an enum picked
+ * out of the prose of a String field, or the parsed type cell.
+ */
+export const inferFieldSpec = (input: ExtractedEntityField): SpecType | null => {
+  if (input.pseudoType === "String") {
+    const enums = extractEnumFromTypeDescription(input.description)
+    if (Array.isNonEmptyArray(enums)) return enumOf(...enums)
+  }
+  return parsePseudoType(input.pseudoType)
+}
+
+// An explicit override wins over anything inferred from the docs.
 const makeSpecFor = (input: ExtractedEntityField): Either.Either<SpecType, NormalTypeError> => {
   const global = globalFieldOverrides.find((g) => g.match(input))
   if (global) return Either.right(global.override)
 
-  if (input.pseudoType === "String") {
-    const enums = extractEnumFromTypeDescription(input.description)
-    if (Array.isNonEmptyArray(enums)) return Either.right(enumOf(...enums))
-  }
-
   const override = fieldOverrides[input.entityName]?.[input.fieldName]
   if (override) return Either.right(override)
 
-  const parsed = parsePseudoType(input.pseudoType)
-  if (!parsed) return NormalTypeError.left("EmptyType", { typeName: input.pseudoType })
-  return Either.right(parsed)
+  if (input.defaultType) return Either.right(input.defaultType)
+
+  const inferred = inferFieldSpec(input)
+  if (!inferred) return NormalTypeError.left("EmptyType", { typeName: input.pseudoType })
+  return Either.right(inferred)
 }
 
 // ── NormalType class ──

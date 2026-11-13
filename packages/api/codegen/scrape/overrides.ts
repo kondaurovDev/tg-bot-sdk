@@ -12,7 +12,7 @@
  * - {@link globalFieldOverrides} — pattern-matched overrides applied across
  *   all entities (e.g. every `*parse_mode` field)
  */
-import { array, enumOf, object, P, raw, ref, union, type SpecType } from "~/scrape/type"
+import { array, enumOf, object, P, raw, ref, type SpecType } from "~/scrape/type"
 import type { ExtractedEntityField } from "~/scrape/type-system"
 import { INITIALING_MINI_APPS } from "./constants"
 
@@ -81,7 +81,7 @@ export const globalFieldOverrides: GlobalFieldOverride[] = [
 
 // ── Per-field overrides: Bot API ──
 
-const botApiFieldOverrides: Record<string, Record<string, SpecType>> = {
+export const botApiFieldOverrides: Record<string, Record<string, SpecType>> = {
   // Docs type is plain `Array of String` — narrow to the AllowedUpdateName union.
   setWebhook: {
     allowed_updates: allowedUpdatesArray
@@ -109,18 +109,10 @@ const botApiFieldOverrides: Record<string, Record<string, SpecType>> = {
     )
   },
 
-  // Docs type is "Array of InputMediaAudio, InputMediaDocument,
-  // InputMediaPhoto and InputMediaVideo" — a union inside an array, which
-  // doesn't match the generic `Array of X` pattern.
-  sendMediaGroup: {
-    media: array(
-      union(
-        ref("InputMediaAudio"),
-        ref("InputMediaDocument"),
-        ref("InputMediaPhoto"),
-        ref("InputMediaVideo")
-      )
-    )
+  // "Poll type, “quiz” or “regular”" names the values without any of the
+  // phrases the enum extractor looks for.
+  sendPoll: {
+    type: enumOf("quiz", "regular")
   }
 }
 
@@ -129,7 +121,7 @@ const botApiFieldOverrides: Record<string, Record<string, SpecType>> = {
 // they're inherently JS-only (callbacks and inline shapes) so non-TS
 // consumers of the JSON spec should treat `kind: "raw"` as opaque.
 
-const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
+export const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
   [INITIALING_MINI_APPS]: {
     offEvent: raw(`T.BindOrUnbindEventHandler`),
     onEvent: raw(`T.BindOrUnbindEventHandler`),
@@ -141,23 +133,24 @@ const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
     ),
     sendData: raw(`(data: string) => void`),
     switchInlineQuery: raw(
-      `(query: string, chat_type?: "users" | "bots" | "groups" | "channels") => void`
+      `(query: string, choose_chat_types?: ("users" | "bots" | "groups" | "channels")[]) => void`
     ),
     openLink: raw(`(url: string, options?: { try_instant_view: boolean }) => void`),
     openTelegramLink: raw(`(url: string) => void`),
     isVersionAtLeast: raw(`(version: string) => boolean`),
     openInvoice: raw(`(url: string, callback?: (invoiceStatus: unknown) => void) => void`),
-    requestEmojiStatusAccess: raw(
-      `(url: string, callback?: (invoiceStatus: unknown) => void) => void`
-    ),
-    shareToStory: raw(`(mediaUrl: string, options?: StoryShareParams) => void`),
+    requestEmojiStatusAccess: raw(`(callback?: (isGranted: boolean) => void) => void`),
+    shareToStory: raw(`(media_url: string, params?: StoryShareParams) => void`),
     setEmojiStatus: raw(
-      `(custom_emoj_id: string, params?: EmojiStatusParams, callback?: (isStatusSet: boolean) => void) => void`
+      `(custom_emoji_id: string, params?: EmojiStatusParams, callback?: (isStatusSet: boolean) => void) => void`
     ),
     setHeaderColor: raw(`(color: string) => void`),
     setBackgroundColor: raw(`(color: string) => void`),
     setBottomBarColor: raw(`(color: string) => void`),
-    shareMessage: raw(`(msg_id: number, options?: (isSent: boolean) => void) => void`),
+    // `msg_id` is the id of a PreparedInlineMessage, a string.
+    shareMessage: raw(`(msg_id: string, callback?: (isSent: boolean) => void) => void`),
+    // `req_id` is the id of a PreparedKeyboardButton, a string.
+    requestChat: raw(`(req_id: string, callback?: (isSent: boolean) => void) => void`),
     showScanQrPopup: raw(
       `(params: ScanQrPopupParams, callback?: (data: string) => boolean) => void`
     ),
@@ -177,7 +170,9 @@ const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
   BottomButton: {
     onClick: raw("(callback: () => void) => BottomButton"),
     offClick: raw("(callback: () => void) => BottomButton"),
-    showProgress: raw("(callback: (leaveActive: boolean) => void) => BottomButton"),
+    // The docs write `showProgress(leaveActive)`, but the flag is optional:
+    // `showProgress()` keeps the documented default (the button is disabled).
+    showProgress: raw("(leaveActive?: boolean) => BottomButton"),
     setParams: raw(
       `
       (params: {
@@ -262,6 +257,11 @@ const miniAppFieldOverrides: Record<string, Record<string, SpecType>> = {
       `(key: string, callback?: (error: unknown | null, isRemoved: boolean) => void) => DeviceStorage`
     ),
     clear: raw(`(callback?: (error: unknown | null, isCleared: boolean) => void) => DeviceStorage`)
+  },
+  Serverless: {
+    call: raw(
+      `(name: string, input?: unknown, callback?: (error: T.ServerlessCallError | null, result?: unknown) => void) => void`
+    )
   },
   SecureStorage: {
     setItem: raw(
