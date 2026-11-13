@@ -1,0 +1,70 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch",
+      "Bash(git fetch:*)",
+      "Bash(gh run *)",
+      "Bash(gh search:*)",
+      "Bash(pnpm ls:*)",
+      "Bash(pnpm why:*)",
+      "Bash(pnpm view *)",
+      "Bash(pnpm build)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm test)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm format)",
+      "Bash(pnpm format:check)",
+      "Bash(pnpm --filter * run build)",
+      "Bash(pnpm --filter * run typecheck)",
+      "Bash(pnpm --filter * run test)",
+      "Bash(pnpm --filter * test)",
+      "Bash(pnpm --filter @effect-ak/tg-bot-api gen)",
+      "Bash(pnpm --filter @effect-ak/tg-bot-api gen:bot:api)",
+      "Bash(pnpm --filter @effect-ak/tg-bot-api gen:webapp:api)",
+      "Bash(node_modules/.bin/tsc *)",
+      "Bash(node_modules/.bin/tsup *)",
+      "Bash(node_modules/.bin/vitest *)",
+      "Bash(node_modules/.bin/oxlint *)",
+      "Bash(node_modules/.bin/oxfmt *)",
+      "Bash(./node_modules/.bin/tsc *)",
+      "Bash(./node_modules/.bin/tsup *)",
+      "Bash(./node_modules/.bin/vitest *)",
+      "Bash(./node_modules/.bin/oxlint *)",
+      "Bash(./node_modules/.bin/oxfmt *)",
+      "Bash(../../node_modules/.bin/tsc *)",
+      "Bash(../../node_modules/.bin/tsup *)",
+      "Bash(../../node_modules/.bin/vitest *)",
+      "Bash(node --test .claude/hooks/guard.test.ts)",
+      "Bash(procdeck *)"
+    ],
+    "deny": []
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard.ts\"",
+            "timeout": 10,
+            "onFailure": "block"
+          }
+        ]
+      }
+    ]
+  },
+  "sandbox": {
+    "excludedCommands": [
+      "pnpm build",
+      "pnpm --filter @effect-ak/tg-bot-api gen",
+      "pnpm --filter @effect-ak/tg-bot-api gen:bot:api",
+      "pnpm --filter @effect-ak/tg-bot-api gen:webapp:api"
+    ],
+    "network": {
+      "allowedDomains": ["localhost", "*.localhost", "127.0.0.1", "core.telegram.org"],
+      "allowLocalBinding": true
+    }
+  }
+}

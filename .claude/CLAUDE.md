@@ -4,17 +4,19 @@ Do not run `changeset version` or `changeset publish` locally. CI/CD handles bui
 
 ## Project overview
 
-Monorepo (`pnpm workspaces`) with three npm packages under `@effect-ak/` scope:
+Monorepo (`pnpm workspaces`); the npm packages are published under the `@effect-ak/` scope.
 
-- **`packages/api`** — Auto-generated TypeScript types for Telegram Bot API. Codegen scrapes official Telegram docs (node-html-parser) and emits `.ts` via a string-based emitter + oxfmt. Runs via Effect-ts. Two modules: `bot_api` and `webapp` (Mini Apps).
-- **`packages/client`** — Lightweight HTTP client (`makeTgBotClient()`). Uses native `fetch`, zero runtime deps. Discriminated union results (`ok: true/false`), automatic FormData serialization, message effect emoji mapping.
-- **`packages/bot`** — High-level bot framework. Fluent builder API (`createBot().command("/start", h).onText(h).onCallback(data, h)` shortcuts, `.onMessage(({ command, text, fallback }) => [...])` for ordered handler lists), guarded handler pattern, handlers receive `{ payload, ctx }` (`payload` = typed `Message`/`CallbackQuery`, not `Update`), long polling with offset management, webhook support with secret token verification, `defineScreens` (inline-keyboard navigation as data, `src/screens.ts`), `bot.use(plugin)`. Handlers return `BotResponse` (a list of API calls); the processor executes them and auto-answers callback queries.
-- **`apps/website/`** — Astro + Starlight documentation site (https://tg-bot-sdk.website). Interactive playground (Alpine.js + Monaco Editor). `/llms.txt` and `/llms-full.txt` are generated from the guide pages by `src/pages/llms*.txt.ts`.
-- **`apps/example/`** — Live demo: a Cloudflare Worker (`src/worker.ts`) hosting several demo bots (`src/bots/`) behind one bot token, switched via an inline menu with per-chat state in KV. Deployed by `.github/workflows/deploy-demo.yml`. `src/polling/` runs the same bots locally with long polling. `Makefile` wraps local dev (`wrangler dev`, tunnel, set-webhook).
+- **`packages/api`** — TypeScript types for the Telegram Bot API and Mini Apps, generated from the official docs.
+- **`packages/client`** — Lightweight HTTP client (`makeTgBotClient()`). Native `fetch`, zero runtime deps, discriminated union results (`ok: true/false`), automatic FormData serialization, message effect emoji mapping.
+- **`packages/bot`** — High-level bot framework: builder API, guarded handlers, long polling, webhooks, `defineScreens`.
+- **`packages/emulator`** — In-memory Bot API for tests and the playground's virtual mode.
+- **`apps/website/`** — Astro + Starlight documentation site (https://tg-bot-sdk.website) with the interactive playground.
+- **`apps/example/`** — Live demo: a Cloudflare Worker hosting several demo bots.
+- **`docs/`** — Local markdown notes and plans (not published).
 
-- **`docs/`** — Local markdown notes and plans (not published; the website lives in `apps/website/`).
+Dependency chain: `api` <- `client` <- `bot`; `emulator` depends on `api` and `client` (`bot` only in its tests). Packages resolve each other through `dist/`, so a change in one is visible to the next only after it is rebuilt.
 
-Dependency chain: `api` <- `client` <- `bot`.
+The details of each package and app load from `.claude/rules/` when you touch its files. Updating to a new Bot API version is the `bot-api-update` skill.
 
 ## Key conventions
 
@@ -26,7 +28,6 @@ Dependency chain: `api` <- `client` <- `bot`.
 - Functional style: builder pattern, handler chaining, immutable data.
 - Snake_case Telegram API method names (e.g. `send_message`) are converted to camelCase for HTTP paths internally.
 - Webhook handlers must support `secret_token`; never add code paths that process updates without it being verifiable.
-- In sandboxed shells call binaries directly (`node_modules/.bin/tsc`, `vitest`, `oxfmt`, `oxlint`, `tsup`) — `pnpm exec` may trigger an auto-install that cannot complete there.
 
 ## Build & test
 
@@ -38,4 +39,11 @@ pnpm lint         # oxlint
 pnpm format:check # oxfmt check (pnpm format to write)
 ```
 
-CI: GitHub Actions, Node.js 24, pnpm 10. Release via changesets with npm provenance.
+CI: GitHub Actions, Node.js 24, pnpm at the version pinned in `packageManager`. Release via changesets with npm provenance.
+
+## Sandbox and guarded commands
+
+- Bash runs sandboxed. Call binaries directly — `node_modules/.bin/tsc`, `vitest`, `oxfmt`, `oxlint`, `tsup` (from a package directory: `../../node_modules/.bin/…`); `pnpm exec`, `pnpm dlx` and `npx` may start an install that cannot complete there.
+- `pnpm build` and codegen need the network and run outside the sandbox only in the spellings listed in `.claude/settings.json`, from the repo root with no `cd` in the same command.
+- Dependencies are installed by the author. When `node_modules` is missing, say so and ask for `pnpm install` instead of running it.
+- `.claude/hooks/guard.ts` asks before deploys, releases, calls to the live bot, `git push` and history rewrites, dependency changes and package runners. Deploys and releases are CI's job; push only on an explicit ask.
