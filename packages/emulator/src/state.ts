@@ -9,6 +9,7 @@ import type {
   Chat,
   InlineQueryResult,
   Message,
+  ReplyKeyboardMarkup,
   Update,
   User
 } from "@effect-ak/tg-bot-api"
@@ -53,6 +54,8 @@ export class EmulatorState {
   messages: Message[] = []
   pendingUpdates: Update[] = []
   activeDraft: EmulatorDraft | null = null
+  /** The reply keyboard the bot set last; Telegram keeps it out of `Message`. */
+  replyKeyboard: ReplyKeyboardMarkup | null = null
   readonly reactions = new Map<number, string[]>()
   readonly uploads = new Map<string, UploadedFile>()
   /** `answer_inline_query` results, keyed by inline query id. */
@@ -128,6 +131,12 @@ export class EmulatorState {
     this.emit({ type: "draft_cleared" })
   }
 
+  setReplyKeyboard(keyboard: ReplyKeyboardMarkup | null): void {
+    if (keyboard === null && this.replyKeyboard === null) return
+    this.replyKeyboard = keyboard
+    this.emit({ type: "reply_keyboard", keyboard })
+  }
+
   setDraft(draft: EmulatorDraft): void {
     this.activeDraft = draft
     this.emit({ type: "draft", draft })
@@ -164,6 +173,7 @@ export class EmulatorState {
     this.messages = []
     this.pendingUpdates = []
     this.activeDraft = null
+    this.replyKeyboard = null
     this.reactions.clear()
     this.uploads.clear()
     this.inlineAnswers.clear()

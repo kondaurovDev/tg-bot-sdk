@@ -21,6 +21,12 @@ export interface UserFile {
   caption?: string
 }
 
+/** A file the bot or the user sent, as the chat downloads it. */
+export interface ChatFile {
+  bytes: Uint8Array<ArrayBuffer>
+  file_name: string
+}
+
 export interface EmulatorPort {
   /** Listen to the chat; returns the unsubscribe function. */
   subscribe(listener: (event: ChatPortEvent) => void): () => void
@@ -30,6 +36,8 @@ export interface EmulatorPort {
   /** Set the user's reaction on a message, or clear it with `null`. */
   react(message_id: number, emoji: string | null): void
   deleteMessage(message_id: number): void
+  /** A file's content by its `file_id` (a photo to show, a document to save). */
+  getFile(file_id: string): Promise<ChatFile>
 }
 
 /**
@@ -74,6 +82,10 @@ export const createEmulatorPort = (emulator: TgBotEmulator): EmulatorPort => {
     tapButton: (callback_data, message_id) =>
       attempt(() => emulator.tapButton(callback_data, { message_id })),
     react: (message_id, emoji) => attempt(() => emulator.react(message_id, emoji)),
-    deleteMessage: (message_id) => attempt(() => emulator.deleteMessage(message_id))
+    deleteMessage: (message_id) => attempt(() => emulator.deleteMessage(message_id)),
+    getFile: async (file_id) => {
+      const file = await emulator.client.getFile({ fileId: file_id })
+      return { bytes: new Uint8Array(file.content), file_name: file.file_name }
+    }
   }
 }

@@ -43,6 +43,7 @@ export const profileMethods = (state: EmulatorState) => ({
   get_my_commands: (): BotCommand[] => [...state.profile.commands],
   set_my_commands: (input: SetMyCommandsInput): boolean => {
     state.profile.commands = [...input.commands]
+    state.emit({ type: "commands_changed", commands: [...input.commands] })
     return true
   },
 

@@ -366,6 +366,164 @@
   background: #2563eb;
 }
 
+/* --- Menu button and the bot's commands --- */
+.tgc-commands-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.tgc-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  padding: 0 10px 0 8px;
+  border: none;
+  border-radius: 9999px;
+  background: var(--tgc-accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.tgc-menu-button-icon {
+  width: 14px;
+  text-align: center;
+}
+.tgc-commands {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 40;
+  width: max-content;
+  max-width: 260px;
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15);
+}
+.tgc-command-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 14px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.tgc-command-item:hover {
+  background: #f9fafb;
+}
+.tgc-command-name {
+  color: var(--tgc-accent);
+  font-size: 13px;
+  font-weight: 500;
+}
+.tgc-command-description {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* --- Reply keyboard --- */
+.tgc-keyboard-toggle {
+  font-size: 18px;
+}
+.tgc-keyboard-toggle.tgc-open {
+  color: var(--tgc-accent);
+}
+.tgc-reply-keyboard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: #e5e7eb;
+  border-top: 1px solid var(--tgc-border);
+}
+.tgc-reply-row {
+  display: flex;
+  gap: 6px;
+}
+.tgc-reply-key {
+  flex: 1;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.15);
+  color: var(--tgc-text);
+  font-size: 14px;
+  cursor: pointer;
+}
+.tgc-reply-keyboard-fit .tgc-reply-key {
+  min-height: 34px;
+}
+.tgc-reply-key:active {
+  background: #f3f4f6;
+}
+
+/* --- Photos and documents --- */
+.tgc-photo {
+  display: block;
+  max-width: 100%;
+  max-height: 260px;
+  margin: -1px -4px 4px -6px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.tgc-photo-loading {
+  width: 200px;
+  height: 140px;
+  background: rgba(15, 23, 42, 0.06);
+}
+.tgc-document {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+  margin: 2px 0 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.tgc-document:disabled {
+  cursor: default;
+}
+.tgc-document-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--tgc-accent);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+}
+.tgc-document-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tgc-document-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+.tgc-document-size {
+  color: var(--tgc-muted);
+  font-size: 11px;
+}
+
 /* --- Message menu --- */
 .tgc-menu {
   position: fixed;

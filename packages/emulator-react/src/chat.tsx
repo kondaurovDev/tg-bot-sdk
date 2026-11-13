@@ -7,6 +7,8 @@
 import type { InlineKeyboardButton, Message } from "@effect-ak/tg-bot-api"
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
+import { CommandsMenu, ReplyKeyboard } from "./chat-keyboards"
+import { FileSourceContext } from "./chat-media"
 import { MessageMenu } from "./chat-menu"
 import { MessageRow } from "./chat-message"
 import type { ChatPortEvent, EmulatorPort } from "./port"
@@ -68,6 +70,8 @@ export const Chat = ({
   const [input, setInput] = useState("")
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [menu, setMenu] = useState<MenuState | null>(null)
+  // The user can fold the reply keyboard away; a new one shows again
+  const [keyboardFolded, setKeyboardFolded] = useState(false)
   const scroller = useRef<HTMLDivElement>(null)
   const fileInput = useRef<HTMLInputElement>(null)
   const busy = state.waiting || state.typing
@@ -89,6 +93,11 @@ export const Chat = ({
     const el = scroller.current
     if (el) el.scrollTop = el.scrollHeight
   }, [state.messages.length, state.draft])
+
+  useEffect(() => setKeyboardFolded(false), [state.replyKeyboard])
+
+  const getFile = useCallback((file_id: string) => port.getFile(file_id), [port])
+  const replyKeyboard = state.replyKeyboard
 
   const copy = useCallback(
     (text: string) => {
@@ -143,198 +152,224 @@ export const Chat = ({
   const menuText = menu ? textOf(menu.message) : undefined
 
   return (
-    <div
-      className={`tgc-chat${className ? ` ${className}` : ""}`}
-      data-testid="chat"
-      data-bot={status}
-      data-busy={String(busy)}
-    >
-      <div className="tgc-header">
-        <div className="tgc-avatar">{title.slice(0, 1).toUpperCase()}</div>
-        <div className="tgc-header-text">
-          <div className="tgc-title">{title}</div>
-          <div className={`tgc-subtitle${busy ? " tgc-subtitle-busy" : ""}`}>
-            {busy ? "typing…" : "bot"}
+    <FileSourceContext.Provider value={getFile}>
+      <div
+        className={`tgc-chat${className ? ` ${className}` : ""}`}
+        data-testid="chat"
+        data-bot={status}
+        data-busy={String(busy)}
+      >
+        <div className="tgc-header">
+          <div className="tgc-avatar">{title.slice(0, 1).toUpperCase()}</div>
+          <div className="tgc-header-text">
+            <div className="tgc-title">{title}</div>
+            <div className={`tgc-subtitle${busy ? " tgc-subtitle-busy" : ""}`}>
+              {busy ? "typing…" : "bot"}
+            </div>
           </div>
+          {onRestart && (
+            <button
+              type="button"
+              className="tgc-icon-button"
+              data-testid="chat-restart"
+              title="Restart the bot and clear the chat"
+              onClick={onRestart}
+            >
+              ↻
+            </button>
+          )}
         </div>
-        {onRestart && (
-          <button
-            type="button"
-            className="tgc-icon-button"
-            data-testid="chat-restart"
-            title="Restart the bot and clear the chat"
-            onClick={onRestart}
-          >
-            ↻
-          </button>
-        )}
-      </div>
 
-      <div ref={scroller} className="tgc-messages" data-testid="chat-messages">
-        {state.messages.map((message) => (
-          <MessageRow
-            key={message.message_id}
-            message={message}
-            reactions={state.reactions[message.message_id]}
-            handlers={handlersFor(message.message_id)}
-            onMenu={(m, x, y) => setMenu({ message: m, x, y })}
-            onQuickReact={(m) => {
-              const quick = quickReactions[0]
-              if (quick) toggleReaction(m, quick)
-            }}
-            onKeyboardButton={onKeyboardButton}
-          />
-        ))}
+        <div ref={scroller} className="tgc-messages" data-testid="chat-messages">
+          {state.messages.map((message) => (
+            <MessageRow
+              key={message.message_id}
+              message={message}
+              reactions={state.reactions[message.message_id]}
+              handlers={handlersFor(message.message_id)}
+              onMenu={(m, x, y) => setMenu({ message: m, x, y })}
+              onQuickReact={(m) => {
+                const quick = quickReactions[0]
+                if (quick) toggleReaction(m, quick)
+              }}
+              onKeyboardButton={onKeyboardButton}
+            />
+          ))}
 
-        {state.draft && (
-          <div className="tgc-row tgc-row-in" data-testid="chat-draft">
-            <div className="tgc-bubble tgc-bubble-in">
-              {state.draft.thinking ? (
-                <span className="tgc-thinking">Thinking…</span>
-              ) : state.draft.rich_message ? (
-                <RichMessageView rich={state.draft.rich_message} h={draftHandlers} />
-              ) : (
-                renderEntities(state.draft.text ?? "", state.draft.entities ?? [], draftHandlers)
+          {state.draft && (
+            <div className="tgc-row tgc-row-in" data-testid="chat-draft">
+              <div className="tgc-bubble tgc-bubble-in">
+                {state.draft.thinking ? (
+                  <span className="tgc-thinking">Thinking…</span>
+                ) : state.draft.rich_message ? (
+                  <RichMessageView rich={state.draft.rich_message} h={draftHandlers} />
+                ) : (
+                  renderEntities(state.draft.text ?? "", state.draft.entities ?? [], draftHandlers)
+                )}
+                <span className="tgc-draft-cursor" />
+              </div>
+            </div>
+          )}
+
+          {busy && !state.draft && (
+            <div className="tgc-row tgc-row-in" data-testid="chat-typing">
+              <div className="tgc-bubble tgc-bubble-in tgc-typing">
+                <span className="tgc-typing-dot" />
+                <span className="tgc-typing-dot" />
+                <span className="tgc-typing-dot" />
+              </div>
+            </div>
+          )}
+
+          {state.messages.length === 0 && !busy && (
+            <div className="tgc-empty">
+              <p>{emptyHint}</p>
+              {startCommand && (
+                <p>
+                  Try{" "}
+                  <button
+                    type="button"
+                    className="tgc-command"
+                    data-testid="chat-start"
+                    onClick={() => actions.send(startCommand)}
+                  >
+                    {startCommand}
+                  </button>
+                </p>
               )}
-              <span className="tgc-draft-cursor" />
             </div>
+          )}
+        </div>
+
+        {replyTo && (
+          <div className="tgc-reply-bar">
+            <div className="tgc-reply-bar-text">
+              <div className="tgc-reply-bar-name">
+                Reply to {replyTo.from?.is_bot ? "Bot" : "You"}
+              </div>
+              <div className="tgc-reply-bar-preview">{textOf(replyTo) ?? "…"}</div>
+            </div>
+            <button
+              type="button"
+              className="tgc-icon-button"
+              title="Cancel reply"
+              onClick={() => setReplyTo(null)}
+            >
+              ×
+            </button>
           </div>
         )}
 
-        {busy && !state.draft && (
-          <div className="tgc-row tgc-row-in" data-testid="chat-typing">
-            <div className="tgc-bubble tgc-bubble-in tgc-typing">
-              <span className="tgc-typing-dot" />
-              <span className="tgc-typing-dot" />
-              <span className="tgc-typing-dot" />
-            </div>
-          </div>
-        )}
-
-        {state.messages.length === 0 && !busy && (
-          <div className="tgc-empty">
-            <p>{emptyHint}</p>
-            {startCommand && (
-              <p>
-                Try{" "}
-                <button
-                  type="button"
-                  className="tgc-command"
-                  data-testid="chat-start"
-                  onClick={() => actions.send(startCommand)}
-                >
-                  {startCommand}
-                </button>
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {replyTo && (
-        <div className="tgc-reply-bar">
-          <div className="tgc-reply-bar-text">
-            <div className="tgc-reply-bar-name">
-              Reply to {replyTo.from?.is_bot ? "Bot" : "You"}
-            </div>
-            <div className="tgc-reply-bar-preview">{textOf(replyTo) ?? "…"}</div>
-          </div>
+        <div className="tgc-composer">
+          {state.commands.length > 0 && (
+            <CommandsMenu commands={state.commands} onPick={(command) => actions.send(command)} />
+          )}
+          <input
+            ref={fileInput}
+            type="file"
+            hidden
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ""
+              void attach(file)
+            }}
+          />
           <button
             type="button"
-            className="tgc-icon-button"
-            title="Cancel reply"
-            onClick={() => setReplyTo(null)}
+            className="tgc-icon-button tgc-attach"
+            data-testid="chat-attach"
+            title="Attach a file (typed text becomes the caption)"
+            onClick={() => fileInput.current?.click()}
           >
-            ×
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            >
+              <path d="M21 12.5 12.6 20.9a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8" />
+            </svg>
+          </button>
+          <input
+            type="text"
+            className="tgc-input"
+            data-testid="chat-input"
+            placeholder={replyKeyboard?.input_field_placeholder ?? "Message"}
+            autoComplete="off"
+            spellCheck={false}
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") send(input)
+            }}
+          />
+          {replyKeyboard && (
+            <button
+              type="button"
+              className={`tgc-icon-button tgc-keyboard-toggle${keyboardFolded ? "" : " tgc-open"}`}
+              data-testid="keyboard-toggle"
+              title={keyboardFolded ? "Show the bot's keyboard" : "Hide the bot's keyboard"}
+              onClick={() => setKeyboardFolded(!keyboardFolded)}
+            >
+              ⌨
+            </button>
+          )}
+          <button
+            type="button"
+            className="tgc-send"
+            data-testid="chat-send"
+            title="Send"
+            onClick={() => send(input)}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M2.4 21.6 22.8 12 2.4 2.4l.01 7.2 14.4 2.4-14.4 2.4z" />
+            </svg>
           </button>
         </div>
-      )}
 
-      <div className="tgc-composer">
-        <input
-          ref={fileInput}
-          type="file"
-          hidden
-          onChange={(event) => {
-            const file = event.target.files?.[0]
-            event.target.value = ""
-            void attach(file)
-          }}
-        />
-        <button
-          type="button"
-          className="tgc-icon-button tgc-attach"
-          data-testid="chat-attach"
-          title="Attach a file (typed text becomes the caption)"
-          onClick={() => fileInput.current?.click()}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-          >
-            <path d="M21 12.5 12.6 20.9a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8" />
-          </svg>
-        </button>
-        <input
-          type="text"
-          className="tgc-input"
-          data-testid="chat-input"
-          placeholder="Message"
-          autoComplete="off"
-          spellCheck={false}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") send(input)
-          }}
-        />
-        <button
-          type="button"
-          className="tgc-send"
-          data-testid="chat-send"
-          title="Send"
-          onClick={() => send(input)}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M2.4 21.6 22.8 12 2.4 2.4l.01 7.2 14.4 2.4-14.4 2.4z" />
-          </svg>
-        </button>
+        {replyKeyboard && !keyboardFolded && (
+          <ReplyKeyboard
+            keyboard={replyKeyboard}
+            onPress={(text) => {
+              send(text)
+              if (replyKeyboard.one_time_keyboard) setKeyboardFolded(true)
+            }}
+          />
+        )}
+
+        {menu && (
+          <MessageMenu
+            x={menu.x}
+            y={menu.y}
+            quickReactions={quickReactions}
+            chosen={state.reactions[menu.message.message_id] ?? []}
+            onReact={(emoji) => {
+              toggleReaction(menu.message, emoji)
+              closeMenu()
+            }}
+            onReply={() => {
+              setReplyTo(menu.message)
+              closeMenu()
+            }}
+            onCopy={
+              menuText === undefined
+                ? undefined
+                : () => {
+                    copy(menuText)
+                    closeMenu()
+                  }
+            }
+            onDelete={() => {
+              actions.deleteMessage(menu.message.message_id)
+              closeMenu()
+            }}
+            onClose={closeMenu}
+          />
+        )}
       </div>
-
-      {menu && (
-        <MessageMenu
-          x={menu.x}
-          y={menu.y}
-          quickReactions={quickReactions}
-          chosen={state.reactions[menu.message.message_id] ?? []}
-          onReact={(emoji) => {
-            toggleReaction(menu.message, emoji)
-            closeMenu()
-          }}
-          onReply={() => {
-            setReplyTo(menu.message)
-            closeMenu()
-          }}
-          onCopy={
-            menuText === undefined
-              ? undefined
-              : () => {
-                  copy(menuText)
-                  closeMenu()
-                }
-          }
-          onDelete={() => {
-            actions.deleteMessage(menu.message.message_id)
-            closeMenu()
-          }}
-          onClose={closeMenu}
-        />
-      )}
-    </div>
+    </FileSourceContext.Provider>
   )
 }

@@ -3,6 +3,7 @@
  * Public types of the emulator package.
  */
 import type {
+  BotCommand,
   CallbackQuery,
   Chat,
   ChosenInlineResult,
@@ -10,6 +11,7 @@ import type {
   InlineQueryResult,
   Message,
   MessageEntity,
+  ReplyKeyboardMarkup,
   RichMessage,
   Update,
   User,
@@ -55,6 +57,13 @@ export type EmulatorEvent =
   | { type: "draft"; draft: EmulatorDraft }
   | { type: "draft_cleared" }
   | { type: "chat_action"; action: string }
+  /**
+   * The bot set a reply keyboard (`keyboard`) or removed it (`null`). It is
+   * not part of the message: Telegram's `Message.reply_markup` is inline only.
+   */
+  | { type: "reply_keyboard"; keyboard: ReplyKeyboardMarkup | null }
+  /** `set_my_commands`: what the client's Menu button now lists. */
+  | { type: "commands_changed"; commands: BotCommand[] }
   | { type: "reactions"; message_id: number; reactions: string[] }
   | { type: "inline_results"; inline_query_id: string; results: InlineQueryResult[] }
   | { type: "widget_answered"; widget_query_id: string; data?: string }
@@ -109,6 +118,8 @@ export interface TgBotEmulator {
   readonly messages: readonly Message[]
   /** The currently streamed draft, if any. */
   readonly draft: EmulatorDraft | null
+  /** The reply keyboard the bot set last, until it removes it. */
+  readonly replyKeyboard: ReplyKeyboardMarkup | null
   /** Reactions on messages (bot- or user-set), keyed by message id. */
   readonly reactions: Readonly<Record<number, readonly string[]>>
   /** Results of the most recent `answer_inline_query`, if any. */

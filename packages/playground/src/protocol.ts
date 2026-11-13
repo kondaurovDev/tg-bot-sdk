@@ -32,6 +32,8 @@ export type WorkerCommand =
       caption?: string
     }
   | { command: "user-react"; message_id: number; emoji: string | null }
+  /** A file's bytes for the chat; answered by a `file` event with the same id. */
+  | { command: "get-file"; request_id: number; file_id: string }
 
 // -- worker → page --
 
@@ -52,3 +54,9 @@ export type WorkerEvent =
   | { type: "error"; error: string }
   /** A user action in the chat failed; the bot keeps running. */
   | { type: "action-error"; error: string }
+  | {
+      type: "file"
+      request_id: number
+      file?: { bytes: Uint8Array<ArrayBuffer>; file_name: string }
+      error?: string
+    }

@@ -31,6 +31,7 @@ type Driver = {
   wait(target: string, seconds?: number): Promise<void>
   gone(target: string, seconds?: number): Promise<void>
   shot(path: string): Promise<string>
+  open(target: string): Promise<string>
 }
 
 const SIM = process.env["GARAGE_SIM"] ?? join(homedir(), "Projects/garage/tools/sim")
@@ -49,7 +50,7 @@ const deckUrl = (): string => {
   return website.url
 }
 
-const URL = process.env["PLAYGROUND_URL"] ?? deckUrl()
+const PLAYGROUND = process.env["PLAYGROUND_URL"] ?? deckUrl()
 
 const BOT = '[data-testid="message"][data-from="bot"]'
 const IDLE = '[data-testid="chat"][data-bot="running"][data-busy="false"]'
@@ -107,10 +108,22 @@ const examples: Record<string, () => Promise<void>> = {
     await web.wait('[data-testid="reaction"]')
   },
   command: async () => {
-    await send("/help")
+    // /start fills the Menu (set_my_commands)
+    await send("/start")
+    await reply("Open the Menu")
+    await web.tap("#chat-menu")
+    await web.tap('[data-testid="command-item"][data-command="/help"]')
     await reply("Available commands")
     await send("/echo")
     await reply('"message_id"')
+    // A reply keyboard: a key sends its text, "Done" removes it
+    await send("/fruit")
+    await web.wait('[data-testid="reply-keyboard-button"]')
+    await web.tap('[data-testid="reply-keyboard-button"]', 0)
+    await reply("You said: 🍎 Apple")
+    await web.tap('[data-testid="reply-keyboard-button"]', 2)
+    await reply("Keyboard removed")
+    await web.gone("#reply-keyboard")
   },
   screens: async () => {
     await send("/start")
@@ -138,6 +151,7 @@ const examples: Record<string, () => Promise<void>> = {
   file: async () => {
     await send("some text")
     await reply("message.txt")
+    await web.wait('[data-testid="document"]')
   },
   dice: async () => {
     await send("/roll")
@@ -162,7 +176,13 @@ if (unknown.length > 0) {
 }
 const chosen = argv.length > 0 ? argv : Object.keys(examples)
 
-await web.start(URL, { fresh: true, ...(device === undefined ? {} : { pick: device }) })
+// A URL of its own: Safari would bring forward a tab already open on the same one
+const startUrl = new URL(PLAYGROUND)
+startUrl.searchParams.set("e2e", String(Date.now()))
+await web.start(startUrl.toString(), {
+  fresh: true,
+  ...(device === undefined ? {} : { pick: device })
+})
 await web.wait("#example-picker", 30)
 
 let failures = 0
@@ -181,4 +201,14 @@ for (const name of chosen) {
     console.log(`FAIL  ${name}: ${reason}\n      ${shot}`)
   }
 }
+// A deep link opens its example
+try {
+  await web.open(`${PLAYGROUND}?example=rich`)
+  await web.wait('[data-testid="example-picker"][data-example="rich.ts"]', 20)
+  console.log("ok    deep link ?example=rich")
+} catch (error) {
+  failures++
+  console.log(`FAIL  deep link: ${error instanceof Error ? error.message : String(error)}`)
+}
+
 process.exitCode = failures > 0 ? 1 : 0

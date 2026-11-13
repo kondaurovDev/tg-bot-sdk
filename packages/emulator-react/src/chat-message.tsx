@@ -7,6 +7,7 @@
 import type { InlineKeyboardButton, Message } from "@effect-ak/tg-bot-api"
 import { useRef, type MouseEvent, type TouchEvent } from "react"
 
+import { ChatDocument, ChatPhoto } from "./chat-media"
 import { RichMessageView } from "./render-rich"
 import {
   describeMedia,
@@ -41,12 +42,19 @@ const isInteractive = (target: EventTarget) =>
 
 export const MessageContent = ({ message, h }: { message: Message; h: RenderHandlers }) => {
   if (message.rich_message) return <RichMessageView rich={message.rich_message} h={h} />
-  const media = describeMedia(message)
   const entities = message.entities ?? message.caption_entities ?? []
+  // Photos and documents are shown; other media get a label
+  const media = message.photo ? (
+    <ChatPhoto photo={message.photo} />
+  ) : message.document ? (
+    <ChatDocument document={message.document} />
+  ) : (
+    describeMedia(message) && <span className="tgc-media">{describeMedia(message)} </span>
+  )
   return (
     <>
       <ReplyQuote message={message} />
-      {media && <span className="tgc-media">{media} </span>}
+      {media}
       {renderEntities(textOf(message) ?? "", entities, h)}
     </>
   )

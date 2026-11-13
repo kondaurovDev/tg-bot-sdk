@@ -9,5 +9,6 @@ paths:
 - Ships as source (`exports` point at `src/`): the website's Vite compiles it, resolving `?raw` imports (the examples, the SDK's `.d.ts` for Monaco) and the worker (`new URL("./bot-worker.ts", import.meta.url)`). It has no build step; it typechecks and tests on its own.
 - The bot runs in a Web Worker (`src/bot-worker.ts`), one per run: `src/bot-runner.ts` starts it and hands the chat a new `EmulatorPort` over `postMessage`. Messages are typed in `src/protocol.ts`.
 - The examples are `examples/*.ts`, typechecked with the package; `src/examples.ts` lists them. A new example also gets a case in the website's smoke test (`apps/website/tests/e2e/playground.ts`).
+- Links: `?example=rich` opens an example, `#code=…` carries code (deflate-raw, base64url; `src/share.ts`). Shared code becomes the visitor's edits of that example and leaves the address bar.
 - Styles are plain CSS (`src/styles.css`, classes prefixed `pg-`), importing the chat's. No Tailwind.
 - localStorage keys (`src/storage.ts`) are the ones the old Alpine playground used: visitors keep their edits and token.

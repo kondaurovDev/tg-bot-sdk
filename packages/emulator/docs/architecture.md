@@ -68,6 +68,13 @@ maps results into the `ClientResult` union: handler return → `{ ok: true }`,
 `EmulatorApiError` → `NotOkResponse` with its code, anything else →
 `ClientInternalError`, unknown method → `NotOkResponse` 404.
 
+**What a client UI follows.** Besides messages, edits, drafts and reactions,
+two events carry chat state that is not in any message: `reply_keyboard`
+(the keyboard a bot set with `ReplyKeyboardMarkup`, or `null` after
+`remove_keyboard` — Telegram keeps it out of `Message.reply_markup`, so does
+the emulator; `outgoingBase` applies it for every send method) and
+`commands_changed` (`set_my_commands`, for the Menu button).
+
 **Long poll.** `get_updates` first applies `offset` (confirmed updates are
 dropped), then: queue non-empty → return immediately; empty with `timeout` →
 park a waiter that either gets woken by the next `pushUpdate` or resolves

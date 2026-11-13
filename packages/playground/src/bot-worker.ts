@@ -123,6 +123,27 @@ const userAction = (work: (emulator: TgBotEmulator) => void) => {
   }
 }
 
+const sendFile = async (request_id: number, file_id: string) => {
+  if (!emulator) {
+    sendEvent({ type: "file", request_id, error: "Emulator is not running" })
+    return
+  }
+  try {
+    const file = await emulator.client.getFile({ fileId: file_id })
+    sendEvent({
+      type: "file",
+      request_id,
+      file: { bytes: new Uint8Array(file.content), file_name: file.file_name }
+    })
+  } catch (error) {
+    sendEvent({
+      type: "file",
+      request_id,
+      error: error instanceof Error ? error.message : String(error)
+    })
+  }
+}
+
 addEventListener("message", (msg: MessageEvent<WorkerCommand>) => {
   const data = msg.data
   switch (data.command) {
@@ -150,6 +171,9 @@ addEventListener("message", (msg: MessageEvent<WorkerCommand>) => {
       break
     case "user-react":
       userAction((e) => e.react(data.message_id, data.emoji))
+      break
+    case "get-file":
+      void sendFile(data.request_id, data.file_id)
       break
   }
 })

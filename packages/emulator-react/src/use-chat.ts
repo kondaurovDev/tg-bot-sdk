@@ -4,7 +4,7 @@
  * draft, reactions, and whether the bot is busy. `useChat` is what `<Chat>`
  * renders from; a custom UI can use it alone.
  */
-import type { Message } from "@effect-ak/tg-bot-api"
+import type { BotCommand, Message, ReplyKeyboardMarkup } from "@effect-ak/tg-bot-api"
 import type { EmulatorDraft } from "@effect-ak/tg-bot-emulator"
 import { useEffect, useMemo, useReducer, useRef } from "react"
 
@@ -22,6 +22,10 @@ export interface ChatState {
   waiting: boolean
   /** The bot sent a chat action a moment ago. */
   typing: boolean
+  /** What the Menu button lists (`set_my_commands`). */
+  commands: readonly BotCommand[]
+  /** The reply keyboard the bot set last, until it removes it. */
+  replyKeyboard: ReplyKeyboardMarkup | null
 }
 
 export const initialChatState: ChatState = {
@@ -29,7 +33,9 @@ export const initialChatState: ChatState = {
   draft: null,
   reactions: {},
   waiting: false,
-  typing: false
+  typing: false,
+  commands: [],
+  replyKeyboard: null
 }
 
 export type ChatAction =
@@ -81,6 +87,10 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
       return { ...state, draft: null }
     case "chat_action":
       return { ...state, typing: true }
+    case "commands_changed":
+      return { ...state, commands: action.commands }
+    case "reply_keyboard":
+      return { ...state, replyKeyboard: action.keyboard }
     case "reactions":
       return {
         ...state,

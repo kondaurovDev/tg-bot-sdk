@@ -26,6 +26,8 @@ export interface CodeEditor {
   hasErrors(): Promise<boolean>
   /** Called with the number of errors whenever the markers change. */
   onErrorCount(listener: (count: number) => void): void
+  /** Put the cursor on the first error; `false` when there is none. */
+  revealFirstError(): boolean
   dispose(): void
 }
 
@@ -89,6 +91,17 @@ export const createCodeEditor = async (container: HTMLElement): Promise<CodeEdit
         const markers = monaco.editor.getModelMarkers({ resource: model.uri })
         listener(markers.filter((m) => m.severity === monaco.MarkerSeverity.Error).length)
       })
+    },
+    revealFirstError() {
+      const [first] = monaco.editor
+        .getModelMarkers({ resource: model.uri })
+        .filter((m) => m.severity === monaco.MarkerSeverity.Error)
+        .sort((a, b) => a.startLineNumber - b.startLineNumber || a.startColumn - b.startColumn)
+      if (!first) return false
+      view.setPosition({ lineNumber: first.startLineNumber, column: first.startColumn })
+      view.revealLineInCenter(first.startLineNumber)
+      view.focus()
+      return true
     },
     dispose() {
       view.dispose()

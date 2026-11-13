@@ -23,9 +23,22 @@ import type { CodeEditor } from "./monaco"
 import { MonacoPane } from "./monaco-pane"
 import type { PlaygroundMode, WorkerEvent } from "./protocol"
 import { storage } from "./storage"
+import { decodeCode, encodeCode, readShareLink, shareLink } from "./share"
 import { deleteWebhook, getBotName, getWebhook } from "./telegram"
 
 type BotStatus = "idle" | "running" | "error"
+
+/** What the toolbar says about the code and the bot it became. */
+type Build =
+  | { kind: "idle" }
+  | { kind: "editing" }
+  | { kind: "compiling" }
+  | { kind: "running"; at: number; restarted: boolean }
+  | { kind: "errors" }
+  | { kind: "failed" }
+
+const clock = (at: number) =>
+  new Date(at).toLocaleTimeString("en-GB", { hour12: false, hour: "2-digit", minute: "2-digit" })
 
 interface RealBot {
   token: string
@@ -54,7 +67,8 @@ const idlePort = (): EmulatorPort => {
     sendFile: refuse,
     tapButton: refuse,
     react: refuse,
-    deleteMessage: refuse
+    deleteMessage: refuse,
+    getFile: () => Promise.reject(new Error("Bot is not running"))
   }
 }
 
@@ -65,11 +79,14 @@ export interface PlaygroundProps {
 
 export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
   const [runner] = useState(createBotRunner)
+  // A link may name the example (?example=) and carry code (#code=)
+  const [link] = useState(() => readShareLink(new URL(window.location.href)))
   const [mode, setMode] = useState<PlaygroundMode>(storage.mode)
   const [example, setExample] = useState(() => {
-    const saved = storage.example()
-    return saved && findExample(saved) ? saved : DEFAULT_EXAMPLE
+    const wanted = link.example ?? storage.example()
+    return wanted && findExample(wanted) ? wanted : DEFAULT_EXAMPLE
   })
+  const [build, setBuild] = useState<Build>({ kind: "idle" })
   const [status, setStatus] = useState<BotStatus>("idle")
   const [port, setPort] = useState<EmulatorPort>(idlePort)
   const [real, setReal] = useState<RealBot | null>(null)
@@ -94,10 +111,13 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
 
   const run = useCallback(async () => {
     clearTimeout(restartTimer.current)
+    setBuild({ kind: "compiling" })
     const code = await editor.current?.compile()
-    if (!code) return
     const { mode, real, status } = latest.current
-    if (mode === "real" && !real) return
+    if (!code || (mode === "real" && !real)) {
+      setBuild({ kind: "idle" })
+      return
+    }
     const restarting = status === "running"
     // Restarts happen on every edit in the emulator: no toast for them
     quietStart.current = restarting
@@ -105,6 +125,7 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
     setPort(runner.run({ mode, code, ...(mode === "real" && real ? { token: real.token } : {}) }))
     setStatus("running")
     latest.current.status = "running"
+    setBuild({ kind: "running", at: Date.now(), restarted: restarting })
     if (restarting && mode === "real") showToast("Bot restarted", "success")
   }, [runner, showToast])
 
@@ -114,6 +135,7 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
       setPort(idlePort())
       setStatus("idle")
       latest.current.status = "idle"
+      setBuild({ kind: "idle" })
       if (notice) showToast("Bot stopped", "success")
     },
     [runner, showToast]
@@ -126,12 +148,16 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
         dispatchLogs({ type: "event", event })
         if (event.type === "bot-state") {
           setStatus(event.state === "active" ? "running" : "idle")
-          if (event.notice && !quietStart.current) showToast(event.notice, "success")
+          // The emulator starts the bot by itself; only a real bot's start is news
+          if (event.notice && !quietStart.current && latest.current.mode === "real") {
+            showToast(event.notice, "success")
+          }
           quietStart.current = false
         } else if (event.type === "error") {
           quietStart.current = false
           setStatus("error")
           latest.current.status = "error"
+          setBuild({ kind: "failed" })
           setLogsOpen(true)
           showToast(event.error, "error")
         }
@@ -212,22 +238,42 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
     [confirm, run, showToast]
   )
 
-  const onEditorReady = (ready: CodeEditor) => {
+  // Shared code becomes this visitor's edits of the example, and leaves the
+  // address bar: a reload shows the visitor's code, not the link's again
+  const openSharedCode = async (file: string, original: string): Promise<string | null> => {
+    if (!link.code) return null
+    const shared = await decodeCode(link.code)
+    window.history.replaceState(null, "", shareLink(new URL(window.location.href), file, null))
+    if (shared === null) {
+      showToast("The link's code could not be read", "error")
+      return null
+    }
+    storage.saveCode(file, shared, original)
+    showToast("Opened the shared code", "success")
+    return shared
+  }
+
+  const onEditorReady = async (ready: CodeEditor) => {
     editor.current = ready
-    const shipped = findExample(latest.current.example)
-    const original = shipped?.code ?? ""
-    ready.model.setValue(storage.code(latest.current.example) ?? original)
+    const file = latest.current.example
+    const original = findExample(file)?.code ?? ""
+    storage.setExample(file)
+    const shared = await openSharedCode(file, original)
+    ready.model.setValue(shared ?? storage.code(file) ?? original)
     setModified(ready.model.getValue() !== original)
     ready.onErrorCount(setErrorCount)
     ready.model.onDidChangeContent(() => {
       const current = findExample(latest.current.example)
       setModified(ready.model.getValue() !== current?.code)
+      setBuild({ kind: "editing" })
       clearTimeout(restartTimer.current)
       restartTimer.current = setTimeout(async () => {
         saveCode()
         const { mode, real, status } = latest.current
         const restart = mode === "virtual" || (real !== null && status === "running")
-        if (restart && !(await ready.hasErrors())) void run()
+        if (!restart) setBuild({ kind: "idle" })
+        else if (await ready.hasErrors()) setBuild({ kind: "errors" })
+        else void run()
       }, RESTART_DELAY_MS)
     })
     if (latest.current.mode === "virtual") void run()
@@ -244,6 +290,7 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
     setExample(file)
     latest.current.example = file
     storage.setExample(file)
+    window.history.replaceState(null, "", shareLink(new URL(window.location.href), file, null))
     editor.current.model.setValue(storage.code(file) ?? shipped.code)
     dispatchLogs({ type: "note", level: "info", text: `Switched to ${file}` })
     if (mode === "virtual" || real) void run()
@@ -305,6 +352,21 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
     window.addEventListener("pointermove", onMove)
     window.addEventListener("pointerup", onUp)
     window.addEventListener("pointercancel", onUp)
+  }
+
+  const share = async () => {
+    const shipped = findExample(example)
+    const code = editor.current?.model.getValue()
+    if (!shipped || code === undefined) return
+    const encoded = code === shipped.code ? null : await encodeCode(code)
+    try {
+      await navigator.clipboard.writeText(
+        shareLink(new URL(window.location.href), shipped.file, encoded)
+      )
+      showToast(encoded ? "Link with your code copied" : "Link to the example copied", "success")
+    } catch {
+      showToast("Could not copy the link", "error")
+    }
   }
 
   const onChatEvent = useCallback(
@@ -422,13 +484,25 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
                 Reset
               </button>
             )}
-            {errorCount > 0 && (
-              <span className="pg-error-count">
-                {errorCount} error{errorCount === 1 ? "" : "s"}
-              </span>
-            )}
+            <div className="pg-toolbar-end">
+              <BuildStatus
+                build={build}
+                errorCount={errorCount}
+                onErrors={() => editor.current?.revealFirstError()}
+                onFailed={() => setLogsOpen(true)}
+              />
+              <button
+                type="button"
+                className="pg-share"
+                data-testid="share"
+                title="Copy a link to this example, with your code if you changed it"
+                onClick={() => void share()}
+              >
+                Share
+              </button>
+            </div>
           </div>
-          <MonacoPane onReady={onEditorReady} />
+          <MonacoPane onReady={(ready) => void onEditorReady(ready)} />
         </section>
 
         <div className={`pg-divider${dragging ? " pg-dragging" : ""}`} onPointerDown={startDrag} />
@@ -500,5 +574,65 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
       {toasts.element}
       {dialogs.element}
     </div>
+  )
+}
+
+interface BuildStatusProps {
+  build: Build
+  errorCount: number
+  onErrors(): void
+  onFailed(): void
+}
+
+/** "Compiling…", "Bot restarted 18:42", or the errors that kept it from restarting. */
+const BuildStatus = ({ build, errorCount, onErrors, onFailed }: BuildStatusProps) => {
+  const errors = `${errorCount} error${errorCount === 1 ? "" : "s"}`
+  const errorButton = (label: string) => (
+    <button
+      type="button"
+      className="pg-build-errors"
+      data-testid="errors-button"
+      title="Go to the first error"
+      onClick={onErrors}
+    >
+      {label}
+    </button>
+  )
+  let status
+  switch (build.kind) {
+    case "editing":
+      status = <span className="pg-build-muted">Editing…</span>
+      break
+    case "compiling":
+      status = <span className="pg-build-muted">Compiling…</span>
+      break
+    case "running":
+      status = (
+        <span className="pg-build-ok">
+          {build.restarted ? "Bot restarted" : "Bot started"} {clock(build.at)}
+        </span>
+      )
+      break
+    case "errors":
+      return (
+        <span className="pg-build" data-testid="build-status" data-state="errors">
+          {errorButton(`${errors} · bot not restarted`)}
+        </span>
+      )
+    case "failed":
+      status = (
+        <button type="button" className="pg-build-errors" onClick={onFailed}>
+          Bot failed to start · console
+        </button>
+      )
+      break
+    case "idle":
+      status = null
+  }
+  return (
+    <span className="pg-build" data-testid="build-status" data-state={build.kind}>
+      {status}
+      {errorCount > 0 && errorButton(errors)}
+    </span>
   )
 }

@@ -54,7 +54,18 @@ export const createBotRunner = (): BotRunner => {
       const current = createWorker()
       worker = current
       const chatListeners = new Set<(event: ChatPortEvent) => void>()
+      // Files the chat asked for, by request id
+      const fileRequests = new Map<
+        number,
+        (event: Extract<WorkerEvent, { type: "file" }>) => void
+      >()
+      let nextRequestId = 1
       current.addEventListener("message", (msg: MessageEvent<WorkerEvent>) => {
+        if (msg.data.type === "file") {
+          fileRequests.get(msg.data.request_id)?.(msg.data)
+          fileRequests.delete(msg.data.request_id)
+          return
+        }
         for (const listener of listeners) listener(msg.data)
         const portEvent = toPortEvent(msg.data)
         if (portEvent) for (const listener of chatListeners) listener(portEvent)
@@ -77,7 +88,15 @@ export const createBotRunner = (): BotRunner => {
         sendFile: (file) => send({ command: "user-file", ...file }),
         tapButton: (data, message_id) => send({ command: "tap-button", data, message_id }),
         react: (message_id, emoji) => send({ command: "user-react", message_id, emoji }),
-        deleteMessage: (message_id) => send({ command: "delete-message", message_id })
+        deleteMessage: (message_id) => send({ command: "delete-message", message_id }),
+        getFile: (file_id) =>
+          new Promise((resolve, reject) => {
+            const request_id = nextRequestId++
+            fileRequests.set(request_id, ({ file, error }) =>
+              file ? resolve(file) : reject(new Error(error ?? "File not found"))
+            )
+            send({ command: "get-file", request_id, file_id })
+          })
       }
     },
     stop,

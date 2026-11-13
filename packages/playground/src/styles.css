@@ -234,15 +234,55 @@
   background: #f3f4f6;
   color: #374151;
 }
-.pg-error-count {
+.pg-toolbar-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+  min-width: 0;
+}
+.pg-build {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pg-build-muted {
+  color: var(--pg-muted);
+}
+.pg-build-ok {
+  color: #15803d;
+}
+.pg-build-ok::before {
+  content: "●";
   margin-right: 4px;
+  font-size: 8px;
+  vertical-align: 1px;
+}
+.pg-build-errors {
   padding: 2px 8px;
+  border: none;
   border-radius: 6px;
   background: #fef2f2;
   color: #dc2626;
   font-family: var(--pg-mono);
   font-size: 12px;
+}
+.pg-build-errors:hover {
+  background: #fee2e2;
+}
+.pg-share {
+  padding: 4px 10px;
+  border: 1px solid var(--pg-border);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 12px;
+  color: #374151;
+}
+.pg-share:hover {
+  background: #f9fafb;
 }
 .pg-monaco {
   flex: 1;
@@ -562,9 +602,10 @@
 }
 
 /* --- Toasts and dialogs --- */
+/* Under the header: at the bottom they would cover the composer and the keyboard */
 .pg-toasts {
   position: fixed;
-  bottom: 24px;
+  top: 60px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 60;
@@ -594,13 +635,13 @@
 @keyframes pg-toast-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(-8px);
   }
 }
 @keyframes pg-toast-out {
   to {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(-8px);
   }
 }
 .pg-dialog-backdrop {
@@ -681,7 +722,8 @@
   .pg-divider {
     display: none;
   }
-  .pg-reset {
+  .pg-reset,
+  .pg-build {
     display: none;
   }
   .pg-side {

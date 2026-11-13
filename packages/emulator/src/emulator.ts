@@ -93,6 +93,9 @@ export const makeTgBotEmulator = (options: EmulatorOptions = {}): TgBotEmulator 
     get draft() {
       return state.activeDraft
     },
+    get replyKeyboard() {
+      return state.replyKeyboard
+    },
     get reactions() {
       return Object.fromEntries(state.reactions)
     },

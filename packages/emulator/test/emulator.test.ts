@@ -314,7 +314,46 @@ describe("ctx.stream integration", () => {
   })
 })
 
+describe("reply keyboard", () => {
+  it("is the chat's, not the message's: set, then removed", async () => {
+    const emulator = makeTgBotEmulator()
+    const keyboard = { keyboard: [[{ text: "Yes" }, { text: "No" }]], resize_keyboard: true }
+    const events: unknown[] = []
+    emulator.subscribe((e) => {
+      if (e.type === "reply_keyboard") events.push(e.keyboard)
+    })
+
+    const sent = await emulator.client.execute("send_message", {
+      chat_id: emulator.chat.id,
+      text: "Agree?",
+      reply_markup: keyboard
+    })
+    expect(sent.reply_markup).toBeUndefined()
+    expect(emulator.replyKeyboard).toEqual(keyboard)
+
+    await emulator.client.execute("send_message", {
+      chat_id: emulator.chat.id,
+      text: "Thanks",
+      reply_markup: { remove_keyboard: true }
+    })
+    expect(emulator.replyKeyboard).toBeNull()
+    expect(events).toEqual([keyboard, null])
+  })
+})
+
 describe("bot profile", () => {
+  it("announces new commands, for the client's Menu button", async () => {
+    const emulator = makeTgBotEmulator()
+    const changed = emulator.nextEvent((e) => e.type === "commands_changed")
+    await emulator.client.execute("set_my_commands", {
+      commands: [{ command: "help", description: "What I can do" }]
+    })
+    expect(await changed).toEqual({
+      type: "commands_changed",
+      commands: [{ command: "help", description: "What I can do" }]
+    })
+  })
+
   it("stores what set_my_* sets, and keeps it across reset()", async () => {
     const emulator = makeTgBotEmulator()
     expect(await emulator.client.execute("get_my_name", {})).toEqual({ name: "Bot" })

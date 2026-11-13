@@ -3,7 +3,12 @@
  * Shared pieces of every outgoing (bot-sent) message: base fields,
  * inline keyboard, caption parsing, and `reply_parameters` resolution.
  */
-import type { InlineKeyboardMarkup, Message, ReplyParameters } from "@effect-ak/tg-bot-api"
+import type {
+  InlineKeyboardMarkup,
+  Message,
+  ReplyKeyboardMarkup,
+  ReplyParameters
+} from "@effect-ak/tg-bot-api"
 import type { FileContent } from "@effect-ak/tg-bot-client"
 
 import type { EmulatorState } from "./state"
@@ -11,6 +16,12 @@ import { parseOutgoingText } from "./text"
 
 export const isInlineKeyboard = (markup: unknown): markup is InlineKeyboardMarkup =>
   typeof markup === "object" && markup !== null && "inline_keyboard" in markup
+
+const isReplyKeyboard = (markup: unknown): markup is ReplyKeyboardMarkup =>
+  typeof markup === "object" && markup !== null && "keyboard" in markup
+
+const isKeyboardRemove = (markup: unknown): boolean =>
+  typeof markup === "object" && markup !== null && "remove_keyboard" in markup
 
 export const isFileContent = (value: unknown): value is FileContent =>
   typeof value === "object" &&
@@ -27,8 +38,14 @@ export interface OutgoingInput {
   parse_mode?: string
 }
 
-/** Base fields of a new bot message: id, date, chat, author, markup, reply. */
+/**
+ * Base fields of a new bot message: id, date, chat, author, markup, reply.
+ * An inline keyboard goes into the message; a reply keyboard (or its
+ * removal) changes the chat's keyboard instead, as in Telegram.
+ */
 export const outgoingBase = (state: EmulatorState, input: OutgoingInput): Message => {
+  if (isReplyKeyboard(input.reply_markup)) state.setReplyKeyboard(input.reply_markup)
+  else if (isKeyboardRemove(input.reply_markup)) state.setReplyKeyboard(null)
   const replyId = input.reply_parameters?.message_id
   const replyTo =
     replyId !== undefined ? state.messages.find((m) => m.message_id === replyId) : undefined

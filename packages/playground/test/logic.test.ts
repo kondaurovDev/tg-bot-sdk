@@ -72,3 +72,27 @@ describe("logsReducer", () => {
     expect(state.entries[0]).toMatchObject({ kind: "update", text: "@You: /start" })
   })
 })
+
+describe("share links", () => {
+  it("round-trips code through the link", async () => {
+    const { decodeCode, encodeCode } = await import("../src/share")
+    const code = `import { createBot } from "@effect-ak/tg-bot"\n// ✓ unicode — dashes\n`.repeat(20)
+    const encoded = await encodeCode(code)
+    expect(encoded).toMatch(/^[\w-]+$/)
+    expect(encoded.length).toBeLessThan(code.length)
+    expect(await decodeCode(encoded)).toBe(code)
+    expect(await decodeCode("not-a-link")).toBeNull()
+  })
+
+  it("reads ?example= and #code=, and builds links back", async () => {
+    const { readShareLink, shareLink } = await import("../src/share")
+    expect(readShareLink(new URL("https://x.dev/playground/?example=rich#code=abc"))).toEqual({
+      example: "rich.ts",
+      code: "abc"
+    })
+    expect(readShareLink(new URL("https://x.dev/playground/"))).toEqual({})
+    const base = new URL("https://x.dev/playground/?example=old#code=zzz")
+    expect(shareLink(base, "dice.ts", null)).toBe("https://x.dev/playground/?example=dice")
+    expect(shareLink(base, "dice.ts", "q1")).toBe("https://x.dev/playground/?example=dice#code=q1")
+  })
+})

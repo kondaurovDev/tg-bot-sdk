@@ -2,8 +2,9 @@
 
 A Telegram-like chat for [`@effect-ak/tg-bot-emulator`](../emulator): put your
 bot in front of people — in docs, a playground, a Storybook — without a token
-or a network. Rich messages, inline keyboards, streamed drafts, reactions,
-replies and file uploads work as in the Telegram client.
+or a network. Rich messages, inline and reply keyboards, the Menu button with the bot's
+commands, photos and documents, streamed drafts, reactions, replies and file
+uploads work as in the Telegram client.
 
 ```tsx
 import { createBot } from "@effect-ak/tg-bot"
@@ -29,7 +30,8 @@ export const Demo = () => (
 
 `<Chat>` never touches the emulator: it talks to an `EmulatorPort` — chat
 events in, user actions out (`sendMessage`, `tapButton`, `react`,
-`deleteMessage`, `sendFile`). `createEmulatorPort(emulator)` is the port to an
+`deleteMessage`, `sendFile`), and `getFile` for the photos it shows and the
+documents it saves. `createEmulatorPort(emulator)` is the port to an
 emulator in the same thread. When the bot runs in a Web Worker, implement the
 same interface over `postMessage`: the worker forwards the emulator's events
 and performs the actions it receives. Besides the emulator's events a port may

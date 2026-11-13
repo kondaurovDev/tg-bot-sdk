@@ -149,6 +149,88 @@ describe("<Chat>", () => {
   })
 })
 
+describe("<Chat> around the composer", () => {
+  it("lists the bot's commands in the Menu and sends the picked one", async () => {
+    const { port } = await start(
+      createBot()
+        .command("/start", ({ ctx }) => [
+          ctx.call("set_my_commands", {
+            commands: [{ command: "help", description: "What I can do" }]
+          }),
+          ctx.reply("Hi")
+        ])
+        .command("/help", ({ ctx }) => ctx.reply("Help text"))
+    )
+    render(<Chat port={port} />)
+    expect(screen.queryByTestId("chat-menu")).toBeNull()
+
+    fireEvent.click(screen.getByTestId("chat-start"))
+    await until(() => screen.queryByTestId("chat-menu") !== null)
+    fireEvent.click(screen.getByTestId("chat-menu"))
+    expect(screen.getByTestId("command-item").textContent).toContain("What I can do")
+    fireEvent.click(screen.getByTestId("command-item"))
+
+    await until(() => botMessages().some((text) => text.includes("Help text")))
+    expect(screen.queryByTestId("commands-menu")).toBeNull()
+  })
+
+  it("shows the reply keyboard until the bot removes it", async () => {
+    const { port } = await start(
+      createBot()
+        .command("/start", ({ ctx }) =>
+          ctx.reply("Pick", {
+            reply_markup: {
+              keyboard: [[{ text: "Apple" }, { text: "Done" }]],
+              input_field_placeholder: "Pick a fruit"
+            }
+          })
+        )
+        .onText(({ payload, ctx }) =>
+          payload.text === "Done"
+            ? ctx.reply("Bye", { reply_markup: { remove_keyboard: true } })
+            : ctx.reply(`You picked ${payload.text}`)
+        )
+    )
+    render(<Chat port={port} />)
+    fireEvent.click(screen.getByTestId("chat-start"))
+    await until(() => screen.queryAllByTestId("reply-keyboard-button").length === 2)
+    expect(screen.getByTestId("chat-input").getAttribute("placeholder")).toBe("Pick a fruit")
+
+    fireEvent.click(screen.getByRole("button", { name: "Apple" }))
+    await until(() => botMessages().some((text) => text.includes("You picked Apple")))
+
+    fireEvent.click(screen.getByTestId("keyboard-toggle"))
+    expect(screen.queryByTestId("reply-keyboard")).toBeNull()
+    fireEvent.click(screen.getByTestId("keyboard-toggle"))
+
+    fireEvent.click(screen.getByRole("button", { name: "Done" }))
+    await until(() => screen.queryByTestId("reply-keyboard") === null)
+    expect(screen.queryByTestId("keyboard-toggle")).toBeNull()
+  })
+
+  it("shows a photo and a document the bot sent", async () => {
+    vi.stubGlobal(
+      "URL",
+      Object.assign(URL, { createObjectURL: () => "blob:photo", revokeObjectURL: () => {} })
+    )
+    const { port } = await start(
+      createBot().command("/start", ({ ctx }) => [
+        ctx.replyWithPhoto({ file_content: new Uint8Array([1, 2, 3]), file_name: "cat.png" }),
+        ctx.replyWithDocument({
+          file_content: Uint8Array.from([110, 111, 116, 101, 115]),
+          file_name: "notes.txt"
+        })
+      ])
+    )
+    render(<Chat port={port} />)
+    fireEvent.click(screen.getByTestId("chat-start"))
+
+    await until(() => screen.queryByTestId("photo")?.getAttribute("src") === "blob:photo")
+    await until(() => screen.queryByTestId("document")?.textContent?.includes("notes.txt") === true)
+    vi.unstubAllGlobals()
+  })
+})
+
 describe("createEmulatorPort", () => {
   it("reports a failed action as an event instead of throwing", () => {
     const port = createEmulatorPort(makeTgBotEmulator())
