@@ -92,17 +92,27 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
     let saveTimer: ReturnType<typeof setTimeout> | null = null
     let pendingRestart = false
     let currentExample = "empty.ts"
+    // The example as shipped: edits equal to it are not stored, so a
+    // visitor who never changed an example gets its updates
+    let originalCode = ""
 
     function attachWorker(self: any) {
       worker = createWorkerManager()
       worker.onEvent((event) => self._handleWorkerEvent(event))
     }
 
+    function saveCode() {
+      if (!editor) return
+      const code = editor.model.getValue()
+      if (code === originalCode) localStorage.removeItem(CODE_STORAGE_PREFIX + currentExample)
+      else localStorage.setItem(CODE_STORAGE_PREFIX + currentExample, code)
+    }
+
     function scheduleSave(self: any) {
       if (saveTimer) clearTimeout(saveTimer)
       saveTimer = setTimeout(async () => {
         if (!editor) return
-        localStorage.setItem(CODE_STORAGE_PREFIX + currentExample, editor.model.getValue())
+        saveCode()
 
         // Restart the bot when the code compiles: in the emulator the bot
         // is always kept alive (even after an error), in real mode only
@@ -135,6 +145,8 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
       errorCount: 0,
       editorWidth: 60,
       isDragging: false,
+      exampleModified: false,
+      now: Date.now(),
       activeExample: localStorage.getItem(ACTIVE_EXAMPLE_KEY) ?? "empty.ts",
       pickerOpen: false,
       pickerQuery: "",
@@ -205,7 +217,7 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
       },
 
       get phoneTime() {
-        return new Date().toLocaleTimeString("en-GB", {
+        return new Date(this.now).toLocaleTimeString("en-GB", {
           hour12: false,
           hour: "2-digit",
           minute: "2-digit"
@@ -217,18 +229,24 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
         editor = await createEditor(document.getElementById("code-editor")!)
         attachWorker(this)
 
+        // The phone mockup's clock
+        setInterval(() => {
+          this.now = Date.now()
+        }, 15_000)
+
         // Restore last active example
         currentExample = localStorage.getItem(ACTIVE_EXAMPLE_KEY) ?? "empty.ts"
-        const savedCode = localStorage.getItem(CODE_STORAGE_PREFIX + currentExample)
-        if (savedCode) {
-          editor.model.setValue(savedCode)
-        } else {
-          const initialCode = await loadExample(currentExample)
-          editor.model.setValue(initialCode)
-        }
+        originalCode = await loadExample(currentExample)
+        editor.model.setValue(
+          localStorage.getItem(CODE_STORAGE_PREFIX + currentExample) ?? originalCode
+        )
+        this.exampleModified = editor.model.getValue() !== originalCode
 
         // Auto-save on content changes
-        editor.model.onDidChangeContent(() => scheduleSave(this))
+        editor.model.onDidChangeContent(() => {
+          this.exampleModified = editor!.model.getValue() !== originalCode
+          scheduleSave(this)
+        })
 
         // Track editor errors reactively
         editor.onMarkerChange((count) => {
@@ -261,21 +279,15 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
       // -- examples --
       async selectExample(name: string) {
         // Save current code before switching
-        if (editor) {
-          localStorage.setItem(CODE_STORAGE_PREFIX + currentExample, editor.model.getValue())
-        }
+        saveCode()
+        const original = await loadExample(name)
         currentExample = name
+        originalCode = original
         this.activeExample = name
         localStorage.setItem(ACTIVE_EXAMPLE_KEY, name)
 
-        // Load saved version or fresh example
-        const saved = localStorage.getItem(CODE_STORAGE_PREFIX + name)
-        if (saved) {
-          editor!.model.setValue(saved)
-        } else {
-          const code = await loadExample(name)
-          editor!.model.setValue(code)
-        }
+        // The visitor's edits, or the example as shipped
+        editor!.model.setValue(localStorage.getItem(CODE_STORAGE_PREFIX + name) ?? original)
         this._pushLog({
           text: `Switched to ${name}`,
           level: "info",
@@ -286,6 +298,17 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
         if (this.canRun) {
           this.runCurrentCode()
         }
+      },
+
+      async resetExample() {
+        const confirmed = await this._showConfirmModal(
+          "Your changes to this example will be replaced with its original code.",
+          { title: "Reset the example?", confirmLabel: "Reset" }
+        )
+        if (!confirmed || !editor) return
+        localStorage.removeItem(CODE_STORAGE_PREFIX + currentExample)
+        editor.model.setValue(originalCode)
+        if (this.canRun) this.runCurrentCode()
       },
 
       // -- run / stop --
@@ -419,7 +442,8 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
             const shouldDelete = await this._showConfirmModal(
               `This bot has an active webhook:\n${webhook.url}\n` +
                 `Pending updates: ${webhook.pending_update_count ?? 0}\n\n` +
-                `Polling won't work while a webhook is set.`
+                `Polling won't work while a webhook is set.`,
+              { title: "Webhook detected", confirmLabel: "Delete webhook" }
             )
 
             if (!shouldDelete) {
@@ -466,10 +490,11 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
       },
 
       // -- resizable panels --
-      startDrag(e: MouseEvent) {
+      // Pointer events: a mouse, a finger and a pencil all drag the divider
+      startDrag(e: PointerEvent) {
         e.preventDefault()
         this.isDragging = true
-        const onMove = (ev: MouseEvent) => {
+        const onMove = (ev: PointerEvent) => {
           const main = (this as any).$refs.mainContainer as HTMLElement
           if (!main) return
           const rect = main.getBoundingClientRect()
@@ -478,11 +503,13 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
         }
         const onUp = () => {
           this.isDragging = false
-          window.removeEventListener("mousemove", onMove)
-          window.removeEventListener("mouseup", onUp)
+          window.removeEventListener("pointermove", onMove)
+          window.removeEventListener("pointerup", onUp)
+          window.removeEventListener("pointercancel", onUp)
         }
-        window.addEventListener("mousemove", onMove)
-        window.addEventListener("mouseup", onUp)
+        window.addEventListener("pointermove", onMove)
+        window.addEventListener("pointerup", onUp)
+        window.addEventListener("pointercancel", onUp)
       },
 
       // -- slices --

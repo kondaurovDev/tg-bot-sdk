@@ -27,7 +27,8 @@ import PlaygroundLogs from "../components/PlaygroundLogs.astro"
     <title>Telegram Bot Playground | Telegram Bot SDK</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
-  <body class="bg-slate-50 flex flex-col h-screen overflow-hidden">
+  <!-- dvh: on iOS, 100vh runs under Safari's toolbar -->
+  <body class="bg-slate-50 flex flex-col h-dvh overflow-hidden">
     <div x-data="playground" @keydown.window.meta.enter.prevent="runIfReady()" @keydown.window.ctrl.enter.prevent="runIfReady()" class="flex flex-col h-full">
 
       <PlaygroundHeader />
@@ -36,18 +37,19 @@ import PlaygroundLogs from "../components/PlaygroundLogs.astro"
 
       <main
         x-ref="mainContainer"
-        class="flex flex-1 min-h-0"
+        class="flex flex-col md:flex-row flex-1 min-h-0"
         :class="isDragging ? 'select-none' : ''"
+        :style="`--editor-width: ${editorWidth}%`"
       >
         <PlaygroundEditor />
 
         <div
-          class="panel-divider"
+          class="panel-divider hidden md:block"
           :class="isDragging ? 'dragging' : ''"
-          @mousedown="startDrag($event)"
+          @pointerdown="startDrag($event)"
         ></div>
 
-        <div class="flex-1 min-w-[280px] flex flex-col bg-gradient-to-b from-slate-100 to-slate-200">
+        <div class="@container flex-1 min-h-0 md:min-w-[280px] flex flex-col bg-gradient-to-b from-slate-100 to-slate-200">
           <PlaygroundChat />
           <PlaygroundRealMode />
           <PlaygroundLogs />

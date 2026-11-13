@@ -1,6 +1,6 @@
 /**
  * Modal dialogs slice of the playground component: bot token input
- * and webhook-deletion confirmation.
+ * and a confirmation dialog.
  */
 export const modalsState = () => ({
   tokenModal: {
@@ -12,7 +12,9 @@ export const modalsState = () => ({
 
   confirmModal: {
     open: false,
+    title: "",
     description: "",
+    confirmLabel: "",
     _resolve: null as ((v: boolean) => void) | null
   }
 })
@@ -50,8 +52,14 @@ export const modalsMethods = {
     this.confirmModal._resolve?.(val)
   },
 
-  _showConfirmModal(this: any, description: string): Promise<boolean> {
+  _showConfirmModal(
+    this: any,
+    description: string,
+    options: { title: string; confirmLabel: string }
+  ): Promise<boolean> {
     return new Promise((resolve) => {
+      this.confirmModal.title = options.title
+      this.confirmModal.confirmLabel = options.confirmLabel
       this.confirmModal.description = description
       this.confirmModal._resolve = resolve
       this.confirmModal.open = true

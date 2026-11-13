@@ -52,7 +52,9 @@ export async function createEditor(container: HTMLElement): Promise<PlaygroundEd
     contextmenu: false,
     fontSize: 14,
     scrollBeyondLastLine: false,
-    padding: { top: 8, bottom: 8 }
+    padding: { top: 8, bottom: 8 },
+    // Examples use typographic dashes and quotes on purpose
+    unicodeHighlight: { ambiguousCharacters: false }
   })
 
   let tsWorker: languages.typescript.TypeScriptWorker

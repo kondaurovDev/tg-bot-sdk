@@ -2,7 +2,7 @@ import { createBot } from "@effect-ak/tg-bot"
 
 // A handler can return SEVERAL actions — they run in order.
 // This one first reacts to your message (👍), then echoes it back.
-// React to the echo yourself: double-click the bot's bubble.
+// React to the echo yourself: double-click (double-tap) the bot's bubble.
 export default createBot()
   .command("/start", ({ ctx }) => ctx.reply("Send me any text — I'll 👍 it and echo it back."))
   .onText(({ payload, ctx }) => [

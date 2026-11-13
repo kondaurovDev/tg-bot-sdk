@@ -458,3 +458,43 @@
   color: #2481cc;
   font-weight: 500;
 }
+
+/* --- Narrow screens: the chat fills the pane, no phone mockup --- */
+@media (max-width: 767px) {
+  .phone-frame {
+    width: 100%;
+    max-height: none;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+  }
+  .phone-frame::before,
+  .phone-frame::after,
+  .phone-notch,
+  .phone-status-bar,
+  .phone-home-indicator {
+    display: none;
+  }
+  .phone-screen {
+    border-radius: 0;
+  }
+}
+
+/* --- Touch: a long press opens the bubble's menu, not iOS's callout --- */
+@media (pointer: coarse) {
+  .bubble {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    touch-action: manipulation;
+  }
+  .panel-divider {
+    width: 12px;
+    touch-action: none;
+  }
+  /* iOS zooms the page into a focused field set below 16px */
+  input[type="text"] {
+    font-size: 16px;
+  }
+}

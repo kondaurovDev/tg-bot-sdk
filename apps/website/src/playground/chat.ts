@@ -91,6 +91,17 @@ const replyQuoteHtml = (message: Message): string => {
 /** The reactions row shown in the message context menu. */
 export const QUICK_REACTIONS = ["👍", "🔥", "❤️", "😁", "🤣", "💩"]
 
+// A double click (double tap) toggles this one, as Telegram's quick reaction
+const DOUBLE_TAP_REACTION = "👍"
+const DOUBLE_TAP_MS = 350
+// Touch: holding a bubble this long opens its menu (iOS sends no contextmenu)
+const LONG_PRESS_MS = 450
+const LONG_PRESS_SLOP_PX = 10
+
+let lastTap = { message_id: 0, at: 0 }
+let press: { timer: ReturnType<typeof setTimeout>; x: number; y: number; fired: boolean } | null =
+  null
+
 export const chatState = () => ({
   chatMessages: [] as Message[],
   chatInput: "",
@@ -193,7 +204,7 @@ export const chatMethods = {
 
   // -- message context menu (right-click, like the desktop client) --
 
-  openContextMenu(this: any, event: MouseEvent, message: Message) {
+  openContextMenu(this: any, event: { clientX: number; clientY: number }, message: Message) {
     // Keep the panel inside the viewport (menu is ~230px wide, ~200px tall)
     this.ctxMenu = {
       open: true,
@@ -211,13 +222,58 @@ export const chatMethods = {
   menuReact(this: any, emoji: string) {
     const message: Message | null = this.ctxMenu.message
     this.closeContextMenu()
-    if (!message) return
+    if (message) this._toggleReaction(message, emoji)
+  },
+
+  _toggleReaction(this: any, message: Message, emoji: string) {
     const current: string[] = this.chatReactions[message.message_id] ?? []
     this._sendToWorker({
       command: "user-react",
       message_id: message.message_id,
       emoji: current.includes(emoji) ? null : emoji
     })
+  },
+
+  // -- touch: long press on a bubble --
+
+  pressStart(this: any, event: TouchEvent, message: Message) {
+    const touch = event.touches[0]
+    if (!touch || event.touches.length > 1) return
+    if (press) clearTimeout(press.timer)
+    const x = touch.clientX
+    const y = touch.clientY
+    press = {
+      x,
+      y,
+      fired: false,
+      timer: setTimeout(() => {
+        if (!press) return
+        press.fired = true
+        this.openContextMenu({ clientX: x, clientY: y }, message)
+      }, LONG_PRESS_MS)
+    }
+  },
+
+  pressMove(this: any, event: TouchEvent) {
+    const touch = event.touches[0]
+    if (!press || !touch) return
+    if (Math.hypot(touch.clientX - press.x, touch.clientY - press.y) > LONG_PRESS_SLOP_PX) {
+      this.pressCancel()
+    }
+  },
+
+  // A press that opened the menu swallows its click: the click would land
+  // outside the menu and close it right away.
+  pressEnd(this: any, event: TouchEvent) {
+    if (!press) return
+    clearTimeout(press.timer)
+    if (press.fired) event.preventDefault()
+    press = null
+  },
+
+  pressCancel(this: any) {
+    if (press) clearTimeout(press.timer)
+    press = null
   },
 
   menuReply(this: any) {
@@ -304,7 +360,10 @@ export const chatMethods = {
     const target = (event.target as HTMLElement).closest?.(
       "[data-command], [data-callback], [data-copy]"
     ) as HTMLElement | null
-    if (!target) return
+    if (!target) {
+      if (message) this._detectDoubleTap(message)
+      return
+    }
     if (target.dataset["command"]) {
       this.sendQuickCommand(target.dataset["command"])
     } else if (target.dataset["copy"] !== undefined) {
@@ -318,6 +377,16 @@ export const chatMethods = {
       })
       this.botBusy = true
     }
+  },
+
+  _detectDoubleTap(this: any, message: Message) {
+    const now = Date.now()
+    if (lastTap.message_id === message.message_id && now - lastTap.at < DOUBLE_TAP_MS) {
+      lastTap = { message_id: 0, at: 0 }
+      this._toggleReaction(message, DOUBLE_TAP_REACTION)
+      return
+    }
+    lastTap = { message_id: message.message_id, at: now }
   },
 
   keyboardRows(this: any, message: Message): InlineKeyboardButton[][] {

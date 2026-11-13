@@ -1,12 +1,13 @@
-<!-- Virtual Telegram client: an iPhone-style mockup running the emulator chat -->
-<div x-show="mode === 'virtual'" x-cloak data-testid="chat" :data-bot="botDot" :data-busy="String(botBusy)" class="flex-1 min-h-0 flex items-center justify-center px-4 py-5">
+<!-- Virtual Telegram client: an iPhone-style mockup running the emulator
+     chat; on a narrow screen the chat itself fills the pane, without the mockup -->
+<div x-show="mode === 'virtual'" x-cloak data-testid="chat" :data-bot="botDot" :data-busy="String(botBusy)" class="flex-1 min-h-0 flex items-center justify-center md:px-4 md:py-5">
   <div class="phone-frame">
     <div class="phone-screen">
       <div class="phone-notch"></div>
 
       <!-- Status bar + chat header -->
       <div class="pt-2.5 pb-2 px-4 bg-white/95 backdrop-blur border-b border-gray-200 z-10">
-        <div class="flex justify-between items-center text-[11px] font-semibold text-gray-800 px-1 mb-2">
+        <div class="phone-status-bar flex justify-between items-center text-[11px] font-semibold text-gray-800 px-1 mb-2">
           <span x-text="phoneTime"></span>
           <span class="flex items-center gap-1 text-gray-700">
             <!-- signal -->
@@ -42,7 +43,12 @@
                 :data-message-id="m.message_id"
                 :class="isBotMessage(m) ? 'bubble-in' : 'bubble-out'"
                 @click="onBubbleClick($event, m)"
+                @mousedown="$event.detail > 1 && $event.preventDefault()"
                 @contextmenu.prevent="openContextMenu($event, m)"
+                @touchstart.passive="pressStart($event, m)"
+                @touchmove.passive="pressMove($event)"
+                @touchend="pressEnd($event)"
+                @touchcancel="pressCancel()"
               >
                 <span x-html="renderMessageHtml(m)"></span>
                 <span class="inline-flex items-baseline gap-0.5 text-[10px] text-gray-400 ml-1.5 whitespace-nowrap">
@@ -138,7 +144,7 @@
       </div>
 
       <!-- Home indicator -->
-      <div class="h-4 bg-white flex items-center justify-center">
+      <div class="phone-home-indicator h-4 bg-white flex items-center justify-center">
         <div class="w-24 h-1 rounded-full bg-gray-300"></div>
       </div>
     </div>
@@ -149,10 +155,10 @@
     x-show="ctxMenu.open"
     x-cloak
     data-testid="message-menu"
-    @click.outside="closeContextMenu()"
+    @pointerdown.outside="closeContextMenu()"
     @contextmenu.prevent
     @keydown.escape.window="closeContextMenu()"
-    class="fixed z-50"
+    class="fixed z-50 select-none"
     :style="`left: ${ctxMenu.x}px; top: ${ctxMenu.y}px`"
   >
     <div class="flex items-center gap-0.5 px-1.5 py-1 mb-1.5 bg-white rounded-full shadow-xl border border-gray-100 w-max">

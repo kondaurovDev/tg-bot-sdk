@@ -51,7 +51,7 @@
     data-testid="console-toggle"
     :data-errors="stats.errors"
     @click="logsOpen = !logsOpen"
-    class="w-full h-9 flex items-center gap-4 px-3 bg-white border-t border-gray-200 text-xs font-mono hover:bg-gray-50"
+    class="w-full h-9 flex items-center gap-3 sm:gap-4 px-3 whitespace-nowrap bg-white border-t border-gray-200 text-xs font-mono hover:bg-gray-50"
   >
     <span class="flex items-center gap-1.5 font-sans font-semibold text-gray-500 uppercase tracking-wide text-[10px]">
       <span
@@ -61,8 +61,8 @@
       Console<span x-show="filteredLogs.length > 0" class="text-gray-400 normal-case" x-text="'(' + filteredLogs.length + ')'"></span>
     </span>
     <span class="text-green-700">handled <span x-text="stats.handled"></span></span>
-    <span class="text-gray-400">ignored <span x-text="stats.ignored"></span></span>
-    <span class="text-yellow-600">no handler <span x-text="stats.noHandler"></span></span>
+    <span class="hidden @md:inline text-gray-400">ignored <span x-text="stats.ignored"></span></span>
+    <span class="hidden @md:inline text-yellow-600">no handler <span x-text="stats.noHandler"></span></span>
     <span :class="stats.errors > 0 ? 'text-red-600 font-semibold' : 'text-gray-400'">errors <span x-text="stats.errors"></span></span>
   </button>
 </div>
