@@ -1,23 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#2AABEE"/>
-      <stop offset="100%" stop-color="#229ED9"/>
-    </linearGradient>
-    <linearGradient id="wl" x1="1" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fff"/>
-      <stop offset="100%" stop-color="#d8e8f4"/>
-    </linearGradient>
-    <linearGradient id="wr" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#d0dde8"/>
-      <stop offset="100%" stop-color="#b0c4d4"/>
-    </linearGradient>
-  </defs>
-  <rect width="40" height="40" rx="9" fill="url(#bg)"/>
-  <path d="M10.5 15 L6 20 L10.5 25" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
-  <path d="M29.5 15 L34 20 L29.5 25" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
-  <path d="M21 10 L14 27 L21 21 L28 27 Z" fill="#000" opacity="0.1"/>
-  <path d="M20 8 L13 26 L20 20 Z" fill="url(#wl)"/>
-  <path d="M20 8 L27 26 L20 20 Z" fill="url(#wr)"/>
-  <line x1="20" y1="8" x2="20" y2="20" stroke="#1a8fc4" stroke-width="0.7" opacity="0.4"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3BB4EC"/><stop offset="1" stop-color="#1A8CC8"/></linearGradient></defs>
+  <!-- Rounded square background -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <!-- Code brackets -->
+  <path d="M15 24 L8 32 L15 40" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+  <path d="M49 24 L56 32 L49 40" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+  <!-- Paper plane: upper wing, lower wing, fold shadow -->
+  <path d="M43 17 L18 29 L28 33 Z" fill="#fff"/>
+  <path d="M43 17 L28 33 L33 46 Z" fill="#fff" opacity="0.82"/>
+  <path d="M28 33 L30.5 40 L33 46 L31 36 Z" fill="#0F6E9F" opacity="0.35"/>
 </svg>
