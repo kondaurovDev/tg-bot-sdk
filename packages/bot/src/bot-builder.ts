@@ -4,7 +4,14 @@
  * factories (command, text, photo, etc.) and terminates with
  * {@link Bot.run} (polling) or {@link Bot.webhook} (webhook).
  */
-import type { Message, CallbackQuery, InlineQuery, Update } from "@effect-ak/tg-bot-api"
+import type {
+  Message,
+  CallbackQuery,
+  InlineQuery,
+  SharedWidgetQuery,
+  Update,
+  WidgetQuery
+} from "@effect-ak/tg-bot-api"
 
 import type {
   GuardedHandler,
@@ -52,6 +59,12 @@ export interface CallbackQueryHelpers {
 export interface InlineQueryHelpers {
   query: (pattern: string | RegExp, handler: HandlerFn<InlineQuery>) => GuardedHandler<InlineQuery>
   fallback: (handler: HandlerFn<InlineQuery>) => GuardedHandler<InlineQuery>
+}
+
+/** Helpers for `onWidgetQuery` / `onSharedWidgetQuery`: match on the request's `data`. */
+export interface WidgetQueryHelpers<U extends WidgetQuery | SharedWidgetQuery> {
+  data: (pattern: string | RegExp, handler: HandlerFn<U>) => GuardedHandler<U>
+  fallback: (handler: HandlerFn<U>) => GuardedHandler<U>
 }
 
 export interface GenericHelpers<U> {
@@ -112,6 +125,16 @@ export interface Bot {
   onEditedBusinessMessage(input: HandlerRegistration<Message, GenericHelpers<Message>>): Bot
   onCallbackQuery(input: HandlerRegistration<CallbackQuery, CallbackQueryHelpers>): Bot
   onInlineQuery(input: HandlerRegistration<InlineQuery, InlineQueryHelpers>): Bot
+  /**
+   * Requests from widgets in messages sent by the bot (Bot API 10.4). A
+   * handler that responds without `ctx.answerWidgetQuery` gets an empty
+   * answer sent for it.
+   */
+  onWidgetQuery(input: HandlerRegistration<WidgetQuery, WidgetQueryHelpers<WidgetQuery>>): Bot
+  /** Requests from forwarded copies of the bot's shared widgets. */
+  onSharedWidgetQuery(
+    input: HandlerRegistration<SharedWidgetQuery, WidgetQueryHelpers<SharedWidgetQuery>>
+  ): Bot
 
   on<K extends AvailableUpdateTypes>(
     type: K,
@@ -175,6 +198,19 @@ function makeInlineQueryHelpers(): InlineQueryHelpers {
     query: (pattern, handler) => ({
       match: ({ payload }) =>
         typeof pattern === "string" ? payload.query === pattern : pattern.test(payload.query),
+      handle: handler
+    }),
+    fallback: (handler) => ({ handle: handler })
+  }
+}
+
+function makeWidgetQueryHelpers<
+  U extends WidgetQuery | SharedWidgetQuery
+>(): WidgetQueryHelpers<U> {
+  return {
+    data: (pattern, handler) => ({
+      match: ({ payload }) =>
+        typeof pattern === "string" ? payload.data === pattern : pattern.test(payload.data),
       handle: handler
     }),
     fallback: (handler) => ({ handle: handler })
@@ -280,6 +316,16 @@ export function createBot(): Bot {
 
     onInlineQuery(input) {
       register("inline_query", resolve(makeInlineQueryHelpers, input))
+      return bot
+    },
+
+    onWidgetQuery(input) {
+      register("widget_query", resolve(makeWidgetQueryHelpers<WidgetQuery>, input))
+      return bot
+    },
+
+    onSharedWidgetQuery(input) {
+      register("shared_widget_query", resolve(makeWidgetQueryHelpers<SharedWidgetQuery>, input))
       return bot
     },
 

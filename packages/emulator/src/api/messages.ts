@@ -104,6 +104,9 @@ export const messageMethods = (state: EmulatorState) => ({
 
   forward_message: (input: ForwardMessageInput): Message => {
     const original = state.findMessage("forward", input.message_id)
+    if (original.has_protected_content) {
+      throw new EmulatorApiError(400, "Bad Request: message can't be forwarded")
+    }
     return state.storeMessage({
       ...original,
       message_id: state.nextMessageId++,
@@ -120,6 +123,8 @@ export const messageMethods = (state: EmulatorState) => ({
   copy_message: (input: CopyMessageInput): { message_id: number } => {
     // A copy, unlike a forward, has no link back to the original
     const { forward_origin: _origin, ...original } = state.findMessage("copy", input.message_id)
+    // Widget messages can't be copied (Bot API 10.4)
+    if (original.widget) throw new EmulatorApiError(400, "Bad Request: message can't be copied")
     const copy = state.storeMessage({
       ...original,
       message_id: state.nextMessageId++,

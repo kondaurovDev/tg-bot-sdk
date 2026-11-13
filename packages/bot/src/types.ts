@@ -237,6 +237,20 @@ export interface BotContext {
     text: string,
     options?: Omit<WithoutTarget<"edit_message_text">, "text">
   ) => BotResponse
+  /**
+   * Answer the widget request that produced this update (`widget_query` or
+   * `shared_widget_query`, Bot API 10.4). `data` (up to 1024 bytes) reaches
+   * only the widget that asked. If a widget handler responds without calling
+   * this, the runner answers the request automatically with no data, so the
+   * widget does not end in `TIMEOUT`.
+   */
+  readonly answerWidgetQuery: (data?: string) => BotResponse
+  /**
+   * Change the state of the widget this update came from (`widget_query`):
+   * `chat_data` is the message's own state, `public_data` the state seen
+   * wherever the widget is shown. An empty string removes a value.
+   */
+  readonly editWidgetData: (options: WithoutTarget<"edit_message_widget_data">) => BotResponse
   /** Replace the inline keyboard of the message this update refers to. */
   readonly editMessageReplyMarkup: (
     options?: WithoutTarget<"edit_message_reply_markup">
@@ -375,6 +389,12 @@ export const resolveMessageTarget = (payload: UpdatePayload): MessageTarget | un
 export const resolveCallbackQueryId = (update: ExtractedUpdate): string | undefined =>
   update.type === "callback_query" ? update.payload.id : undefined
 
+/** The query id when the update is a request from a widget. */
+export const resolveWidgetQueryId = (update: ExtractedUpdate): string | undefined =>
+  update.type === "widget_query" || update.type === "shared_widget_query"
+    ? update.payload.id
+    : undefined
+
 // ---------------------------------------------------------------------------
 // BotContext factory
 // ---------------------------------------------------------------------------
@@ -403,6 +423,23 @@ export const createBotContext = (update: ExtractedUpdate): BotContext => {
       }
       return BotResponse.call("answer_callback_query", { callback_query_id, ...options })
     },
+    answerWidgetQuery: (data) => {
+      const widget_query_id = resolveWidgetQueryId(update)
+      if (!widget_query_id) {
+        throw new Error(
+          "ctx.answerWidgetQuery: update is not a widget_query or shared_widget_query"
+        )
+      }
+      return BotResponse.call("answer_widget_query", {
+        widget_query_id,
+        ...(data !== undefined ? { data } : {})
+      })
+    },
+    editWidgetData: (options) =>
+      BotResponse.call("edit_message_widget_data", {
+        ...messageTarget("editWidgetData"),
+        ...options
+      }),
     editMessageText: (text, options) =>
       BotResponse.call("edit_message_text", {
         ...messageTarget("editMessageText"),

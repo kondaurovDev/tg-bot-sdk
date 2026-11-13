@@ -7,11 +7,29 @@
 import type { Chat, InlineQueryResult, Message, Update, User } from "@effect-ak/tg-bot-api"
 
 import { EmulatorApiError } from "./errors"
-import type { EmulatorDraft, EmulatorEvent } from "./types"
+import type { EmulatorDraft, EmulatorEvent, WidgetRequestOutcome } from "./types"
 
 export interface UploadedFile {
   content: Uint8Array
   file_name: string
+}
+
+/** What the server knows about a widget message beyond what `Message.widget` shows. */
+export interface WidgetMeta {
+  /** Sent with `allow_queries`: the widget may send requests to the bot. */
+  allow_queries: boolean
+  /** Set when the message shows a shared widget. */
+  widget_id?: string
+}
+
+/** A shared widget: one object on the server that any number of messages show. */
+export interface SharedWidget {
+  widget_id: string
+  html: string
+  width?: number
+  height?: number
+  public_data?: string
+  allow_queries: boolean
 }
 
 export class EmulatorState {
@@ -23,12 +41,21 @@ export class EmulatorState {
   /** `answer_inline_query` results, keyed by inline query id. */
   readonly inlineAnswers = new Map<string, { query: string; results: InlineQueryResult[] }>()
   lastInlineQueryId: string | null = null
+  /** Widget messages, keyed by message id. */
+  readonly widgetMeta = new Map<number, WidgetMeta>()
+  readonly sharedWidgets = new Map<string, SharedWidget>()
+  /** Widget requests waiting for `answer_widget_query`, keyed by query id. */
+  readonly widgetQueries = new Map<string, (outcome: WidgetRequestOutcome) => void>()
+  /** Messages whose widget has a request in flight (one at a time per widget). */
+  readonly busyWidgets = new Set<number>()
 
   nextMessageId = 1
   nextUpdateId = 1
   nextCallbackId = 1
   nextFileId = 1
   nextInlineQueryId = 1
+  nextWidgetId = 1
+  nextWidgetQueryId = 1
 
   private readonly listeners = new Set<(event: EmulatorEvent) => void>()
   private pollWaiters: Array<() => void> = []
@@ -122,6 +149,10 @@ export class EmulatorState {
     this.uploads.clear()
     this.inlineAnswers.clear()
     this.lastInlineQueryId = null
+    this.widgetMeta.clear()
+    this.sharedWidgets.clear()
+    this.widgetQueries.clear()
+    this.busyWidgets.clear()
     this.wakeUpPolls()
   }
 }

@@ -165,7 +165,7 @@ runBot({
 - Writing bots: **[tg-bot-sdk.website/bot-runner/writing-bots](https://tg-bot-sdk.website/bot-runner/writing-bots/)**
 - Running bots (polling, webhooks, Cloudflare Workers): **[/bot-runner/running-bots](https://tg-bot-sdk.website/bot-runner/running-bots/)**
 - Screens: **[/bot-runner/screens](https://tg-bot-sdk.website/bot-runner/screens/)**
-- Runnable demo (Cloudflare Worker + GitHub Actions deploy): [`example/`](https://github.com/kondaurovDev/tg-bot-sdk/tree/main/example)
+- Runnable demo (Cloudflare Worker + GitHub Actions deploy): [`apps/example/`](https://github.com/kondaurovDev/tg-bot-sdk/tree/main/apps/example)
 - For LLMs / coding agents: https://tg-bot-sdk.website/llms.txt
 
 ## License

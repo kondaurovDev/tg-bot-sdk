@@ -21,7 +21,14 @@ import type {
   BotApiCall,
   BotResult
 } from "./types"
-import { createBotContext, BotResponse, handlerFor, resolveChatId, toBotResponse } from "./types"
+import {
+  createBotContext,
+  BotResponse,
+  handlerFor,
+  resolveChatId,
+  resolveWidgetQueryId,
+  toBotResponse
+} from "./types"
 import type { PollSettings } from "./polling"
 
 export interface BatchUpdateResult {
@@ -245,7 +252,7 @@ const handleOneUpdate = async (
     return undefined
   }
 
-  const actions = withAutoCallbackAnswer(update, handleResult)
+  const actions = withAutoAnswer(update, handleResult)
 
   for (const action of actions) {
     await executeAction(action, update, client, settings, log)
@@ -265,26 +272,29 @@ const handleOneUpdate = async (
   return undefined
 }
 
+/** The call that answers a query update with no text or data, if the update is one. */
+const emptyAnswerFor = (update: ExtractedUpdate): BotApiCall | undefined => {
+  if (update.type === "callback_query") {
+    return { method: "answer_callback_query", params: { callback_query_id: update.payload.id } }
+  }
+  const widget_query_id = resolveWidgetQueryId(update)
+  return widget_query_id
+    ? { method: "answer_widget_query", params: { widget_query_id } }
+    : undefined
+}
+
 /**
- * A `callback_query` must be answered or the tapped button keeps spinning.
- * When a handler responds to a callback query without an explicit
- * `answer_callback_query`, prepend one with no text.
+ * A query must be answered: a `callback_query` or the tapped button keeps
+ * spinning, a widget request or the widget gets `TIMEOUT`. When a handler
+ * responds to one without answering it, prepend an empty answer.
  */
-const withAutoCallbackAnswer = (
-  update: ExtractedUpdate,
-  response: BotResponse
-): readonly BotAction[] => {
-  if (update.type !== "callback_query" || response.isEmpty) return response.actions
+const withAutoAnswer = (update: ExtractedUpdate, response: BotResponse): readonly BotAction[] => {
+  const answer = emptyAnswerFor(update)
+  if (!answer || response.isEmpty) return response.actions
   const alreadyAnswered = response.actions.some(
-    (a) => "call" in a && a.call.method === "answer_callback_query"
+    (a) => "call" in a && a.call.method === answer.method
   )
-  if (alreadyAnswered) return response.actions
-  return [
-    {
-      call: { method: "answer_callback_query", params: { callback_query_id: update.payload.id } }
-    },
-    ...response.actions
-  ]
+  return alreadyAnswered ? response.actions : [{ call: answer }, ...response.actions]
 }
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

@@ -24,12 +24,11 @@ exercise in tests and the playground; stay lenient elsewhere.
       test backoff logic; same for arbitrary error injection
       (`emulator.failNext("send_message", ...)`).
 
-- [ ] **Widgets (10.4)** — `send_widget`, `send_shared_widget`,
-      `answer_widget_query`, `edit_message_widget_data`,
-      `edit_shared_widget_data`, plus a user-side `widgetRequest(data)` that
-      delivers a `widget_query` and resolves with the bot's answer (or
-      `TIMEOUT`). In production widgets work only in the private chat with the
-      bot, which is exactly the emulator's model.
+- [x] **Widgets (10.4)** (done) — the five methods, size limits, protected
+      content, and the user-side `widgetRequest`. Not emulated: the 4096-byte
+      compressed-size limit, the 5-requests-per-5-seconds rate limit,
+      background requests, inline-mode and forwarded widgets
+      (`shared_widget_query`; deliver one with `pushUpdate`).
 
 ## Medium
 

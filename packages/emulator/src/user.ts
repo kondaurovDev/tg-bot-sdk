@@ -17,7 +17,13 @@ import type { FileContent } from "@effect-ak/tg-bot-client"
 import { isInlineKeyboard } from "./outgoing"
 import type { EmulatorState } from "./state"
 import { commandEntities } from "./text"
-import type { TapButtonOptions, UserMediaOptions, UserSendOptions } from "./types"
+import type {
+  TapButtonOptions,
+  UserMediaOptions,
+  UserSendOptions,
+  WidgetRequestOptions,
+  WidgetRequestOutcome
+} from "./types"
 
 const hasButton = (message: Message, callback_data: string): boolean =>
   isInlineKeyboard(message.reply_markup) &&
@@ -191,7 +197,52 @@ export const userActions = (state: EmulatorState) => {
     throw new Error(`chooseInlineResult: no answered result with id "${result_id}"`)
   }
 
+  const widgetRequest = (
+    message_id: number,
+    data: string,
+    options: WidgetRequestOptions = {}
+  ): Promise<WidgetRequestOutcome> => {
+    const message = state.messages.find((m) => m.message_id === message_id)
+    if (!message?.widget) throw new Error(`widgetRequest: message ${message_id} has no widget`)
+    const size = new TextEncoder().encode(data).byteLength
+    if (size < 1 || size > 64) {
+      throw new TypeError(`widgetRequest: data must be 1-64 bytes, got ${size}`)
+    }
+    const meta = state.widgetMeta.get(message_id)
+    if (!meta?.allow_queries) return Promise.resolve({ ok: false, code: "NOT_ALLOWED" })
+    if (state.busyWidgets.has(message_id)) return Promise.resolve({ ok: false, code: "BUSY" })
+
+    const id = `emu-widget-query-${state.nextWidgetQueryId++}`
+    state.busyWidgets.add(message_id)
+    return new Promise((resolve) => {
+      const finish = (outcome: WidgetRequestOutcome) => {
+        clearTimeout(timer)
+        state.widgetQueries.delete(id)
+        state.busyWidgets.delete(message_id)
+        resolve(outcome)
+      }
+      const timer = setTimeout(
+        () => finish({ ok: false, code: "TIMEOUT" }),
+        options.timeout ?? 15_000
+      )
+      state.widgetQueries.set(id, finish)
+      state.pushUpdate({
+        widget_query: {
+          id,
+          from: state.user,
+          chat: state.chat,
+          message_id,
+          chat_instance: String(state.chat.id),
+          type: { type: "data" },
+          data,
+          ...(meta.widget_id ? { widget_id: meta.widget_id } : {})
+        }
+      })
+    })
+  }
+
   return {
+    widgetRequest,
     sendMessage,
     deleteMessage,
     sendPhoto,

@@ -5,7 +5,9 @@ export type {
   EmulatorEvent,
   EmulatorDraft,
   TapButtonOptions,
-  WaitOptions
+  WaitOptions,
+  WidgetRequestOptions,
+  WidgetRequestOutcome
 } from "./types"
 export { parseHtmlText } from "./html"
 export type { ParsedText } from "./html"

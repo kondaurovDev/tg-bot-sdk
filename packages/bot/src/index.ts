@@ -3,7 +3,8 @@ export {
   createBotContext,
   resolveChatId,
   resolveMessageTarget,
-  resolveCallbackQueryId
+  resolveCallbackQueryId,
+  resolveWidgetQueryId
 } from "./types"
 
 export type { PollSettings } from "./polling"
@@ -56,6 +57,7 @@ export type {
   MessageHelpers,
   CallbackQueryHelpers,
   InlineQueryHelpers,
+  WidgetQueryHelpers,
   GenericHelpers
 } from "./bot-builder"
 

@@ -1025,3 +1025,106 @@ describe("parseWebhookRequest", () => {
     })
   })
 })
+
+// ---------------------------------------------------------------------------
+// Widget queries (Bot API 10.4)
+// ---------------------------------------------------------------------------
+
+describe("createBot — widget queries", () => {
+  // vi.spyOn(global, "fetch") returns a heavily overloaded type — keep it loose.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let fetchSpy: any
+
+  beforeEach(() => {
+    fetchSpy = vi.spyOn(global, "fetch").mockResolvedValue(okResponse(true))
+  })
+  afterEach(() => fetchSpy.mockRestore())
+
+  const widgetQuery = (data: string): Update =>
+    ({
+      update_id: 9,
+      widget_query: {
+        id: "wq1",
+        from: { id: 1, is_bot: false, first_name: "A" },
+        chat: { id: 99, type: "private" },
+        message_id: 7,
+        chat_instance: "x",
+        type: { type: "data" },
+        data
+      }
+    }) as Update
+
+  const calls = () =>
+    fetchCalls(fetchSpy).map(([url, init]) => ({
+      method: url.split("/").pop(),
+      params: decodeFormData(init)
+    }))
+
+  it("matches on data and answers the request automatically when the handler does not", async () => {
+    const handler = createBot()
+      .onWidgetQuery(({ data }) => [data(/^vote:/, ({ ctx }) => ctx.reply("thanks"))])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, widgetQuery("vote:1"))
+
+    expect(calls()).toEqual([
+      { method: "answerWidgetQuery", params: { widget_query_id: "wq1" } },
+      { method: "sendMessage", params: expect.objectContaining({ chat_id: "99", text: "thanks" }) }
+    ])
+  })
+
+  it("an explicit answer with data replaces the automatic one", async () => {
+    const handler = createBot()
+      .onWidgetQuery(({ fallback }) => [fallback(({ ctx }) => ctx.answerWidgetQuery("ok"))])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, widgetQuery("x"))
+
+    expect(calls()).toEqual([
+      { method: "answerWidgetQuery", params: { widget_query_id: "wq1", data: "ok" } }
+    ])
+  })
+
+  it("editWidgetData targets the widget's message", async () => {
+    const handler = createBot()
+      .onWidgetQuery(({ fallback }) => [
+        fallback(({ ctx }) => ctx.editWidgetData({ chat_data: "s" }))
+      ])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, widgetQuery("x"))
+
+    expect(calls()).toEqual([
+      { method: "answerWidgetQuery", params: { widget_query_id: "wq1" } },
+      {
+        method: "editMessageWidgetData",
+        params: { chat_id: "99", message_id: "7", chat_data: "s" }
+      }
+    ])
+  })
+
+  it("ignore sends nothing — the request is left unanswered, like a callback query", async () => {
+    const handler = createBot()
+      .onWidgetQuery(({ fallback }) => [fallback(({ ctx }) => ctx.ignore)])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, widgetQuery("x"))
+    expect(fetchSpy).not.toHaveBeenCalled()
+  })
+
+  it("answerWidgetQuery throws outside a widget request", async () => {
+    const errors: string[] = []
+    const handler = createBot()
+      .onMessage(({ command }) => [command("/x", ({ ctx }) => ctx.answerWidgetQuery())])
+      .webhook({
+        bot_token: TOKEN,
+        logger: silentLogger,
+        onHandleResult: (r) => {
+          if (r.error) errors.push(r.error)
+        }
+      })
+
+    await sendUpdate(handler, messageWithCommand("/x"))
+    expect(errors[0]).toMatch(/not a widget_query/)
+  })
+})

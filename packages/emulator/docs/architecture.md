@@ -28,6 +28,7 @@ src/
     media.ts     send_photo/document/…/dice + get_file
     drafts.ts    send_message_draft, send_rich_message(_draft)
     chat.ts      chat actions, reactions, callback answers, get_me/get_chat
+    widgets.ts   send_widget/send_shared_widget, answer_widget_query, widget data
 ```
 
 Each `api/*.ts` exports a factory `(state) => { method_name: handler }`;
@@ -90,6 +91,17 @@ structurally the resolved blocks for our purposes), `html` is converted with
 the same HTML parser — inline tags become RichText spans, `pre`/`blockquote`
 become their own blocks — and `markdown` returns a 400.
 
+**Widgets (Bot API 10.4).** `send_widget` stores the widget on the message
+(`Message.widget`, marked `has_protected_content` as in production, so
+`copy_message` and `forward_message` refuse it); what the server knows beyond
+that — `allow_queries`, the shared widget id — lives in `widgetMeta`, and
+shared widgets in `sharedWidgets`. `emulator.widgetRequest(message_id, data)`
+plays the widget's `TelegramWidget.request()`: it pushes a `widget_query` and
+resolves with what the widget would get — the bot's `answer_widget_query`
+data, or `NOT_ALLOWED` / `BUSY` / `TIMEOUT` / `INVALID_ANSWER`. Its timeout
+(15 s by default, as in Telegram) is the second timer in the emulator.
+Changing a shared widget's public data rewrites every message that shows it.
+
 **Files.** Media sent as `{ file_content, file_name }` is stored in
 `uploads` under a minted `emu-file-N` id; `get_file` and `client.getFile`
 then return the actual bytes. String inputs (existing file_id / URL) pass
@@ -106,6 +118,7 @@ through as stub descriptors.
 - **Lenient where tests want it.** Unknown fields are ignored, `chat_id` is
   not strictly validated, drafts have no TTL. The emulator is a test double,
   not a validator.
-- **No timers except the long poll.** Everything else is synchronous, so
-  tests are deterministic and fast; `nextEvent`/`nextBotMessage` add a
-  rejection timeout (default 5 s) purely as a hang guard.
+- **No timers except the long poll and a widget request's timeout.**
+  Everything else is synchronous, so tests are deterministic and fast;
+  `nextEvent`/`nextBotMessage` add a rejection timeout (default 5 s) purely
+  as a hang guard.

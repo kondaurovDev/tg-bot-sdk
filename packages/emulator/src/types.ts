@@ -12,7 +12,8 @@ import type {
   MessageEntity,
   RichMessage,
   Update,
-  User
+  User,
+  Widget
 } from "@effect-ak/tg-bot-api"
 import type { FileContent, TgBotClient } from "@effect-ak/tg-bot-client"
 
@@ -56,6 +57,8 @@ export type EmulatorEvent =
   | { type: "chat_action"; action: string }
   | { type: "reactions"; message_id: number; reactions: string[] }
   | { type: "inline_results"; inline_query_id: string; results: InlineQueryResult[] }
+  | { type: "widget_answered"; widget_query_id: string; data?: string }
+  | { type: "widget_data_changed"; message_id: number; widget: Widget }
 
 export interface TapButtonOptions {
   /** Message to look for the button in. Default: the latest message that has it. */
@@ -74,6 +77,23 @@ export interface UserMediaOptions {
 export interface UserSendOptions {
   /** Message id to reply to; embedded as `reply_to_message`. */
   reply_to?: number
+}
+
+/**
+ * How a widget's request ends, as `TelegramWidget.request()` sees it: the
+ * bot's answer (`result` is `null` when it answered without data) or the
+ * error code the widget would get.
+ */
+export type WidgetRequestOutcome =
+  | { readonly ok: true; readonly result: string | null }
+  | {
+      readonly ok: false
+      readonly code: "NOT_ALLOWED" | "BUSY" | "TIMEOUT" | "INVALID_ANSWER"
+    }
+
+export interface WidgetRequestOptions {
+  /** How long the widget waits for `answer_widget_query`, in milliseconds. Default: `15000`, as in Telegram. */
+  timeout?: number
 }
 
 export interface TgBotEmulator {
@@ -132,6 +152,20 @@ export interface TgBotEmulator {
    * `input_message_content.message_text` (if any) to the chat.
    */
   chooseInlineResult(result_id: string): ChosenInlineResult
+  /**
+   * Send a request from the widget in a message, like `TelegramWidget.request(data)`
+   * on a tap: delivers a `widget_query` update and resolves when the bot answers
+   * with `answer_widget_query`, or with the error code the widget would get —
+   * `NOT_ALLOWED` for a widget sent without `allow_queries`, `BUSY` while
+   * another request of the same widget waits, `TIMEOUT` when the bot does not
+   * answer in time. Throws when the message has no widget or `data` is not
+   * 1-64 bytes.
+   */
+  widgetRequest(
+    message_id: number,
+    data: string,
+    options?: WidgetRequestOptions
+  ): Promise<WidgetRequestOutcome>
   /** Deliver an arbitrary update to the bot (escape hatch for uncovered types). */
   pushUpdate(update: Omit<Update, "update_id">): Update
   /** Listen to chat activity. Returns an unsubscribe function. */

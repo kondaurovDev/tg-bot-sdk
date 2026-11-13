@@ -10,6 +10,7 @@ import { draftMethods } from "./api/drafts"
 import { mediaMethods } from "./api/media"
 import { messageMethods } from "./api/messages"
 import { updateMethods } from "./api/updates"
+import { widgetMethods } from "./api/widgets"
 import { makeEmulatorClient } from "./client"
 import { EmulatorState } from "./state"
 import { userActions } from "./user"
@@ -46,7 +47,8 @@ export const makeTgBotEmulator = (options: EmulatorOptions = {}): TgBotEmulator 
     ...messageMethods(state),
     ...mediaMethods(state),
     ...draftMethods(state),
-    ...chatMethods(state)
+    ...chatMethods(state),
+    ...widgetMethods(state)
   })
 
   function nextEvent<E extends EmulatorEvent>(
