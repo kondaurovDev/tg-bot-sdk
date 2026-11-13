@@ -82,7 +82,8 @@ jobs:
       # deploy, which has already succeeded by now.
       - name: Summary
         run: |
-          if ! me=$(curl --fail --silent --show-error "https://api.telegram.org/bot${DEMO_BOT_TOKEN}/getMe"); then
+          if ! me=$(curl --fail --silent --show-error --retry 3 --retry-all-errors --retry-delay 2 \
+            "https://api.telegram.org/bot${DEMO_BOT_TOKEN}/getMe"); then
             echo "::warning::getMe failed — the bot's name is not in the summary"
             exit 0
           fi
