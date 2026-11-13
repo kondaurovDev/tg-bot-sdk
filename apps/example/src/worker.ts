@@ -11,7 +11,7 @@
  *   GET  /setup   — registers the webhook once (protected by the same secret)
  *   GET  /        — health check
  */
-import { extractUpdate, SECRET_TOKEN_HEADER } from "@effect-ak/tg-bot"
+import { extractUpdate, resolveChatId, SECRET_TOKEN_HEADER } from "@effect-ak/tg-bot"
 import { makeTgBotClient } from "@effect-ak/tg-bot-client"
 import type { WebhookHandler } from "@effect-ak/tg-bot"
 import type { Update } from "@effect-ak/tg-bot-api"
@@ -67,8 +67,8 @@ const buildRuntime = (env: Env): Runtime => {
 // --- routing -----------------------------------------------------------------
 
 const chatIdOf = (update: Update): number | undefined => {
-  const u = extractUpdate(update) as { chat?: { id: number }; message?: { chat: { id: number } } }
-  return u?.chat?.id ?? u?.message?.chat.id
+  const extracted = extractUpdate(update)
+  return extracted ? resolveChatId(extracted.payload) : undefined
 }
 
 const dispatch = async (update: Update, rt: Runtime): Promise<void> => {

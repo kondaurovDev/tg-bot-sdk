@@ -135,8 +135,10 @@ export const userActions = (state: EmulatorState) => {
     return message
   }
 
-  // The spec narrows emoji to a literal union; the emulator stays lenient
+  // The spec narrows `emoji` to the reactions Telegram offers. The user side
+  // takes any string and stays lenient, so this is a deliberate assertion.
   const toReactionTypes = (emojis: readonly string[]): ReactionType[] =>
+    // oxlint-disable-next-line typescript/consistent-type-assertions
     emojis.map((emoji) => ({ type: "emoji", emoji }) as ReactionType)
 
   const react = (message_id: number, emoji: string | null): void => {
@@ -182,9 +184,8 @@ export const userActions = (state: EmulatorState) => {
         query: answer.query
       }
       state.pushUpdate({ chosen_inline_result: chosen })
-      const content = (result as { input_message_content?: { message_text?: string } })
-        .input_message_content
-      if (content?.message_text) sendMessage(content.message_text)
+      const content = "input_message_content" in result ? result.input_message_content : undefined
+      if (content && "message_text" in content) sendMessage(content.message_text)
       return chosen
     }
     throw new Error(`chooseInlineResult: no answered result with id "${result_id}"`)

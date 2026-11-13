@@ -1,7 +1,7 @@
 # How the emulator works
 
 `@effect-ak/tg-bot-emulator` is an in-memory implementation of a useful subset
-of the Telegram Bot API (spec version 10.3). A bot built with
+of the Telegram Bot API (types of spec version 10.4). A bot built with
 `@effect-ak/tg-bot` runs against it unchanged — same handlers, same polling
 loop — because the emulator exposes a `TgBotClient`-compatible client and
 implements `get_updates` with real long-poll semantics. Everything lives in
@@ -31,7 +31,10 @@ src/
 ```
 
 Each `api/*.ts` exports a factory `(state) => { method_name: handler }`;
-`emulator.ts` merges the tables and hands them to the client facade.
+`emulator.ts` merges the tables and hands them to the client facade. The
+merged table is typed against the generated `Api` (`MethodTable` in
+`client.ts`): a handler whose input or result drifts from the real method's
+signature does not compile.
 
 ## The state
 
@@ -85,10 +88,7 @@ want.
 `InputRichMessage`: `blocks` pass through as-is (input blocks are
 structurally the resolved blocks for our purposes), `html` is converted with
 the same HTML parser — inline tags become RichText spans, `pre`/`blockquote`
-become their own blocks — and `markdown` returns a 400. Note: the generated
-`RichText` type in `@effect-ak/tg-bot-api` is missing the `string` and
-`RichText[]` leaves the spec describes (codegen gap); `rich.ts` models them
-locally as `RichTextNode`.
+become their own blocks — and `markdown` returns a 400.
 
 **Files.** Media sent as `{ file_content, file_name }` is stored in
 `uploads` under a minted `emu-file-N` id; `get_file` and `client.getFile`

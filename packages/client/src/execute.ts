@@ -60,12 +60,12 @@ export interface FileContent {
 }
 
 const isFileContent = (input: unknown): input is FileContent =>
-  typeof input == "object" &&
+  typeof input === "object" &&
   input != null &&
   "file_content" in input &&
   input.file_content instanceof Uint8Array &&
   "file_name" in input &&
-  typeof input.file_name == "string"
+  typeof input.file_name === "string"
 
 interface TgBotApiResponseSchema {
   ok: boolean
@@ -75,7 +75,7 @@ interface TgBotApiResponseSchema {
 }
 
 const isTgBotApiResponse = (input: unknown): input is TgBotApiResponseSchema =>
-  typeof input == "object" && input != null && "ok" in input && typeof input.ok == "boolean"
+  typeof input === "object" && input != null && "ok" in input && typeof input.ok === "boolean"
 
 const isTimeoutError = (cause: unknown): boolean =>
   cause instanceof DOMException && cause.name === "TimeoutError"
@@ -93,11 +93,18 @@ export const MESSAGE_EFFECTS = {
 
 export type MessageEffect = keyof typeof MESSAGE_EFFECTS
 
-export const messageEffectIdCodes = Object.keys(MESSAGE_EFFECTS) as MessageEffect[]
-
 const isMessageEffect = (input: unknown): input is MessageEffect => {
   return typeof input === "string" && input in MESSAGE_EFFECTS
 }
+
+export const messageEffectIdCodes: MessageEffect[] =
+  Object.keys(MESSAGE_EFFECTS).filter(isMessageEffect)
+
+/** Replaces an emoji `message_effect_id` with the identifier Telegram expects. */
+const resolveMessageEffect = (input: object): object =>
+  "message_effect_id" in input && isMessageEffect(input.message_effect_id)
+    ? { ...input, message_effect_id: MESSAGE_EFFECTS[input.message_effect_id] }
+    : input
 
 // --- execute ---
 
@@ -116,32 +123,34 @@ export interface ExecuteOptions {
   signal?: AbortSignal
 }
 
+/**
+ * Input of a Bot API method as the client accepts it: the generated
+ * parameters, with `message_effect_id` also taking an emoji from
+ * {@link MESSAGE_EFFECTS}.
+ */
+export type MethodInput<M extends keyof Api> = WithMessageEffect<Parameters<Api[M]>[0]>
+
 /** Calls a Bot API method; throws {@link TgBotClientError} on failure */
 export type ExecuteMethod = <M extends keyof Api>(
   method: M,
-  input: WithMessageEffect<Parameters<Api[M]>[0]>,
+  input: MethodInput<M>,
   options?: ExecuteOptions
 ) => Promise<ReturnType<Api[M]>>
 
 /** Calls a Bot API method; returns a {@link ClientResult} instead of throwing */
 export type ExecuteSafeMethod = <M extends keyof Api>(
   method: M,
-  input: WithMessageEffect<Parameters<Api[M]>[0]>,
+  input: MethodInput<M>,
   options?: ExecuteOptions
 ) => Promise<ClientResult<ReturnType<Api[M]>>>
 
 export async function executeTgBotMethod<M extends keyof Api>(params: {
   config: Required<TgClientConfig>
   method: M
-  input: Parameters<Api[M]>[0]
+  input: MethodInput<M>
   options?: ExecuteOptions | undefined
 }): Promise<ClientResult<ReturnType<Api[M]>>> {
-  const { config, method, options } = params
-  let { input } = params
-
-  if ("message_effect_id" in input && isMessageEffect(input.message_effect_id)) {
-    input = { ...input, message_effect_id: MESSAGE_EFFECTS[input.message_effect_id] }
-  }
+  const { config, method, input, options } = params
 
   const timeoutMs = options?.timeout ?? config.timeout
   const timeoutSignal = AbortSignal.timeout(timeoutMs)
@@ -152,7 +161,7 @@ export async function executeTgBotMethod<M extends keyof Api>(params: {
     httpResponse = await fetch(
       `${config.base_url}/bot${config.bot_token}/${snakeToCamel(method)}`,
       {
-        body: makePayload(input) ?? null,
+        body: makePayload(resolveMessageEffect(input)) ?? null,
         method: "POST",
         signal
       }
@@ -186,20 +195,23 @@ export async function executeTgBotMethod<M extends keyof Api>(params: {
     }
   }
 
+  // Wire boundary: the shape of `result` is Telegram's contract for the method,
+  // not something this client validates.
+  // oxlint-disable-next-line typescript/consistent-type-assertions
   return { ok: true, data: response.result as ReturnType<Api[M]> }
 }
 
 export const makePayload = (body: object): FormData | undefined => {
   const entries = Object.entries(body)
 
-  if (entries.length == 0) return undefined
+  if (entries.length === 0) return undefined
 
   const result = new FormData()
 
   for (const [key, value] of entries) {
     if (value == null) continue
 
-    if (typeof value != "object") {
+    if (typeof value !== "object") {
       result.append(key, `${value}`)
     } else if (value instanceof Blob) {
       result.append(key, value)

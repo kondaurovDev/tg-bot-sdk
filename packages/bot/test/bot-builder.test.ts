@@ -366,6 +366,108 @@ describe("createBot — multiple update types", () => {
     await sendUpdate(handler, callbackQueryUpdate("anything"))
     expect(fetchSpy).not.toHaveBeenCalled()
   })
+
+  // Payloads with a `type` field of their own: the update kind used to be
+  // merged into the payload, so these never reached their handler.
+  it("routes a poll update and hands over the poll's own `type`", async () => {
+    const seen: string[] = []
+    const handler = createBot()
+      .on("poll", ({ fallback }) => [
+        fallback(({ payload }) => {
+          seen.push(payload.type)
+          return BotResponse.ignore
+        })
+      ])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, {
+      update_id: 4,
+      poll: { id: "p", question: "?", options: [], type: "quiz" }
+    } as unknown as Update)
+
+    expect(seen).toEqual(["quiz"])
+  })
+
+  const widgetQueryUpdate = (): Update =>
+    ({
+      update_id: 5,
+      widget_query: {
+        id: "wq",
+        from: { id: 1, is_bot: false, first_name: "A" },
+        chat: { id: 99, type: "private" },
+        message_id: 7,
+        chat_instance: "x",
+        type: { type: "data" },
+        data: "vote:2"
+      }
+    }) as Update
+
+  it("routes a widget_query update, replies to its chat and answers the query", async () => {
+    const seen: unknown[] = []
+    const handler = createBot()
+      .on("widget_query", ({ fallback }) => [
+        fallback(({ payload, ctx }) => {
+          seen.push(payload.type, payload.data)
+          return [
+            ctx.call("answer_widget_query", { widget_query_id: payload.id, data: "ok" }),
+            ctx.reply("voted")
+          ]
+        })
+      ])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, widgetQueryUpdate())
+
+    expect(seen).toEqual([{ type: "data" }, "vote:2"])
+    const calls = fetchCalls(fetchSpy)
+    expect(calls.map(([url]) => url.split("/").pop())).toEqual(["answerWidgetQuery", "sendMessage"])
+    expect(decodeFormData(calls[0]![1])).toMatchObject({ widget_query_id: "wq", data: "ok" })
+    expect(decodeFormData(calls[1]![1])).toMatchObject({ chat_id: "99", text: "voted" })
+  })
+
+  it("does not take a widget_query for a callback_query", async () => {
+    const errors: string[] = []
+    const handler = createBot()
+      .on("widget_query", ({ fallback }) => [fallback(({ ctx }) => ctx.answerCallbackQuery())])
+      .webhook({
+        bot_token: TOKEN,
+        logger: silentLogger,
+        onHandleResult: (r) => {
+          if (r.error) errors.push(r.error)
+        }
+      })
+
+    await sendUpdate(handler, widgetQueryUpdate())
+
+    expect(errors[0]).toMatch(/not a callback_query/)
+    const urls = fetchCalls(fetchSpy).map(([url]) => url.split("/").pop())
+    expect(urls).not.toContain("answerCallbackQuery")
+  })
+
+  it("routes a shared_widget_query update", async () => {
+    const seen: string[] = []
+    const handler = createBot()
+      .on("shared_widget_query", ({ fallback }) => [
+        fallback(({ payload }) => {
+          seen.push(payload.widget_id)
+          return BotResponse.ignore
+        })
+      ])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    await sendUpdate(handler, {
+      update_id: 6,
+      shared_widget_query: {
+        id: "sq",
+        from: { id: 1, is_bot: false, first_name: "A" },
+        type: { type: "data" },
+        data: "x",
+        widget_id: "w1"
+      }
+    } as Update)
+
+    expect(seen).toEqual(["w1"])
+  })
 })
 
 describe("createBot — error handling", () => {
@@ -407,6 +509,28 @@ describe("createBot — error handling", () => {
     })
     const res = await handler(req)
     expect(res.status).toBe(500)
+  })
+
+  it("returns 400 if the JSON body is not an Update", async () => {
+    const seen: string[] = []
+    const handler = createBot()
+      .onMessage(({ fallback }) => [
+        fallback(() => {
+          seen.push("message")
+          return BotResponse.ignore
+        })
+      ])
+      .webhook({ bot_token: TOKEN, logger: silentLogger })
+
+    const req = new Request("https://example.test/webhook", {
+      method: "POST",
+      body: JSON.stringify({ message: { chat: { id: 1, type: "private" }, text: "forged" } }),
+      headers: { "content-type": "application/json" }
+    })
+    const res = await handler(req)
+
+    expect(res.status).toBe(400)
+    expect(seen).toEqual([])
   })
 
   it("invokes onHandleResult with status=handled for matched updates", async () => {

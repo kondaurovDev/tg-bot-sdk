@@ -5,6 +5,7 @@
 import type {
   AnswerCallbackQueryInput,
   AnswerInlineQueryInput,
+  ChatFullInfo,
   ReactionType,
   SendChatActionInput,
   SetMessageReactionInput
@@ -27,7 +28,20 @@ const reactionEmoji = (reaction: ReactionType): string => {
 export const chatMethods = (state: EmulatorState) => ({
   get_me: () => state.bot,
 
-  get_chat: () => state.chat,
+  // `get_chat` returns the full info, not the short `Chat` carried by messages:
+  // the fields it requires on top get the values of a plain private chat.
+  get_chat: (): ChatFullInfo => ({
+    ...state.chat,
+    accent_color_id: 0,
+    max_reaction_count: 11,
+    accepted_gift_types: {
+      unlimited_gifts: false,
+      limited_gifts: false,
+      unique_gifts: false,
+      premium_subscription: false,
+      gifts_from_channels: false
+    }
+  }),
 
   send_chat_action: (input: SendChatActionInput): boolean => {
     state.emit({ type: "chat_action", action: input.action })

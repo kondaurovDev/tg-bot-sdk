@@ -36,7 +36,8 @@ for p in api client bot emulator; do (cd packages/$p && ../../node_modules/.bin/
 
 What usually breaks is not `api`:
 
-- **A new update kind** appears in `bot` through the `Update` type with no code change there. Check that the processor really dispatches it — add its case to `packages/bot/test/` — and look at the payload's own field names: one that clashes with what the processor adds or reads (`type` in `poll` and `widget_query`) breaks dispatch silently.
+- **A new update kind** appears in `bot` through the `Update` type with no code change there. Check that the processor really dispatches it by adding its case to `packages/bot/test/bot-builder.test.ts`, and that `resolveChatId` / `resolveMessageTarget` find its chat if it has one.
+- **A method the emulator implements changed its signature**: `emulator` stops compiling, because its method table is typed against `Api`.
 - **A required field turned optional** (`chat_id` in the `send*` methods in 10.4) surfaces wherever `bot` or `emulator` assumed it.
 - **A renamed or removed type** is a breaking change for users of the package. No alias is added; the changeset says so.
 

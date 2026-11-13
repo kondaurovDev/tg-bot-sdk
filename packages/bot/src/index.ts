@@ -10,6 +10,9 @@ export type { PollSettings } from "./polling"
 export type {
   BotResult,
   BotApiCall,
+  AvailableUpdateTypes,
+  UpdatePayload,
+  ExtractedUpdate,
   BotAction,
   StreamSource,
   StreamOptions,

@@ -4,7 +4,7 @@
  * the registered handler (function, guard, or guard array), executes
  * the handler, and sends the response back to Telegram.
  */
-import type { Update } from "@effect-ak/tg-bot-api"
+import type { Api, Update } from "@effect-ak/tg-bot-api"
 import type { TgBotClient } from "@effect-ak/tg-bot-client"
 import type {
   AvailableUpdateTypes,
@@ -17,15 +17,11 @@ import type {
   BotContext,
   BotLogger,
   BotBehavior,
-  BotAction
+  BotAction,
+  BotApiCall,
+  BotResult
 } from "./types"
-import {
-  createBotContext,
-  BotResponse,
-  resolveChatId,
-  resolveCallbackQueryId,
-  toBotResponse
-} from "./types"
+import { createBotContext, BotResponse, handlerFor, resolveChatId, toBotResponse } from "./types"
 import type { PollSettings } from "./polling"
 
 export interface BatchUpdateResult {
@@ -79,14 +75,44 @@ const executeHandler = async <U>(
   return BotResponse.ignore
 }
 
-export const extractUpdate = <U extends AvailableUpdateTypes>(
-  input: Update
-): ExtractedUpdate<U> | undefined => {
-  for (const [field, value] of Object.entries(input)) {
-    if (field === "update_id") continue
-    return { type: field, ...value } as ExtractedUpdate<U>
+/**
+ * Every field of an `Update` other than `update_id` names its kind — the
+ * Bot API guarantees at most one is present. A kind this SDK's types do not
+ * know yet (a newer Bot API) still passes, and simply finds no handler.
+ */
+const isUpdateType = (field: string): field is AvailableUpdateTypes => field !== "update_id"
+
+const pickUpdate = <K extends AvailableUpdateTypes>(
+  input: Update,
+  type: K
+): ExtractedUpdate<K> | undefined => {
+  const payload = input[type]
+  return payload == null ? undefined : { type, payload }
+}
+
+/**
+ * Split an `Update` into its kind and its payload:
+ * `{ update_id, message }` → `{ type: "message", payload: message }`.
+ */
+export const extractUpdate = (input: Update): ExtractedUpdate | undefined => {
+  for (const field of Object.keys(input)) {
+    if (!isUpdateType(field)) continue
+    const update = pickUpdate(input, field)
+    if (update) return update
   }
   return undefined
+}
+
+/**
+ * Pair an update with the handler registered for its kind. Generic in the
+ * kind, so the handler and the payload it receives stay the same type.
+ */
+const bindHandler = <K extends AvailableUpdateTypes>(
+  handlers: BotUpdatesHandlers,
+  update: ExtractedUpdate<K>
+): ((ctx: BotContext) => Promise<BotResponse>) | undefined => {
+  const handler = handlerFor(handlers, update.type)
+  return handler && ((ctx) => executeHandler(handler, update.payload, ctx))
 }
 
 export const handleUpdates = async (
@@ -164,9 +190,9 @@ const handleOneUpdate = async (
     return "UnknownUpdate"
   }
 
-  const handler = handlers[`on_${update.type}`] as UpdateHandler<typeof update> | undefined
+  const handle = bindHandler(handlers, update)
 
-  if (!handler) {
+  if (!handle) {
     onHandleResult?.({
       update: updateObject,
       updateType: update.type,
@@ -183,7 +209,7 @@ const handleOneUpdate = async (
   let hasError = false
   let errorMessage: string | undefined
   try {
-    handleResult = await executeHandler(handler, update, ctx)
+    handleResult = await handle(ctx)
   } catch (error) {
     hasError = true
     errorMessage = error instanceof Error ? error.message : String(error)
@@ -245,7 +271,7 @@ const handleOneUpdate = async (
  * `answer_callback_query`, prepend one with no text.
  */
 const withAutoCallbackAnswer = (
-  update: ExtractedUpdate<AvailableUpdateTypes>,
+  update: ExtractedUpdate,
   response: BotResponse
 ): readonly BotAction[] => {
   if (update.type !== "callback_query" || response.isEmpty) return response.actions
@@ -253,10 +279,10 @@ const withAutoCallbackAnswer = (
     (a) => "call" in a && a.call.method === "answer_callback_query"
   )
   if (alreadyAnswered) return response.actions
-  const callback_query_id = resolveCallbackQueryId(update)
-  if (!callback_query_id) return response.actions
   return [
-    { call: { method: "answer_callback_query", params: { callback_query_id } } },
+    {
+      call: { method: "answer_callback_query", params: { callback_query_id: update.payload.id } }
+    },
     ...response.actions
   ]
 }
@@ -274,11 +300,11 @@ let nextStreamDraftId = 1
  */
 const executeStream = async (
   stream: Extract<BotAction, { stream: unknown }>["stream"],
-  update: ExtractedUpdate<AvailableUpdateTypes>,
+  update: ExtractedUpdate,
   client: TgBotClient,
   log: BotLogger
 ): Promise<void> => {
-  const chat_id = resolveChatId(update)
+  const chat_id = resolveChatId(update.payload)
   if (chat_id === undefined) {
     log.warn("cannot stream response: update has no chat", { updateType: update.type })
     return
@@ -315,40 +341,53 @@ const executeStream = async (
   }
 }
 
-const executeAction = async (
-  action: BotAction,
-  update: ExtractedUpdate<AvailableUpdateTypes>,
+/**
+ * `{ type: "message", … }` → a `send_message` call with the chat filled in.
+ * `send_<type>` is a real method by construction of `BotResult`, but the
+ * compiler cannot follow a method name assembled from a prefix.
+ */
+const toSendCall = (send: BotResult, chat_id: number): BotApiCall =>
+  // oxlint-disable-next-line typescript/consistent-type-assertions
+  ({ method: `send_${send.type}`, params: { ...send, chat_id } }) as BotApiCall
+
+/** Generic in the method, so the name and its parameters stay the same type. */
+const executeCall = async <K extends keyof Api>(
+  call: BotApiCall<K>,
   client: TgBotClient,
   settings: PollSettings,
   log: BotLogger
 ): Promise<void> => {
-  let method: string
-  let params: unknown
+  const result = await client.executeSafe(call.method, call.params)
+  if (!result.ok) {
+    log.warn(`failed to execute ${call.method}`, result.error)
+  } else if (settings.log_level === "debug") {
+    log.debug(`bot response (${call.method})`, result.data)
+  }
+}
 
+const executeAction = async (
+  action: BotAction,
+  update: ExtractedUpdate,
+  client: TgBotClient,
+  settings: PollSettings,
+  log: BotLogger
+): Promise<void> => {
   if ("stream" in action) {
     await executeStream(action.stream, update, client, log)
     return
   }
 
-  if ("send" in action) {
-    const chat_id = resolveChatId(update)
-    if (chat_id === undefined) {
-      log.warn("cannot send response: update has no chat", { updateType: update.type })
-      return
-    }
-    method = `send_${action.send.type}`
-    params = { ...action.send, chat_id }
-  } else {
-    method = action.call.method
-    params = action.call.params
+  if ("call" in action) {
+    await executeCall(action.call, client, settings, log)
+    return
   }
 
-  const result = await client.executeSafe(method as any, params as any)
-  if (!result.ok) {
-    log.warn(`failed to execute ${method}`, result.error)
-  } else if (settings.log_level === "debug") {
-    log.debug(`bot response (${method})`, result.data)
+  const chat_id = resolveChatId(update.payload)
+  if (chat_id === undefined) {
+    log.warn("cannot send response: update has no chat", { updateType: update.type })
+    return
   }
+  await executeCall(toSendCall(action.send, chat_id), client, settings, log)
 }
 
 const describeResponseType = (response: BotResponse): string | undefined => {

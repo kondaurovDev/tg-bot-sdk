@@ -157,7 +157,39 @@ describe("extractUpdate", () => {
       }
     } as Update)
     expect(u?.type).toBe("message")
-    // properties of the inner update should be flattened onto the result
-    expect((u as { text?: string }).text).toBe("x")
+    expect(u?.payload).toMatchObject({ text: "x" })
+  })
+
+  it("returns the payload object itself, with no fields added", () => {
+    const message = { chat: { id: 1, type: "private" }, date: 0, message_id: 1, text: "x" }
+    const u = extractUpdate({ update_id: 42, message } as Update)
+    expect(u?.payload).toBe(message)
+    expect(u?.payload).not.toHaveProperty("type")
+  })
+
+  // `Poll` and `WidgetQuery` carry a `type` field of their own. The update kind
+  // must not overwrite it, nor be overwritten by it.
+  it("keeps the kind apart from a payload that has its own `type` (poll)", () => {
+    const u = extractUpdate({
+      update_id: 1,
+      poll: { id: "p", question: "?", options: [], type: "quiz" }
+    } as unknown as Update)
+    expect(u?.type).toBe("poll")
+    expect(u?.payload).toMatchObject({ id: "p", type: "quiz" })
+  })
+
+  it("keeps the kind apart from a payload that has its own `type` (widget_query)", () => {
+    const u = extractUpdate({
+      update_id: 1,
+      widget_query: {
+        id: "w",
+        from: { id: 1, is_bot: false, first_name: "A" },
+        chat_instance: "x",
+        type: { type: "data" },
+        data: "vote:2"
+      }
+    } as Update)
+    expect(u?.type).toBe("widget_query")
+    expect(u?.payload).toMatchObject({ data: "vote:2", type: { type: "data" } })
   })
 })

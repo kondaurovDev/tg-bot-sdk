@@ -22,6 +22,7 @@ import type {
   HandlerOutput,
   HandlerResult
 } from "./types"
+import { isReadonlyArray, resolveChatId } from "./types"
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -130,21 +131,18 @@ export interface Screens<K extends string> {
 // Implementation
 // ---------------------------------------------------------------------------
 
-const resolve = async <T>(value: Resolvable<T>, input: ScreenInput): Promise<T> =>
-  typeof value === "function" ? (value as (i: ScreenInput) => T | PromiseLike<T>)(input) : value
+// What a screen resolves is never itself a function (a text, or buttons), so
+// a function here can only be the resolver.
+const resolve = async <T extends string | readonly unknown[] | undefined>(
+  value: Resolvable<T>,
+  input: ScreenInput
+): Promise<T> => (typeof value === "function" ? value(input) : value)
 
-const toRows = <K extends string>(buttons: ScreenButtons<K> | undefined): ScreenButton<K>[][] => {
-  if (!buttons || buttons.length === 0) return []
-  const first = buttons[0]
-  return Array.isArray(first)
-    ? (buttons as readonly (readonly ScreenButton<K>[])[]).map((r) => [...r])
-    : [...(buttons as readonly ScreenButton<K>[])].map((b) => [b])
-}
+/** A flat list is one button per row; a list of lists is the rows as given. */
+const toRows = <K extends string>(buttons: ScreenButtons<K> | undefined): ScreenButton<K>[][] =>
+  (buttons ?? []).map((item) => (isReadonlyArray(item) ? [...item] : [item]))
 
-const chatIdOf = (input: ScreenInput): number | undefined => {
-  const u = input.payload as { chat?: { id: number }; message?: { chat: { id: number } } }
-  return u.chat?.id ?? u.message?.chat.id
-}
+const chatIdOf = (input: ScreenInput): number | undefined => resolveChatId(input.payload)
 
 // callback_data layout (kept short — Telegram allows 64 bytes):
 //   <prefix>g:<from>:<to>      go to screen `to` (from `from`)
@@ -158,17 +156,18 @@ export function defineScreens<K extends string>(
   screens: { readonly [P in K]: Screen<NoInfer<K>> },
   options: ScreensOptions<NoInfer<K>> = {}
 ): Screens<K> {
-  const ids = Object.keys(screens) as K[]
-  if (ids.length === 0) throw new Error("defineScreens: at least one screen is required")
+  const isId = (id: string): id is K => Object.prototype.hasOwnProperty.call(screens, id)
 
-  const start = options.start ?? ids[0]!
+  const ids = Object.keys(screens).filter(isId)
+  const [first] = ids
+  if (first === undefined) throw new Error("defineScreens: at least one screen is required")
+
+  const start = options.start ?? first
   const prefix = options.prefix ?? "s:"
   const backLabel = options.back === undefined ? "‹ Back" : options.back
   const command = options.command === undefined ? "/start" : options.command
   const maxStack = options.max_stack ?? 20
   const store = options.store
-
-  const isId = (id: string): id is K => Object.prototype.hasOwnProperty.call(screens, id)
 
   // --- navigation stack (only with a store) ---------------------------------
 
@@ -254,7 +253,8 @@ export function defineScreens<K extends string>(
   }
 
   const onCallback = async (input: HandlerInput<CallbackQuery>): Promise<HandlerResult> => {
-    const data = input.payload.data!.slice(prefix.length)
+    // The guard in `callbackHandlers` matched on `data`, so it is present here.
+    const data = (input.payload.data ?? "").slice(prefix.length)
     const chatId = chatIdOf(input)
 
     if (data.startsWith(GO)) {
@@ -297,8 +297,7 @@ export function defineScreens<K extends string>(
     { match: ({ payload }) => payload.data?.startsWith(prefix) ?? false, handle: onCallback }
   ]
 
-  const plugin = ((bot: Bot) =>
-    bot.onMessage(messageHandlers).onCallbackQuery(callbackHandlers)) as Screens<K>
+  const plugin = (bot: Bot): Bot => bot.onMessage(messageHandlers).onCallbackQuery(callbackHandlers)
 
   return Object.assign(plugin, {
     ids,

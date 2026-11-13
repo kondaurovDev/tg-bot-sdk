@@ -136,7 +136,14 @@ export interface TgBotEmulator {
   pushUpdate(update: Omit<Update, "update_id">): Update
   /** Listen to chat activity. Returns an unsubscribe function. */
   subscribe(listener: (event: EmulatorEvent) => void): () => void
-  /** Wait for the next event matching the predicate. */
+  /**
+   * Wait for the next event matching the predicate. A type guard narrows
+   * the result: `nextEvent((e) => e.type === "draft")` resolves to the draft event.
+   */
+  nextEvent<E extends EmulatorEvent>(
+    match: (event: EmulatorEvent) => event is E,
+    options?: WaitOptions
+  ): Promise<E>
   nextEvent(match: (event: EmulatorEvent) => boolean, options?: WaitOptions): Promise<EmulatorEvent>
   /** Wait for the next message sent by the bot. */
   nextBotMessage(options?: WaitOptions): Promise<Message>

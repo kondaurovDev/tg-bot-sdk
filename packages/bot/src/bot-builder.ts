@@ -7,15 +7,16 @@
 import type { Message, CallbackQuery, InlineQuery, Update } from "@effect-ak/tg-bot-api"
 
 import type {
-  BotUpdatesHandlers,
   GuardedHandler,
   HandlerInput,
   HandlerOutput,
   AvailableUpdateTypes,
+  UpdatePayload,
   BotLogger,
   HandleResult,
   ClientSource
 } from "./types"
+import { toUpdatesHandlers } from "./types"
 
 import type { PollSettings } from "./polling"
 import type { BotInstance, WebhookHandler } from "./run"
@@ -114,7 +115,7 @@ export interface Bot {
 
   on<K extends AvailableUpdateTypes>(
     type: K,
-    input: HandlerRegistration<NonNullable<Update[K]>, GenericHelpers<NonNullable<Update[K]>>>
+    input: HandlerRegistration<UpdatePayload<K>, GenericHelpers<UpdatePayload<K>>>
   ): Bot
 
   /** Apply a plugin — a function that registers handlers and returns the bot (e.g. `defineScreens(...)`). */
@@ -204,20 +205,29 @@ function resolve<U, H>(
 // createBot
 // ---------------------------------------------------------------------------
 
+/** Guards registered so far, by update kind. */
+type GuardTable<K extends AvailableUpdateTypes = AvailableUpdateTypes> = {
+  [P in K]?: GuardedHandler<UpdatePayload<P>>[]
+}
+
+// Generic in the kind — a view of the table narrowed to `K` — so the guards
+// written under a kind are checked against that kind's payload.
+function appendGuards<K extends AvailableUpdateTypes>(
+  table: GuardTable<K>,
+  type: K,
+  guards: GuardedHandler<UpdatePayload<K>>[]
+): void {
+  table[type] = [...(table[type] ?? []), ...guards]
+}
+
 export function createBot(): Bot {
-  const handlers = new Map<string, GuardedHandler<any>[]>()
+  const table: GuardTable = {}
 
-  function register(type: string, guards: GuardedHandler<any>[]): void {
-    const existing = handlers.get(type) ?? []
-    handlers.set(type, [...existing, ...guards])
-  }
-
-  function collectHandlers(): BotUpdatesHandlers {
-    const result: Record<string, GuardedHandler<any>[]> = {}
-    for (const [type, guards] of handlers) {
-      result[`on_${type}`] = guards
-    }
-    return result as BotUpdatesHandlers
+  function register<K extends AvailableUpdateTypes>(
+    type: K,
+    guards: GuardedHandler<UpdatePayload<K>>[]
+  ): void {
+    appendGuards(table, type, guards)
   }
 
   const bot: Bot = {
@@ -273,8 +283,11 @@ export function createBot(): Bot {
       return bot
     },
 
-    on(type, input) {
-      register(type, resolve(makeGenericHelpers, input))
+    on<K extends AvailableUpdateTypes>(
+      type: K,
+      input: HandlerRegistration<UpdatePayload<K>, GenericHelpers<UpdatePayload<K>>>
+    ) {
+      register(type, resolve(makeGenericHelpers<UpdatePayload<K>>, input))
       return bot
     },
 
@@ -283,22 +296,20 @@ export function createBot(): Bot {
     },
 
     async run(config) {
-      const collected = collectHandlers()
-      if (handlers.size === 0) {
+      if (Object.keys(table).length === 0) {
         console.warn("No handlers are defined for bot")
       }
       return runBot({
         ...config,
         mode: "single",
-        ...collected
+        ...toUpdatesHandlers(table)
       })
     },
 
     webhook(config) {
-      const collected = collectHandlers()
       return createWebhook({
         ...config,
-        ...collected
+        ...toUpdatesHandlers(table)
       })
     }
   }

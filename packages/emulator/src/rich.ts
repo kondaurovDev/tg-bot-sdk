@@ -22,26 +22,23 @@ export type RichTextNode = RichText
 /** Thrown when the input cannot be resolved; mapped to a 400 response. */
 export class RichInputError extends Error {}
 
-type InlineRichType =
-  | "bold"
-  | "italic"
-  | "underline"
-  | "strikethrough"
-  | "spoiler"
-  | "code"
-  | "url"
-  | "bot_command"
+/**
+ * How an inline entity wraps the rich text inside it. One constructor per
+ * entity type, so each literal is checked against its own `RichText*` class.
+ * `covered` is the plain text the entity spans.
+ */
+type InlineWrap = (text: RichText, covered: string, entity: MessageEntity) => RichText
 
-const INLINE_ENTITY_TO_RICH: Partial<Record<MessageEntity["type"], InlineRichType>> = {
-  bold: "bold",
-  italic: "italic",
-  underline: "underline",
-  strikethrough: "strikethrough",
-  spoiler: "spoiler",
-  code: "code",
-  text_link: "url",
-  url: "url",
-  bot_command: "bot_command"
+const INLINE_ENTITY_TO_RICH: Partial<Record<MessageEntity["type"], InlineWrap>> = {
+  bold: (text) => ({ type: "bold", text }),
+  italic: (text) => ({ type: "italic", text }),
+  underline: (text) => ({ type: "underline", text }),
+  strikethrough: (text) => ({ type: "strikethrough", text }),
+  spoiler: (text) => ({ type: "spoiler", text }),
+  code: (text) => ({ type: "code", text }),
+  text_link: (text, covered, entity) => ({ type: "url", text, url: entity.url ?? covered }),
+  url: (text, covered) => ({ type: "url", text, url: covered }),
+  bot_command: (text, covered) => ({ type: "bot_command", text, bot_command: covered })
 }
 
 const isBlockLevel = (entity: MessageEntity): boolean =>
@@ -65,8 +62,8 @@ const richNode = (
   entities: MessageEntity[],
   start: number,
   end: number
-): RichTextNode => {
-  const parts: RichTextNode[] = []
+): RichText => {
+  const parts: RichText[] = []
   let cursor = start
   for (const entity of topLevelWithin(entities, start, end)) {
     if (entity.offset > cursor) parts.push(text.slice(cursor, entity.offset))
@@ -78,19 +75,9 @@ const richNode = (
       entity.offset,
       entity.offset + entity.length
     )
-    const type = INLINE_ENTITY_TO_RICH[entity.type]
-    if (!type) {
-      parts.push(inner)
-    } else if (type === "url") {
-      parts.push({
-        type: "url",
-        text: inner,
-        url: entity.url ?? text.slice(entity.offset, entity.offset + entity.length)
-      })
-    } else {
-      // {type: A|B, …} does not distribute over the union — safe per-literal
-      parts.push({ type, text: inner } as RichText)
-    }
+    const wrap = INLINE_ENTITY_TO_RICH[entity.type]
+    const covered = text.slice(entity.offset, entity.offset + entity.length)
+    parts.push(wrap ? wrap(inner, covered, entity) : inner)
     cursor = entity.offset + entity.length
   }
   if (cursor < end) parts.push(text.slice(cursor, end))
@@ -111,7 +98,7 @@ export const htmlToRichBlocks = (html: string): RichBlock[] => {
     const from = start + text.slice(start, end).indexOf(slice)
     blocks.push({
       type: "paragraph",
-      text: richNode(text, inline, from, from + slice.length) as RichText
+      text: richNode(text, inline, from, from + slice.length)
     })
   }
 
@@ -122,13 +109,13 @@ export const htmlToRichBlocks = (html: string): RichBlock[] => {
     if (block.type === "pre") {
       blocks.push({
         type: "pre",
-        text: inner as RichText,
+        text: inner,
         ...(block.language ? { language: block.language } : {})
       })
     } else {
       blocks.push({
         type: "blockquote",
-        blocks: [{ type: "paragraph", text: inner as RichText }]
+        blocks: [{ type: "paragraph", text: inner }]
       })
     }
     cursor = block.offset + block.length
@@ -141,8 +128,11 @@ export const htmlToRichBlocks = (html: string): RichBlock[] => {
 export const resolveInputRichMessage = (input: InputRichMessage): RichMessage => {
   if (input.blocks) {
     // Input blocks are structurally the resolved blocks for everything the
-    // emulator cares about — media resolution is out of scope.
+    // emulator cares about. They are not the same type — media arrives as
+    // input media — and resolving it is out of scope (see docs/todo.md), so
+    // this is a deliberate assertion rather than a conversion.
     return {
+      // oxlint-disable-next-line typescript/consistent-type-assertions
       blocks: input.blocks as unknown as RichBlock[],
       ...(input.is_rtl ? { is_rtl: input.is_rtl } : {})
     }

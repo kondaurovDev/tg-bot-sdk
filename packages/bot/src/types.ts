@@ -4,14 +4,22 @@
  * Every other module in the package depends on this one.
  */
 import type { Api, Update } from "@effect-ak/tg-bot-api"
-import type { TgBotClient } from "@effect-ak/tg-bot-client"
+import type { MethodInput, TgBotClient } from "@effect-ak/tg-bot-client"
+
+import type { PollSettings } from "./polling"
+
+/** `Array.isArray` that keeps the element type of a readonly array. */
+export const isReadonlyArray: (value: unknown) => value is readonly unknown[] = Array.isArray
 
 // ---------------------------------------------------------------------------
 // BotResponse
 // ---------------------------------------------------------------------------
 
-/** Input parameters of a Bot API method. */
-export type ApiParams<K extends keyof Api> = Parameters<Api[K]>[0]
+/**
+ * Input parameters of a Bot API method, as the client accepts them
+ * (`message_effect_id` also takes an emoji).
+ */
+export type ApiParams<K extends keyof Api> = MethodInput<K>
 
 /**
  * Shorthand for `send_*` methods: `{ type: "message", text }` maps to
@@ -23,10 +31,13 @@ export type BotResult = {
     : never
 }[keyof Api]
 
-/** Any Bot API method call with its full parameters. */
-export type BotApiCall = {
-  [K in keyof Api]: { method: K; params: ApiParams<K> }
-}[keyof Api]
+/**
+ * A Bot API method call with its full parameters: any method by default,
+ * or the one(s) named by `K`.
+ */
+export type BotApiCall<K extends keyof Api = keyof Api> = {
+  [P in K]: { method: P; params: ApiParams<P> }
+}[K]
 
 /** What `ctx.stream` accepts: a string (split into words), sync or async chunks. */
 export type StreamSource = string | Iterable<string> | AsyncIterable<string>
@@ -60,10 +71,10 @@ export class BotResponse {
   constructor(response?: BotResult | readonly BotAction[]) {
     if (response === undefined) {
       this.actions = []
-    } else if (Array.isArray(response)) {
+    } else if (isReadonlyArray(response)) {
       this.actions = response
     } else {
-      this.actions = [{ send: response as BotResult }]
+      this.actions = [{ send: response }]
     }
   }
 
@@ -90,7 +101,11 @@ export class BotResponse {
 
   /** Respond with an arbitrary Bot API method call. */
   static call<K extends keyof Api>(method: K, params: ApiParams<K>): BotResponse {
-    return new BotResponse([{ call: { method, params } as BotApiCall }])
+    const call: BotApiCall<K> = { method, params }
+    // A call to one method is a member of the union over all of them, but
+    // TypeScript cannot widen the generic form to that union by itself.
+    // oxlint-disable-next-line typescript/consistent-type-assertions
+    return new BotResponse([{ call: call as BotApiCall }])
   }
 
   /** Combine several responses; their actions run sequentially in order. */
@@ -138,7 +153,7 @@ export type ClientSource =
   | { client: TgBotClient; bot_token?: string }
 
 export interface RunBotOptions {
-  poll?: Partial<import("./polling").PollSettings>
+  poll?: Partial<PollSettings>
   onUpdate?: (update: Update) => void
   onHandleResult?: (result: HandleResult) => void
   logger?: BotLogger
@@ -152,10 +167,22 @@ export type RunBotInputBatch = HandleBatchUpdateFunction &
   ClientSource &
   RunBotOptions & { mode: "batch" }
 
-export type ExtractedUpdate<K extends AvailableUpdateTypes> = {
-  type: K
-} & Update[K]
+/** Update kinds: every field of `Update` except `update_id`. */
 export type AvailableUpdateTypes = Exclude<keyof Update, "update_id">
+
+/** Payload of an update kind: `Message` for `message`, `CallbackQuery` for `callback_query`, … */
+export type UpdatePayload<K extends AvailableUpdateTypes = AvailableUpdateTypes> = NonNullable<
+  Update[K]
+>
+
+/**
+ * An update split into its kind and its payload. The payload is the object
+ * Telegram sent, untouched — the kind lives beside it, never inside it
+ * (`Poll` and `WidgetQuery` have a `type` field of their own).
+ */
+export type ExtractedUpdate<K extends AvailableUpdateTypes = AvailableUpdateTypes> = {
+  [T in K]: { readonly type: T; readonly payload: UpdatePayload<T> }
+}[K]
 
 /**
  * What a handler may return: one `BotResponse` or several — an array is
@@ -166,9 +193,7 @@ export type HandlerOutput = HandlerResult | PromiseLike<HandlerResult>
 
 /** Normalize a handler's return value into a single response. */
 export const toBotResponse = (result: HandlerResult): BotResponse =>
-  Array.isArray(result)
-    ? BotResponse.all(...(result as readonly BotResponse[]))
-    : (result as BotResponse)
+  isReadonlyArray(result) ? BotResponse.all(...result) : result
 
 export type HandleUpdateFunction<U> = (payload: U) => HandlerOutput
 
@@ -245,8 +270,32 @@ export interface GuardedHandler<U> {
 export type UpdateHandler<U> = HandleUpdateFunction<U> | GuardedHandler<U> | GuardedHandler<U>[]
 
 export type BotUpdatesHandlers = {
-  [K in AvailableUpdateTypes as `on_${K}`]?: UpdateHandler<NonNullable<Update[K]>>
+  [K in AvailableUpdateTypes as `on_${K}`]?: UpdateHandler<UpdatePayload<K>>
 }
+
+/** Handlers keyed by update kind — `BotUpdatesHandlers` without the `on_` prefix. */
+export type UpdateHandlerTable<K extends AvailableUpdateTypes = AvailableUpdateTypes> = {
+  [P in K]?: UpdateHandler<UpdatePayload<P>>
+}
+
+// The two functions below are the only place that knows `on_<kind>` belongs to
+// `<kind>`: TypeScript cannot follow a generic key through the prefix, so each
+// carries one assertion. Everything else works on typed kinds.
+
+/** The handler registered for an update kind, if any. */
+export const handlerFor = <K extends AvailableUpdateTypes>(
+  handlers: BotUpdatesHandlers,
+  type: K
+): UpdateHandler<UpdatePayload<K>> | undefined =>
+  // oxlint-disable-next-line typescript/consistent-type-assertions
+  handlers[`on_${type}`] as UpdateHandler<UpdatePayload<K>> | undefined
+
+/** Kind-keyed handlers in the public `on_*` form. */
+export const toUpdatesHandlers = (table: UpdateHandlerTable): BotUpdatesHandlers =>
+  // oxlint-disable-next-line typescript/consistent-type-assertions
+  Object.fromEntries(
+    Object.entries(table).map(([type, handler]) => [`on_${type}`, handler])
+  ) as BotUpdatesHandlers
 
 export interface HandleBatchUpdateFunction {
   readonly on_batch: (update: Update[]) => boolean | PromiseLike<boolean>
@@ -266,79 +315,71 @@ export type BotBehavior = BotSingleBehavior | BotBatchBehavior
 // Update introspection helpers
 // ---------------------------------------------------------------------------
 
-interface UpdateWithEntities {
-  text?: string
-  entities?: Array<{ type: string; offset: number; length: number }>
-}
+// These look at the fields a payload has, not at a table of update kinds, so
+// an update kind added by a newer Bot API version resolves without a change
+// here. The `in` checks narrow the payload union to the types that declare
+// the field; the compiler then checks every one of them.
 
-const extractCommand = (update: unknown): string | undefined => {
-  if (typeof update !== "object" || update === null) return undefined
-  const u = update as UpdateWithEntities
-  if (!u.entities || !u.text) return undefined
-  const entity = u.entities.find((e) => e.type === "bot_command" && e.offset === 0)
+const extractCommand = (payload: UpdatePayload): string | undefined => {
+  if (!("text" in payload && "entities" in payload)) return undefined
+  const { text, entities } = payload
+  if (!text || !entities) return undefined
+  const entity = entities.find((e) => e.type === "bot_command" && e.offset === 0)
   if (!entity) return undefined
   // In groups Telegram sends "/start@my_bot" — drop the mention so that
   // `command("/start")` matches everywhere. Commands are case-insensitive.
-  const raw = u.text.slice(entity.offset, entity.offset + entity.length)
+  const raw = text.slice(entity.offset, entity.offset + entity.length)
   return raw.replace(/@\S+$/, "").toLowerCase()
 }
 
-interface UpdateShape {
-  id?: unknown
-  chat?: { id?: number }
-  message_id?: number
-  message?: { chat?: { id?: number }; message_id?: number }
-  inline_message_id?: string
-}
-
-const asShape = (update: unknown): UpdateShape =>
-  typeof update === "object" && update !== null ? (update as UpdateShape) : {}
-
 /**
- * Chat id a `send_*` response should go to: the update's own chat
+ * Chat id a `send_*` response should go to: the payload's own chat
  * (message, channel_post, …) or the chat of the message it refers to
  * (callback_query).
  */
-export const resolveChatId = (update: unknown): number | undefined => {
-  const u = asShape(update)
-  return u.chat?.id ?? u.message?.chat?.id
+export const resolveChatId = (payload: UpdatePayload): number | undefined => {
+  if ("chat" in payload && payload.chat) return payload.chat.id
+  if ("message" in payload && payload.message) return payload.message.chat.id
+  return undefined
 }
 
 /**
  * Target of an `edit_message_*` / `delete_message` call: the message the
- * update refers to (for callback_query) or the update's own message.
+ * payload refers to (for callback_query) or the payload's own message.
  */
 export type MessageTarget = { chat_id: number; message_id: number } | { inline_message_id: string }
 
-export const resolveMessageTarget = (update: unknown): MessageTarget | undefined => {
-  const u = asShape(update)
-  if (u.message?.chat?.id !== undefined && u.message.message_id !== undefined) {
-    return { chat_id: u.message.chat.id, message_id: u.message.message_id }
+export const resolveMessageTarget = (payload: UpdatePayload): MessageTarget | undefined => {
+  if ("message" in payload && payload.message) {
+    return { chat_id: payload.message.chat.id, message_id: payload.message.message_id }
   }
-  if (u.inline_message_id !== undefined) {
-    return { inline_message_id: u.inline_message_id }
+  if ("inline_message_id" in payload && payload.inline_message_id !== undefined) {
+    return { inline_message_id: payload.inline_message_id }
   }
-  if (u.chat?.id !== undefined && u.message_id !== undefined) {
-    return { chat_id: u.chat.id, message_id: u.message_id }
+  if (
+    "chat" in payload &&
+    "message_id" in payload &&
+    payload.chat &&
+    payload.message_id !== undefined
+  ) {
+    return { chat_id: payload.chat.id, message_id: payload.message_id }
   }
   return undefined
 }
 
 /** `callback_query.id` when the update is a callback query. */
-export const resolveCallbackQueryId = (update: unknown): string | undefined => {
-  const u = asShape(update)
-  return typeof u.id === "string" && "chat_instance" in u ? u.id : undefined
-}
+export const resolveCallbackQueryId = (update: ExtractedUpdate): string | undefined =>
+  update.type === "callback_query" ? update.payload.id : undefined
 
 // ---------------------------------------------------------------------------
 // BotContext factory
 // ---------------------------------------------------------------------------
 
-export const createBotContext = (update: unknown): BotContext => {
-  const command = extractCommand(update)
+export const createBotContext = (update: ExtractedUpdate): BotContext => {
+  const command = extractCommand(update.payload)
 
   const messageTarget = (method: string): MessageTarget => {
-    const target = resolveMessageTarget(update)
+    const target = resolveMessageTarget(update.payload)
     if (!target) {
       throw new Error(`ctx.${method}: cannot resolve target message from this update`)
     }

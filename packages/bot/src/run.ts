@@ -161,6 +161,17 @@ export interface WebhookHandler {
   setWebhook: (params: SetWebhookParams) => Promise<boolean>
 }
 
+/**
+ * The request body is whatever the caller posted. An `Update` is recognised by
+ * its `update_id`; the rest of its shape is Telegram's contract, vouched for by
+ * the secret token.
+ */
+const isUpdate = (body: unknown): body is Update =>
+  typeof body === "object" &&
+  body !== null &&
+  "update_id" in body &&
+  typeof body.update_id === "number"
+
 /** Compares two strings without leaking their common-prefix length. */
 const timingSafeEqual = (a: string, b: string): boolean => {
   const encoder = new TextEncoder()
@@ -210,8 +221,12 @@ export const createWebhook = (config: WebhookBotConfig): WebhookHandler => {
       return new Response("forbidden", { status: 403 })
     }
     try {
-      const update = (await request.json()) as Update
-      await handleUpdate(update)
+      const body: unknown = await request.json()
+      if (!isUpdate(body)) {
+        log.warn("webhook: rejected a request whose body is not an Update")
+        return new Response("bad request", { status: 400 })
+      }
+      await handleUpdate(body)
       return new Response("ok", { status: 200 })
     } catch (error) {
       log.error("Webhook error", error)

@@ -12,6 +12,7 @@ export type {
   ClientErrorReason,
   FileContent,
   MessageEffect,
+  MethodInput,
   ExecuteMethod,
   ExecuteSafeMethod,
   ExecuteOptions

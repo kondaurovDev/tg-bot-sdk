@@ -15,6 +15,8 @@ import { EmulatorState } from "./state"
 import { userActions } from "./user"
 import type { EmulatorEvent, EmulatorOptions, TgBotEmulator, WaitOptions } from "./types"
 
+type MessageEvent = Extract<EmulatorEvent, { type: "message" }>
+
 export const makeTgBotEmulator = (options: EmulatorOptions = {}): TgBotEmulator => {
   const user: User = {
     id: 1,
@@ -47,11 +49,19 @@ export const makeTgBotEmulator = (options: EmulatorOptions = {}): TgBotEmulator 
     ...chatMethods(state)
   })
 
-  const nextEvent = (
+  function nextEvent<E extends EmulatorEvent>(
+    match: (event: EmulatorEvent) => event is E,
+    options?: WaitOptions
+  ): Promise<E>
+  function nextEvent(
+    match: (event: EmulatorEvent) => boolean,
+    options?: WaitOptions
+  ): Promise<EmulatorEvent>
+  function nextEvent(
     match: (event: EmulatorEvent) => boolean,
     options: WaitOptions = {}
-  ): Promise<EmulatorEvent> =>
-    new Promise((resolve, reject) => {
+  ): Promise<EmulatorEvent> {
+    return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         unsubscribe()
         reject(new Error("nextEvent: timed out waiting for a matching event"))
@@ -63,6 +73,10 @@ export const makeTgBotEmulator = (options: EmulatorOptions = {}): TgBotEmulator 
         resolve(event)
       })
     })
+  }
+
+  const isBotMessage = (event: EmulatorEvent): event is MessageEvent =>
+    event.type === "message" && event.message.from?.id === bot.id
 
   return {
     client,
@@ -86,13 +100,7 @@ export const makeTgBotEmulator = (options: EmulatorOptions = {}): TgBotEmulator 
     pushUpdate: (update: Omit<Update, "update_id">) => state.pushUpdate(update),
     subscribe: (listener) => state.subscribe(listener),
     nextEvent,
-    nextBotMessage: async (options) => {
-      const event = await nextEvent(
-        (e) => e.type === "message" && e.message.from?.id === bot.id,
-        options
-      )
-      return (event as Extract<EmulatorEvent, { type: "message" }>).message
-    },
+    nextBotMessage: async (options) => (await nextEvent(isBotMessage, options)).message,
     reset: () => state.reset()
   }
 }

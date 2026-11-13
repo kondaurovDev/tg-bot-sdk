@@ -40,6 +40,13 @@ export interface TgBotClient {
   readonly getFileSafe: (input: GetFileInput) => Promise<ClientResult<TgFile>>
 }
 
+/** Base64 of raw bytes without `Buffer`: the same code runs in Node, browsers and Workers. */
+const toBase64 = (bytes: Uint8Array): string => {
+  let binary = ""
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary)
+}
+
 export function makeTgBotClient(config: TgClientConfig): TgBotClient {
   const tgConfig = {
     bot_token: config.bot_token,
@@ -48,12 +55,7 @@ export function makeTgBotClient(config: TgClientConfig): TgBotClient {
   }
 
   const executeSafe: ExecuteSafeMethod = (method, input, options) =>
-    executeTgBotMethod({
-      config: tgConfig,
-      method,
-      input: input as any,
-      options
-    })
+    executeTgBotMethod({ config: tgConfig, method, input, options })
 
   const execute: ExecuteMethod = (method, input, options) =>
     executeSafe(method, input, options).then(unwrapClientResult)
@@ -84,7 +86,7 @@ export function makeTgBotClient(config: TgClientConfig): TgBotClient {
       return { ok: false, error: { _tag: "UnableToGetFile", cause } }
     }
 
-    const base64String = () => Buffer.from(content).toString("base64")
+    const base64String = () => toBase64(new Uint8Array(content))
     const file = () =>
       new File([content], file_name, params.type ? { type: params.type } : undefined)
 

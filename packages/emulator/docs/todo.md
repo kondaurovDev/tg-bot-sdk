@@ -1,6 +1,6 @@
 # Emulator: what's still missing
 
-Gaps against Bot API 10.3, roughly by value. Guiding rule stays the same as
+Gaps against Bot API 10.4, roughly by value. Guiding rule stays the same as
 in [architecture.md](architecture.md): emulate faithfully what bots commonly
 exercise in tests and the playground; stay lenient elsewhere.
 
@@ -24,12 +24,20 @@ exercise in tests and the playground; stay lenient elsewhere.
       test backoff logic; same for arbitrary error injection
       (`emulator.failNext("send_message", ...)`).
 
+- [ ] **Widgets (10.4)** — `send_widget`, `send_shared_widget`,
+      `answer_widget_query`, `edit_message_widget_data`,
+      `edit_shared_widget_data`, plus a user-side `widgetRequest(data)` that
+      delivers a `widget_query` and resolves with the bot's answer (or
+      `TIMEOUT`). In production widgets work only in the private chat with the
+      bot, which is exactly the emulator's model.
+
 ## Medium
 
 - [ ] **Draft TTL** — real drafts expire after ~30 s; an opt-in timer would
       catch bots that stream slower than the TTL.
 - [ ] **Ephemeral messages** (10.2) — `ephemeral_message_parameters`,
-      auto-delete semantics.
+      auto-delete semantics. Since 10.4 `chat_id` is optional for an ephemeral
+      reply to a callback query.
 - [ ] **`send_media_group`** — album messages with shared `media_group_id`.
 - [ ] **Entity auto-detection** — real Telegram detects `url`, `mention`,
       `#hashtag` in plain text; the emulator only detects `bot_command`.
@@ -56,12 +64,3 @@ exercise in tests and the playground; stay lenient elsewhere.
       first-class.
 - [ ] **Chat administration** — `get_chat_member`, restrict/promote; mostly
       useful for group support (above).
-
-## Upstream
-
-- [ ] **`api` codegen gap:** the generated `RichText` union is missing the
-      `string` and `RichText[]` leaves the spec describes ("Currently, it can
-      be either a String for plain text, an Array of RichText, or …").
-      `rich.ts` works around it with a local `RichTextNode` type — fix the
-      codegen, then drop the workaround and the `as unknown as RichText`
-      casts.
