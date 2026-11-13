@@ -10,7 +10,8 @@ import type {
   ChosenInlineResult,
   InlineQuery,
   Message,
-  ReactionType
+  ReactionType,
+  RichBlock
 } from "@effect-ak/tg-bot-api"
 import type { FileContent } from "@effect-ak/tg-bot-client"
 
@@ -25,11 +26,26 @@ import type {
   WidgetRequestOutcome
 } from "./types"
 
+// A rich message carries its buttons as `buttons` blocks, which may sit
+// inside containers (quotations, details, collages, list items).
+const richHasButton = (blocks: readonly RichBlock[], callback_data: string): boolean =>
+  blocks.some((block) => {
+    if (block.type === "buttons") {
+      return block.buttons.some((button) => button.callback_data === callback_data)
+    }
+    if ("blocks" in block) return richHasButton(block.blocks, callback_data)
+    if (block.type === "list") {
+      return block.items.some((item) => richHasButton(item.blocks, callback_data))
+    }
+    return false
+  })
+
 const hasButton = (message: Message, callback_data: string): boolean =>
-  isInlineKeyboard(message.reply_markup) &&
-  message.reply_markup.inline_keyboard.some((row) =>
-    row.some((button) => button.callback_data === callback_data)
-  )
+  (isInlineKeyboard(message.reply_markup) &&
+    message.reply_markup.inline_keyboard.some((row) =>
+      row.some((button) => button.callback_data === callback_data)
+    )) ||
+  (message.rich_message !== undefined && richHasButton(message.rich_message.blocks, callback_data))
 
 export const userActions = (state: EmulatorState) => {
   const baseMessage = (): Message => ({

@@ -215,6 +215,29 @@ describe("tapButton", () => {
     expect(updates[0].callback_query?.data).toBe("go")
   })
 
+  it("taps a button of a rich message, nested blocks included", async () => {
+    const emulator = makeTgBotEmulator()
+    const sent = await emulator.client.execute("send_rich_message", {
+      chat_id: emulator.chat.id,
+      rich_message: {
+        blocks: [
+          { type: "buttons", buttons: [{ text: "Approve", callback_data: "approve" }] },
+          {
+            type: "details",
+            summary: "More",
+            blocks: [{ type: "buttons", buttons: [{ text: "Undo", callback_data: "undo" }] }]
+          }
+        ]
+      }
+    })
+
+    expect(emulator.tapButton("approve").message).toMatchObject({ message_id: sent.message_id })
+    expect(emulator.tapButton("undo", { message_id: sent.message_id }).data).toBe("undo")
+
+    const updates = await emulator.client.execute("get_updates", {})
+    expect(updates.map((u) => u.callback_query?.data)).toEqual(["approve", "undo"])
+  })
+
   it("throws when no message has the button", () => {
     const emulator = makeTgBotEmulator()
     expect(() => emulator.tapButton("missing")).toThrow(/no message has a button/)

@@ -126,6 +126,21 @@ async function runBot(command: Extract<WorkerCommand, { command: "run-bot" }>) {
   sendEvent({ type: "bot-state", state: "active", notice: "Bot started" })
 }
 
+// What the user does in the chat. A failure here (no such button, a
+// message already gone) is the action's, not the bot's: it is reported as
+// `action-error` and leaves the bot running.
+const userAction = (work: (emulator: TgBotEmulator) => void) => {
+  if (!emulator) {
+    sendEvent({ type: "action-error", error: "Emulator is not running" })
+    return
+  }
+  try {
+    work(emulator)
+  } catch (error) {
+    sendEvent({ type: "action-error", error: error instanceof Error ? error.message : `${error}` })
+  }
+}
+
 self.onmessage = async (msg: MessageEvent<WorkerCommand>) => {
   const data = msg.data
   switch (data?.command) {
@@ -133,60 +148,31 @@ self.onmessage = async (msg: MessageEvent<WorkerCommand>) => {
       await runBot(data)
       break
     case "user-message":
-      if (!emulator) {
-        sendEvent({ type: "error", error: "Emulator is not running" })
-        break
-      }
-      emulator.sendMessage(
-        data.text,
-        data.reply_to !== undefined ? { reply_to: data.reply_to } : {}
+      userAction((emulator) =>
+        emulator.sendMessage(
+          data.text,
+          data.reply_to !== undefined ? { reply_to: data.reply_to } : {}
+        )
       )
       break
     case "delete-message":
-      if (!emulator) {
-        sendEvent({ type: "error", error: "Emulator is not running" })
-        break
-      }
-      try {
-        emulator.deleteMessage(data.message_id)
-      } catch (error) {
-        sendEvent({ type: "error", error: error instanceof Error ? error.message : `${error}` })
-      }
+      userAction((emulator) => emulator.deleteMessage(data.message_id))
       break
     case "tap-button":
-      if (!emulator) {
-        sendEvent({ type: "error", error: "Emulator is not running" })
-        break
-      }
-      try {
-        emulator.tapButton(data.data, { message_id: data.message_id })
-      } catch (error) {
-        sendEvent({ type: "error", error: error instanceof Error ? error.message : `${error}` })
-      }
+      userAction((emulator) => emulator.tapButton(data.data, { message_id: data.message_id }))
       break
-    case "user-file": {
-      if (!emulator) {
-        sendEvent({ type: "error", error: "Emulator is not running" })
-        break
-      }
-      const file = { file_content: new Uint8Array(data.bytes), file_name: data.file_name }
-      const options = data.caption ? { caption: data.caption } : {}
-      if (data.kind === "photo") emulator.sendPhoto(file, options)
-      else emulator.sendDocument(file, options)
+    case "user-file":
+      userAction((emulator) => {
+        const file = { file_content: new Uint8Array(data.bytes), file_name: data.file_name }
+        const options = data.caption ? { caption: data.caption } : {}
+        if (data.kind === "photo") emulator.sendPhoto(file, options)
+        else emulator.sendDocument(file, options)
+      })
       break
-    }
     case "user-react":
-      if (!emulator) {
-        sendEvent({ type: "error", error: "Emulator is not running" })
-        break
-      }
-      try {
-        emulator.react(data.message_id, data.emoji)
-      } catch (error) {
-        sendEvent({ type: "error", error: error instanceof Error ? error.message : `${error}` })
-      }
+      userAction((emulator) => emulator.react(data.message_id, data.emoji))
       break
     default:
-      sendEvent({ type: "error", error: "Unknown command" })
+      sendEvent({ type: "action-error", error: "Unknown command" })
   }
 }

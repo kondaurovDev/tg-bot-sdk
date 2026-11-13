@@ -47,4 +47,7 @@ export type WorkerEvent =
       duration: number
     }
   | { type: "chat-event"; event: EmulatorEvent }
+  /** The bot could not start or load. */
   | { type: "error"; error: string }
+  /** A user action in the chat failed; the bot keeps running. */
+  | { type: "action-error"; error: string }

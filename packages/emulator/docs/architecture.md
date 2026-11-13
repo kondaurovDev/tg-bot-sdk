@@ -57,7 +57,9 @@ Everything observable goes through `state.emit(event)`; the public
 `bot_command` entity when the text starts with `/`), stores it in the history,
 and pushes an `Update` into `pendingUpdates`. A `get_updates` call blocked in
 a long poll is woken immediately — that is why a test never waits for the
-next poll cycle. `tapButton` does the same with a `callback_query` update.
+next poll cycle. `tapButton` does the same with a `callback_query` update;
+the button is looked up in the message's inline keyboard or in the
+`buttons` blocks of its rich message (nested blocks included).
 
 **Bot → chat.** Method handlers validate input (throwing `EmulatorApiError`
 for API-shaped failures), mutate the state, emit events, and return exactly

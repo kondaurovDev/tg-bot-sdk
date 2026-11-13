@@ -377,6 +377,12 @@ export function registerPlayground(Alpine: import("alpinejs").Alpine) {
             this.logsOpen = true
             this._showToast(event.error, "error")
             break
+          case "action-error":
+            this.botBusy = false
+            this.stats.errors++
+            this._addConsoleLog(event.error, "error")
+            this._showToast(event.error, "error")
+            break
         }
       },
 
