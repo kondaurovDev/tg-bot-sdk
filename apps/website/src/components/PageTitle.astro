@@ -7,6 +7,12 @@ const displayTitle = fullTitle
 
 <h1 id="_top">{displayTitle}</h1>
 
+<script>
+  // Defines <tg-api-runner>, the "try it" widget on the API method pages;
+  // Astro bundles it once, and it wakes up only where the tag appears
+  import "../api-runner"
+</script>
+
 <style>
   h1 {
     margin-top: 1rem;

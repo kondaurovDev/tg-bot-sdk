@@ -143,157 +143,23 @@ const resolveInputType = (field: EntityField): string => {
   return "json"
 }
 
-const inputStyle =
-  "width:100%;padding:6px 8px;border:1px solid var(--sl-color-gray-5);border-radius:4px;font-size:13px;font-family:var(--sl-font-mono);background:var(--sl-color-bg);color:var(--sl-color-text);"
+const escapeAttribute = (value: string) => value.replaceAll("&", "&amp;").replaceAll("'", "&#39;")
 
-const labelStyle =
-  "display:block;font-size:12px;font-weight:500;margin-bottom:2px;color:var(--sl-color-gray-2);"
-
-const btnPrimary =
-  "padding:6px 16px;background:var(--sl-color-text-accent);color:white;border:none;border-radius:4px;font-size:13px;cursor:pointer;"
-
-const btnSecondary =
-  "padding:6px 16px;background:transparent;color:var(--sl-color-gray-2);border:1px solid var(--sl-color-gray-5);border-radius:4px;font-size:13px;cursor:pointer;"
-
-const makeFieldInput = (field: EntityField): string[] => {
-  const inputType = resolveInputType(field)
-  const label = `<label style="${labelStyle}">${field.name}</label>`
-
-  if (inputType === "boolean") {
-    return [
-      `<div style="margin-bottom:8px;">`,
-      label,
-      `<select x-model="values.${field.name}" style="${inputStyle}">`,
-      `<option value="">—</option>`,
-      `<option value="true">true</option>`,
-      `<option value="false">false</option>`,
-      `</select>`,
-      `</div>`
-    ]
-  }
-
-  if (inputType === "json") {
-    return [
-      `<div style="margin-bottom:8px;">`,
-      label,
-      `<textarea x-model="values.${field.name}" placeholder='{}' rows="2" style="${inputStyle}resize:vertical;"></textarea>`,
-      `</div>`
-    ]
-  }
-
-  if (field.name === "chat_id") {
-    return [
-      `<div style="margin-bottom:8px;">`,
-      label,
-      `<div style="display:flex;gap:8px;">`,
-      `<input type="text" x-model="values.chat_id" placeholder="chat_id" style="flex:1;${inputStyle}">`,
-      `<button @click="detectChatId()" :disabled="detectingChatId || !token" style="${btnSecondary}font-size:12px;">`,
-      `<span x-show="!detectingChatId">Detect</span>`,
-      `<span x-show="detectingChatId">...</span>`,
-      `</button>`,
-      `</div>`,
-      `</div>`
-    ]
-  }
-
-  const htmlType = inputType === "number" ? "number" : "text"
-  return [
-    `<div style="margin-bottom:8px;">`,
-    label,
-    `<input type="${htmlType}" x-model="values.${field.name}" placeholder="${field.name}" style="${inputStyle}">`,
-    `</div>`
-  ]
-}
-
+/**
+ * The "try it" widget: only the data — the method and its fields. The
+ * website's `<tg-api-runner>` custom element (apps/website/src/api-runner.ts)
+ * renders the form, calls the method with the visitor's token, shows the reply.
+ */
 const makeApiRunnerBlock = (method: ExtractedMethodShape): string[] => {
-  const fields = method.parameters?.fields ?? []
-
-  const fieldsJson = JSON.stringify(
-    fields.map((f) => ({
-      name: f.name,
-      type: resolveInputType(f),
-      required: f.required
-    }))
-  ).replaceAll('"', "'")
-
-  const config = `{method:'${method.methodName}',fields:${fieldsJson}}`
-
-  const required = fields.filter((f) => f.required)
-  const optional = fields.filter((f) => !f.required)
-
-  const lines: string[] = [
-    `<div class="not-content" x-data="apiRunner(${config})">`,
-    `<div style="margin-top:1.5rem;border:1px solid var(--sl-color-gray-5);border-radius:8px;overflow:hidden;">`,
-
-    // Token status
-    `<div x-show="token" x-cloak style="padding:8px 14px;background:var(--sl-color-gray-6);border-bottom:1px solid var(--sl-color-gray-5);display:flex;align-items:center;justify-content:flex-end;">`,
-    `<span style="font-size:12px;color:var(--sl-color-gray-3);">`,
-    `Token saved`,
-    `<button @click="clearToken()" style="margin-left:6px;color:var(--sl-color-text-accent);cursor:pointer;background:none;border:none;font-size:12px;">Change</button>`,
-    `</span>`,
-    `</div>`,
-
-    // Body
-    `<div style="padding:14px;">`,
-
-    // Token input
-    `<div x-show="showTokenInput" style="margin-bottom:12px;">`,
-    `<label style="${labelStyle}">Bot Token</label>`,
-    `<div style="display:flex;gap:8px;">`,
-    `<input x-model="tokenInput" type="text" placeholder="Paste token from @BotFather" style="flex:1;${inputStyle}">`,
-    `<button @click="saveToken()" style="${btnPrimary}">Save</button>`,
-    `</div>`,
-    `</div>`
-  ]
-
-  // Required fields
-  for (const field of required) {
-    lines.push(...makeFieldInput(field))
-  }
-
-  // Optional fields toggle
-  if (optional.length > 0) {
-    lines.push(
-      `<button @click="showOptional = !showOptional" style="background:none;border:none;color:var(--sl-color-text-accent);font-size:12px;cursor:pointer;padding:4px 0;margin-bottom:8px;">`,
-      `<span x-text="showOptional ? 'Hide' : 'Show'"></span> optional (${optional.length})`,
-      `</button>`,
-      `<div x-show="showOptional" x-transition x-cloak>`
-    )
-    for (const field of optional) {
-      lines.push(...makeFieldInput(field))
-    }
-    lines.push(`</div>`)
-  }
-
-  // Actions
-  lines.push(
-    `<div x-show="token" x-cloak style="display:flex;gap:8px;margin-top:12px;">`,
-    `<button @click="run()" :disabled="loading" style="${btnPrimary}">`,
-    `<span x-show="!loading">Run</span>`,
-    `<span x-show="loading">Running...</span>`,
-    `</button>`,
-    ...(fields.length > 0
-      ? [`<button @click="reset()" style="${btnSecondary}">Reset</button>`]
-      : []),
-    `</div>`,
-
-    // Response
-    `<div x-show="response !== null || error !== null" x-transition x-cloak style="margin-top:12px;">`,
-    `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">`,
-    `<span style="font-size:12px;font-weight:600;" :style="responseOk === true ? 'color:#22c55e' : 'color:#ef4444'">Response</span>`,
-    `<button @click="showResponse = !showResponse" style="font-size:11px;cursor:pointer;background:none;border:none;color:var(--sl-color-gray-3);" x-text="showResponse ? 'Collapse' : 'Expand'"></button>`,
-    `</div>`,
-    `<pre x-show="showResponse" x-text="error ?? response" style="overflow:auto;max-height:400px;padding:10px;border:1px solid;border-radius:4px;font-size:12px;line-height:1.5;background:var(--sl-color-gray-7);white-space:pre-wrap;margin:0;" :style="responseOk === false || error ? 'border-color:#ef4444' : 'border-color:#22c55e'"></pre>`,
-    `</div>`,
-
-    // Close body, card, wrapper
-    `</div>`,
-    `</div>`,
-    `</div>`,
+  const fields = (method.parameters?.fields ?? []).map((f) => ({
+    name: f.name,
+    type: resolveInputType(f),
+    required: f.required
+  }))
+  return [
+    `<tg-api-runner class="not-content" method="${method.methodName}" fields='${escapeAttribute(JSON.stringify(fields))}'></tg-api-runner>`,
     ""
-  )
-
-  return lines
+  ]
 }
 
 // ── Meta description ──

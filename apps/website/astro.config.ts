@@ -1,6 +1,5 @@
 import { defineConfig } from "astro/config"
 import starlight from "@astrojs/starlight"
-import alpine from "@astrojs/alpinejs"
 import react from "@astrojs/react"
 import tailwindcss from "@tailwindcss/vite"
 
@@ -21,7 +20,6 @@ export default defineConfig({
     }
   },
   integrations: [
-    alpine({ entrypoint: "/src/alpine-entrypoint" }),
     // The playground island (packages/playground)
     react(),
     starlight({
