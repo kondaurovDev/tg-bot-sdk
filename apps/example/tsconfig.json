@@ -1,9 +1,9 @@
 {
   "extends": "../../tsconfig.base.json",
-  "include": ["src"],
+  "include": ["src", "test"],
   "compilerOptions": {
     "types": ["node"],
-    "lib": ["DOM", "WebWorker"],
+    "lib": ["ESNext", "DOM", "WebWorker"],
     "paths": {
       "~/*": ["./src/*"]
     }

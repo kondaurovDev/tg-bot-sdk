@@ -104,7 +104,7 @@ export default {
       try {
         await runtime.home.setWebhook({
           url: webhookUrl,
-          allowed_updates: ["message", "callback_query"],
+          allowed_updates: ["message", "callback_query", "inline_query", "widget_query"],
           drop_pending_updates: true
         })
         // Show the home commands in the client's "/" menu

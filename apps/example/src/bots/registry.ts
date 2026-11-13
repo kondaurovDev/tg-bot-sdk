@@ -4,10 +4,10 @@
  */
 import type { Bot } from "@effect-ak/tg-bot"
 
-import * as echo from "./echo"
-import * as command from "./command"
 import * as file from "./file"
 import * as menu from "./menu"
+import * as stream from "./stream"
+import * as tictactoe from "./tictactoe"
 
 export interface Demo {
   title: string
@@ -17,8 +17,12 @@ export interface Demo {
 
 export const demos: Record<string, Demo> = {
   menu: { title: "🔘 Menu Bot", description: menu.description, bot: menu.default },
-  echo: { title: "🦜 Echo Bot", description: echo.description, bot: echo.default },
-  command: { title: "⌨️ Command Bot", description: command.description, bot: command.default },
+  tictactoe: {
+    title: "⭕ Tic-tac-toe Widget",
+    description: tictactoe.description,
+    bot: tictactoe.default
+  },
+  stream: { title: "💬 Streaming Bot", description: stream.description, bot: stream.default },
   file: { title: "📄 File Bot", description: file.description, bot: file.default }
 }
 

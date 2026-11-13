@@ -1,7 +1,7 @@
 /**
  * Run any bot from `src/bots` locally with long polling.
  *
- *   pnpm polling menu     # or echo | command | file | home
+ *   pnpm polling menu     # or tictactoe | stream | file | home
  */
 import type { Bot } from "@effect-ak/tg-bot"
 

@@ -6,7 +6,7 @@ The bots themselves live in [`src/bots/`](src/bots) — plain `createBot()` defi
 
 ## Deployment (GitHub Actions)
 
-[`.github/workflows/deploy-demo.yml`](../.github/workflows/deploy-demo.yml) builds the packages, deploys the Worker with `wrangler`, pushes the bot secrets and registers the Telegram webhook via the Worker's `/setup` route. It runs on every push to `main` that touches the SDK or the demo, and on manual dispatch.
+[`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml) builds the packages, deploys the Worker with `wrangler`, pushes the bot secrets and registers the Telegram webhook via the Worker's `/setup` route. It runs on every push to `main` that touches the SDK or the demo, and on manual dispatch.
 
 Repository secrets it needs:
 
@@ -17,11 +17,24 @@ Repository secrets it needs:
 | `DEMO_BOT_TOKEN`        | Bot token from @BotFather                                        |
 | `DEMO_WEBHOOK_SECRET`   | 1–256 chars of `A-Z a-z 0-9 _ -`, e.g. `openssl rand -hex 32`    |
 
-Nothing needs to be installed or deployed locally.
+Nothing needs to be installed or deployed locally. For the inline snippets, switch inline mode on once in @BotFather (`/setinline`).
+
+## The demos
+
+| Demo             | Shows                                                                                               |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| 🔘 Menu Bot      | `defineScreens`: inline-keyboard navigation declared as data, edited in place                       |
+| ⭕ Tic-tac-toe   | An HTML widget (Bot API 10.4): taps become `widget_query` requests, the bot answers and saves state |
+| 💬 Streaming Bot | `ctx.stream`: "Thinking…", then the reply typed in word by word (fixed answers, no LLM)             |
+| 📄 File Bot      | Sending a file built in memory                                                                      |
+
+The home bot answers `/features` with a rich message (table, details, buttons) and inline queries (`@bot widget`) with code snippets.
+
+[`test/demos.test.ts`](test/demos.test.ts) runs every demo against the in-memory emulator (`pnpm --filter example test`) — no token needed.
 
 ## Layout
 
-- [`src/bots/`](src/bots) — the demo bots (`echo`, `command`, `file`, `menu`), their [`registry.ts`](src/bots/registry.ts), and the [`home.ts`](src/bots/home.ts) bot (/start, /source, /install, /features, /demo menu)
+- [`src/bots/`](src/bots) — the demo bots (`menu`, `tictactoe`, `stream`, `file`), their [`registry.ts`](src/bots/registry.ts), and the [`home.ts`](src/bots/home.ts) bot (/start, /source, /install, /features, /demo menu, inline snippets)
 - [`src/worker.ts`](src/worker.ts) — Cloudflare Worker: routing (`POST /webhook`, `GET /setup`), dispatch to home or the active demo, KV state
 - [`wrangler.jsonc`](wrangler.jsonc) — Worker config; the KV namespace is provisioned automatically on first deploy
 - [`src/polling/`](src/polling) — long polling: `run.ts` starts any bot from `src/bots` (`pnpm polling menu`); `batch-bot.ts` / `reload-bot.ts` show the low-level `runBot` API (batch mode, hot reload)
@@ -29,7 +42,7 @@ Nothing needs to be installed or deployed locally.
 ## Local dev (optional)
 
 ```bash
-cd example
+cd apps/example
 cp .dev.vars.example .dev.vars   # fill in BOT_TOKEN / WEBHOOK_SECRET
 make dev                         # wrangler dev on http://localhost:8787
 make tunnel                      # cloudflared quick tunnel → https://<words>.trycloudflare.com
