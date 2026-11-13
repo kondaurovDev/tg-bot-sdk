@@ -1,5 +1,56 @@
 # @effect-ak/tg-bot-client
 
+## 1.13.0
+
+### Minor Changes
+
+- 6c01ac9: Upload files that sit inside objects: album items in `send_media_group`, the media of `edit_message_media`, `send_paid_media`, stickers in `create_new_sticker_set` / `add_sticker_to_set` / `replace_sticker_in_set`, `set_my_profile_photo`, story content, and the thumbnails and covers of `InputMedia*`.
+
+  **`@effect-ak/tg-bot-api`** — the 25 fields the docs describe as `attach://<file_attach_name>` uploads are typed `InputFile | string` instead of `string`, so a file can be passed there.
+
+  **`@effect-ak/tg-bot-client`** — a file found inside an object is sent as its own multipart part, and the JSON carries `attach://file<N>` in its place, as the Bot API expects. Before, it was serialized into the JSON and the upload failed.
+
+  ```ts
+  await client.execute("send_media_group", {
+    chat_id,
+    media: [
+      { type: "photo", media: { file_content: first, file_name: "1.jpg" } },
+      { type: "photo", media: new File([second], "2.jpg") },
+    ],
+  });
+  ```
+
+- 27e26a1: Keep the update kind apart from its payload, and replace type assertions with checked types.
+
+  **`@effect-ak/tg-bot`**
+
+  - Fix: `poll`, `widget_query` and `shared_widget_query` updates never reached their handlers. The processor merged the update kind into the payload as `type`, and these payloads have a `type` field of their own, which overwrote it. Handlers now receive the payload exactly as Telegram sent it, with no `type` key added.
+  - Fix: `ctx.answerCallbackQuery()` in a `widget_query` handler built an `answer_callback_query` call instead of throwing — a widget query was told apart from a callback query by its fields, which are the same.
+  - The webhook handler answers `400` to a JSON body that is not an `Update` (no numeric `update_id`) instead of processing it.
+  - Changed: `extractUpdate(update)` returns `{ type, payload }` instead of the payload with `type` mixed in. `createBotContext` and `resolveCallbackQueryId` take that extracted update; `resolveChatId` and `resolveMessageTarget` take a payload. Before, all four accepted `unknown`.
+  - New exports: `AvailableUpdateTypes`, `UpdatePayload<K>`, `ExtractedUpdate<K>`. `BotApiCall` takes an optional method parameter (`BotApiCall<"send_message">`).
+  - `ctx.call` and `BotResponse.call` accept an emoji for `message_effect_id`, like the client.
+
+  **`@effect-ak/tg-bot-client`**
+
+  - `getFile` builds base64 with `btoa` instead of `Buffer`, so `base64String()` works in browsers and Workers too.
+  - New export: `MethodInput<M>` — the input of a method as `execute` / `executeSafe` accept it.
+
+  **`@effect-ak/tg-bot-emulator`**
+
+  - Fix: `get_chat` returned a `Chat`; it now returns a `ChatFullInfo` with the required fields filled in.
+  - Fix: a bot command in an `html` rich message became a `RichTextBotCommand` without its required `bot_command` field.
+  - `MethodTable` is typed against the generated `Api`, so every emulated method is checked against the real signature.
+  - `nextEvent` narrows its result when the predicate is a type guard.
+
+### Patch Changes
+
+- Updated dependencies [1fa538c]
+- Updated dependencies [c08995c]
+- Updated dependencies [6c01ac9]
+- Updated dependencies [551c1d4]
+  - @effect-ak/tg-bot-api@1.13.0
+
 ## 1.12.0
 
 ### Patch Changes
