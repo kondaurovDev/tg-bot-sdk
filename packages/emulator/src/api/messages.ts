@@ -57,6 +57,7 @@ export const messageMethods = (state: EmulatorState) => ({
     } else {
       delete message.reply_markup
     }
+    message.edit_date = state.nowSeconds()
     state.emit({ type: "message_edited", message })
     return message
   },
@@ -72,6 +73,7 @@ export const messageMethods = (state: EmulatorState) => ({
       delete message.caption
       delete message.caption_entities
     }
+    message.edit_date = state.nowSeconds()
     state.emit({ type: "message_edited", message })
     return message
   },
@@ -83,6 +85,7 @@ export const messageMethods = (state: EmulatorState) => ({
     } else {
       delete message.reply_markup
     }
+    message.edit_date = state.nowSeconds()
     state.emit({ type: "message_edited", message })
     return message
   },

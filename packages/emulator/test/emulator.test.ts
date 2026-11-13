@@ -272,6 +272,8 @@ describe("integration with bot.run()", () => {
       await answered
       await edited
       expect(emulator.messages.at(-1)?.text).toBe("You picked red")
+      // Telegram stamps a bot's edit, as it does the user's
+      expect(emulator.messages.at(-1)?.edit_date).toBeDefined()
     } finally {
       instance.stop()
     }

@@ -10,11 +10,13 @@ Monorepo (`pnpm workspaces`); the npm packages are published under the `@effect-
 - **`packages/client`** — Lightweight HTTP client (`makeTgBotClient()`). Native `fetch`, zero runtime deps, discriminated union results (`ok: true/false`), automatic FormData serialization, message effect emoji mapping.
 - **`packages/bot`** — High-level bot framework: builder API, guarded handlers, long polling, webhooks, `defineScreens`.
 - **`packages/emulator`** — In-memory Bot API for tests and the playground's virtual mode.
-- **`apps/website/`** — Astro + Starlight documentation site (https://tg-bot-sdk.website) with the interactive playground.
+- **`packages/emulator-react`** — React chat UI over the emulator (`<Chat>`, `<PhoneFrame>`), talking to it through an `EmulatorPort`. Private for now.
+- **`packages/playground`** — The website's playground as a React component (Monaco, the bot worker, the console, the examples). Private, never published.
+- **`apps/website/`** — Astro + Starlight documentation site (https://tg-bot-sdk.website); mounts the playground on `/playground`.
 - **`apps/example/`** — Live demo: a Cloudflare Worker hosting several demo bots.
 - **`docs/`** — Local markdown notes and plans (not published).
 
-Dependency chain: `api` <- `client` <- `bot`; `emulator` depends on `api` and `client` (`bot` only in its tests). Packages resolve each other through `dist/`, so a change in one is visible to the next only after it is rebuilt.
+Dependency chain: `api` <- `client` <- `bot`; `emulator` depends on `api` and `client` (`bot` only in its tests); `emulator-react` on `api` and `emulator`; `playground` on all of them. Packages resolve each other through `dist/`, so a change in one is visible to the next only after it is rebuilt — except `playground`, which the website compiles from source (its worker and Monaco need the website's Vite).
 
 The details of each package and app load from `.claude/rules/` when you touch its files. Updating to a new Bot API version is the `bot-api-update` skill.
 

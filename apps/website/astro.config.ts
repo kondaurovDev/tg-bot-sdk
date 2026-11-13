@@ -1,15 +1,29 @@
 import { defineConfig } from "astro/config"
 import starlight from "@astrojs/starlight"
 import alpine from "@astrojs/alpinejs"
+import react from "@astrojs/react"
 import tailwindcss from "@tailwindcss/vite"
 
 export default defineConfig({
   site: "https://tg-bot-sdk.website",
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    // The React renderer imports react-dom/client, which is CommonJS:
+    // without pre-bundling the browser gets it raw and the island fails
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime"
+      ]
+    }
   },
   integrations: [
     alpine({ entrypoint: "/src/alpine-entrypoint" }),
+    // The playground island (packages/playground)
+    react(),
     starlight({
       title: "Telegram Bot SDK",
       logo: {

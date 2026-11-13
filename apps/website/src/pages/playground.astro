@@ -1,13 +1,9 @@
 ---
-import "../playground/styles.css"
-
-import PlaygroundHeader from "../components/PlaygroundHeader.astro"
-import PlaygroundEditor from "../components/PlaygroundEditor.astro"
-import PlaygroundModals from "../components/PlaygroundModals.astro"
-import PlaygroundToasts from "../components/PlaygroundToasts.astro"
-import PlaygroundChat from "../components/PlaygroundChat.astro"
-import PlaygroundRealMode from "../components/PlaygroundRealMode.astro"
-import PlaygroundLogs from "../components/PlaygroundLogs.astro"
+// The playground is its own package (packages/playground): this page only
+// mounts it. It runs in the browser alone — Monaco and the bot worker have
+// nothing to render on the server.
+import { Playground } from "@effect-ak/tg-bot-playground"
+import "@effect-ak/tg-bot-playground/styles.css"
 ---
 
 <html lang="en">
@@ -26,36 +22,24 @@ import PlaygroundLogs from "../components/PlaygroundLogs.astro"
     <link rel="canonical" href="https://tg-bot-sdk.website/playground/" />
     <title>Telegram Bot Playground | Telegram Bot SDK</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style is:global>
+      html,
+      body {
+        margin: 0;
+      }
+      /* dvh: on iOS, 100vh runs under Safari's toolbar */
+      body {
+        height: 100dvh;
+        overflow: hidden;
+        background: #f8fafc;
+      }
+      body > astro-island {
+        display: block;
+        height: 100%;
+      }
+    </style>
   </head>
-  <!-- dvh: on iOS, 100vh runs under Safari's toolbar -->
-  <body class="bg-slate-50 flex flex-col h-dvh overflow-hidden">
-    <div x-data="playground" @keydown.window.meta.enter.prevent="runIfReady()" @keydown.window.ctrl.enter.prevent="runIfReady()" class="flex flex-col h-full">
-
-      <PlaygroundHeader />
-      <PlaygroundModals />
-      <PlaygroundToasts />
-
-      <main
-        x-ref="mainContainer"
-        class="flex flex-col md:flex-row flex-1 min-h-0"
-        :class="isDragging ? 'select-none' : ''"
-        :style="`--editor-width: ${editorWidth}%`"
-      >
-        <PlaygroundEditor />
-
-        <div
-          class="panel-divider hidden md:block"
-          :class="isDragging ? 'dragging' : ''"
-          @pointerdown="startDrag($event)"
-        ></div>
-
-        <div class="@container flex-1 min-h-0 md:min-w-[280px] flex flex-col bg-gradient-to-b from-slate-100 to-slate-200">
-          <PlaygroundChat />
-          <PlaygroundRealMode />
-          <PlaygroundLogs />
-        </div>
-      </main>
-
-    </div>
+  <body>
+    <Playground client:only="react" docsHref="/" />
   </body>
 </html>

@@ -1,5 +1,6 @@
 /**
- * Typed messages exchanged between the playground page and the bot worker.
+ * @module protocol
+ * The messages between the page and the bot worker.
  */
 import type { Update } from "@effect-ak/tg-bot-api"
 import type { EmulatorEvent } from "@effect-ak/tg-bot-emulator"
@@ -26,7 +27,7 @@ export type WorkerCommand =
   | {
       command: "user-file"
       file_name: string
-      bytes: ArrayBuffer
+      bytes: Uint8Array<ArrayBuffer>
       kind: "photo" | "document"
       caption?: string
     }

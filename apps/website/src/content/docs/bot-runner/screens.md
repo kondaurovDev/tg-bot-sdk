@@ -126,4 +126,4 @@ const { text, reply_markup } = await screens.render("root", input) // just the p
 
 Generated `callback_data` is `s:g:<from>:<to>` (go), `s:b:<current>` (back) and `s:a:<screen>:<index>` (action). Unknown ids fall back to the start screen, so stale buttons on old messages never break anything.
 
-The full demo lives in [`example/src/bots/menu.ts`](https://github.com/kondaurovDev/tg-bot-sdk/blob/main/example/src/bots/menu.ts).
+The full demo lives in [`apps/example/src/bots/menu.ts`](https://github.com/kondaurovDev/tg-bot-sdk/blob/main/apps/example/src/bots/menu.ts).

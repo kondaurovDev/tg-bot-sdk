@@ -44,7 +44,7 @@
       }
     },
     {
-      "files": ["apps/website/src/playground/**"],
+      "files": ["packages/playground/src/**"],
       "rules": {
         "import/default": "off"
       }

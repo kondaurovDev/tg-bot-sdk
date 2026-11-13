@@ -1,0 +1,69 @@
+{
+  "name": "@effect-ak/tg-bot-emulator-react",
+  "version": "0.0.0",
+  "private": true,
+  "description": "React chat UI for the in-memory Telegram Bot API emulator: a Telegram-like chat that talks to your bot",
+  "keywords": [
+    "chat",
+    "emulator",
+    "react",
+    "telegram",
+    "telegram-bot"
+  ],
+  "homepage": "https://tg-bot-sdk.website",
+  "license": "MIT",
+  "author": {
+    "name": "Aleksandr Kondaurov",
+    "email": "kondaurov.dev@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kondaurovDev/tg-bot-sdk",
+    "directory": "packages/emulator-react"
+  },
+  "files": [
+    "dist/*.js",
+    "dist/*.cjs",
+    "dist/*.d.ts",
+    "dist/*.css"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup && node -e \"require('node:fs').copyFileSync('src/styles.css', 'dist/styles.css')\"",
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@effect-ak/tg-bot-api": "workspace:^",
+    "@effect-ak/tg-bot-emulator": "workspace:^"
+  },
+  "devDependencies": {
+    "@effect-ak/tg-bot": "workspace:^",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "jsdom": "^31.0.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^19.3.1"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  }
+}
