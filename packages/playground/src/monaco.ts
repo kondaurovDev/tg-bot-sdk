@@ -28,6 +28,7 @@ export interface CodeEditor {
   onErrorCount(listener: (count: number) => void): void
   /** Put the cursor on the first error; `false` when there is none. */
   revealFirstError(): boolean
+  setTheme(theme: "light" | "dark"): void
   dispose(): void
 }
 
@@ -102,6 +103,9 @@ export const createCodeEditor = async (container: HTMLElement): Promise<CodeEdit
       view.revealLineInCenter(first.startLineNumber)
       view.focus()
       return true
+    },
+    setTheme(theme) {
+      monaco.editor.setTheme(theme === "dark" ? "vs-dark" : "vs")
     },
     dispose() {
       view.dispose()

@@ -10,5 +10,6 @@ paths:
 - The bot runs in a Web Worker (`src/bot-worker.ts`), one per run: `src/bot-runner.ts` starts it and hands the chat a new `EmulatorPort` over `postMessage`. Messages are typed in `src/protocol.ts`.
 - The examples are `examples/*.ts`, typechecked with the package; `src/examples.ts` lists them. A new example also gets a case in the website's smoke test (`apps/website/tests/e2e/playground.ts`).
 - Links: `?example=rich` opens an example, `#code=…` carries code (deflate-raw, base64url; `src/share.ts`). Shared code becomes the visitor's edits of that example and leaves the address bar.
+- Theme: `src/theme.ts` follows the docs — Starlight's `starlight-theme` in localStorage, else the system — and the header's toggle writes it back, so the site and the playground switch together.
 - Styles are plain CSS (`src/styles.css`, classes prefixed `pg-`), importing the chat's. No Tailwind.
 - localStorage keys (`src/storage.ts`) are the ones the old Alpine playground used: visitors keep their edits and token.

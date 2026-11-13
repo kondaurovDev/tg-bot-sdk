@@ -13,6 +13,10 @@ export interface ChatServices {
   widgetRequest(message_id: number, data: string): Promise<WidgetRequestOutcome>
   /** Copy to the clipboard and say so. */
   copy(text: string): void
+  /** The chat's color scheme, for widgets' `themeParams`. */
+  theme: ChatTheme
 }
+
+export type ChatTheme = "light" | "dark"
 
 export const ChatServicesContext = createContext<ChatServices | null>(null)

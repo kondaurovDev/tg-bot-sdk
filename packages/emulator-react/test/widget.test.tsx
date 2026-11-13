@@ -17,6 +17,7 @@ afterEach(() => {
 describe("widgetDocument", () => {
   it("puts the shim before the widget and keeps the state from closing the script", () => {
     const doc = widgetDocument("<p id=w>widget</p>", {
+      colorScheme: "dark",
       chatData: "</script><b>",
       publicData: null,
       viewer: { id: 1, first_name: "You" }
@@ -25,6 +26,7 @@ describe("widgetDocument", () => {
     expect(doc).not.toContain("</script><b>")
     expect(doc).toContain("\\u003c/script>")
     expect(doc).toContain("default-src 'none'")
+    expect(doc).toContain("--tg-theme-bg-color:#182533")
   })
 })
 
@@ -66,7 +68,8 @@ describe("<WidgetFrame> in the chat", () => {
         ])
         .run({ client: emulator.client, logger: silentLogger })
     )
-    render(<Chat port={createEmulatorPort(emulator)} />)
+    const port = createEmulatorPort(emulator)
+    const { rerender } = render(<Chat port={port} />)
     fireEvent.click(screen.getByTestId("chat-start"))
     await waitFor(() => expect(screen.queryByTestId("widget")).not.toBeNull(), { timeout: 5000 })
 
@@ -98,5 +101,13 @@ describe("<WidgetFrame> in the chat", () => {
       { __tgWidgetHost: true, type: "data", chatData: "1", publicData: null },
       "*"
     )
+
+    // Night mode reaches the running widget
+    rerender(<Chat port={port} theme="dark" />)
+    expect(toFrame).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "theme", colorScheme: "dark" }),
+      "*"
+    )
+    expect(screen.getByTestId("chat").dataset["theme"]).toBe("dark")
   })
 })

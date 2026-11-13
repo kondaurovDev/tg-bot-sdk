@@ -12,10 +12,17 @@ export interface PhoneFrameProps {
   children: ReactNode
   /** Keep the frame on narrow screens too. Default: `false`. */
   alwaysFramed?: boolean
+  /** Light or dark, to match the chat inside. Default: `"light"`. */
+  theme?: "light" | "dark"
   className?: string
 }
 
-export const PhoneFrame = ({ children, alwaysFramed = false, className }: PhoneFrameProps) => {
+export const PhoneFrame = ({
+  children,
+  alwaysFramed = false,
+  theme = "light",
+  className
+}: PhoneFrameProps) => {
   const [time, setTime] = useState(clock)
   useEffect(() => {
     const timer = setInterval(() => setTime(clock()), 15_000)
@@ -24,7 +31,7 @@ export const PhoneFrame = ({ children, alwaysFramed = false, className }: PhoneF
 
   const classes = ["tgc-phone", alwaysFramed ? "tgc-phone-always" : "", className ?? ""]
   return (
-    <div className={classes.filter(Boolean).join(" ")}>
+    <div className={classes.filter(Boolean).join(" ")} data-theme={theme}>
       <div className="tgc-phone-screen">
         <div className="tgc-phone-notch" />
         <div className="tgc-phone-status">

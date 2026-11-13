@@ -64,7 +64,9 @@ filtering of HTML and CSS.
 
 ## Styling
 
-`styles.css` styles classes prefixed `tgc-`. Colors and fonts are custom
+`theme="dark"` on `<Chat>` and `<PhoneFrame>` switches to Telegram's night
+palette, widgets included (they get `themeChanged`). `styles.css` styles
+classes prefixed `tgc-`. Colors and fonts are custom
 properties on `.tgc-chat` and `.tgc-phone` (`--tgc-accent`, `--tgc-bubble-out`,
 `--tgc-wallpaper`, …): override them to restyle. The elements carry
 `data-testid` attributes (`chat`, `message`, `keyboard-button`, `chat-input`, …)

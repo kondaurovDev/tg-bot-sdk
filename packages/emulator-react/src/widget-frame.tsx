@@ -13,25 +13,44 @@
 import type { Widget } from "@effect-ak/tg-bot-api"
 import { useContext, useEffect, useMemo, useRef, useState } from "react"
 
-import { ChatServicesContext } from "./chat-services"
+import { ChatServicesContext, type ChatTheme } from "./chat-services"
 
-/** The light palette of an incoming bubble, under the keys of Mini Apps' themeParams. */
-export const WIDGET_THEME: Readonly<Record<string, string>> = {
-  bg_color: "#ffffff",
-  text_color: "#000000",
-  hint_color: "#8a9aa8",
-  link_color: "#2481cc",
-  button_color: "#2481cc",
-  button_text_color: "#ffffff",
-  secondary_bg_color: "#f1f3f5",
-  accent_text_color: "#2481cc",
-  subtitle_text_color: "#8a9aa8",
-  destructive_text_color: "#e53935",
-  section_bg_color: "#ffffff",
-  section_header_text_color: "#2481cc",
-  section_separator_color: "#e5e7eb",
-  header_bg_color: "#ffffff",
-  bottom_bar_bg_color: "#ffffff"
+/** The palette of an incoming bubble, under the keys of Mini Apps' themeParams. */
+export const WIDGET_THEMES: Readonly<Record<ChatTheme, Readonly<Record<string, string>>>> = {
+  light: {
+    bg_color: "#ffffff",
+    text_color: "#000000",
+    hint_color: "#8a9aa8",
+    link_color: "#2481cc",
+    button_color: "#2481cc",
+    button_text_color: "#ffffff",
+    secondary_bg_color: "#f1f3f5",
+    accent_text_color: "#2481cc",
+    subtitle_text_color: "#8a9aa8",
+    destructive_text_color: "#e53935",
+    section_bg_color: "#ffffff",
+    section_header_text_color: "#2481cc",
+    section_separator_color: "#e5e7eb",
+    header_bg_color: "#ffffff",
+    bottom_bar_bg_color: "#ffffff"
+  },
+  dark: {
+    bg_color: "#182533",
+    text_color: "#f5f5f5",
+    hint_color: "#7f91a4",
+    link_color: "#6ab2f2",
+    button_color: "#5288c1",
+    button_text_color: "#ffffff",
+    secondary_bg_color: "#232e3c",
+    accent_text_color: "#6ab2f2",
+    subtitle_text_color: "#7f91a4",
+    destructive_text_color: "#ef5b5b",
+    section_bg_color: "#17212b",
+    section_header_text_color: "#6ab2f2",
+    section_separator_color: "#2b3a4a",
+    header_bg_color: "#17212b",
+    bottom_bar_bg_color: "#17212b"
+  }
 }
 
 const MIN_HEIGHT = 50
@@ -39,6 +58,7 @@ const MAX_HEIGHT = 600
 const clampHeight = (height: number) => Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, height))
 
 export interface WidgetInit {
+  colorScheme: ChatTheme
   chatData: string | null
   publicData: string | null
   viewer: { id: number; first_name: string }
@@ -62,7 +82,7 @@ const SHIM = String.raw`(() => {
   const W = {
     profile: 1,
     isProfileAtLeast: (n) => typeof n === "number" && n <= 1,
-    colorScheme: "light",
+    colorScheme: init.colorScheme,
     themeParams: Object.freeze(init.theme),
     isActive: true,
     isPreview: false,
@@ -107,6 +127,16 @@ const SHIM = String.raw`(() => {
   };
   W.theme = W.colorScheme;
   W.onTheme = (callback) => W.onEvent("themeChanged", callback);
+  // The palette as CSS variables on the root, rewritten when the chat's theme changes
+  const applyTheme = () => {
+    const vars = Object.entries(W.themeParams)
+      .map(([key, value]) => "--tg-theme-" + key.replaceAll("_", "-") + ":" + value)
+      .join(";");
+    const style = document.getElementById("tg-theme");
+    if (style) {
+      style.textContent = ":root{" + vars + ";--tg-color-scheme:" + W.colorScheme + ";color-scheme:" + W.colorScheme + "}";
+    }
+  };
   Object.defineProperty(window, "TelegramWidget", { value: W });
   addEventListener("message", (event) => {
     const m = event.data;
@@ -118,6 +148,12 @@ const SHIM = String.raw`(() => {
       if (!request) return;
       if (m.ok) request.resolve({ result: m.result });
       else request.reject(new WidgetRequestError(m.code));
+    } else if (m.type === "theme") {
+      W.colorScheme = m.colorScheme;
+      W.theme = m.colorScheme;
+      W.themeParams = Object.freeze(m.theme);
+      applyTheme();
+      fire("themeChanged");
     } else if (m.type === "data") {
       const chatChanged = m.chatData !== W.chatData;
       const publicChanged = m.publicData !== W.publicData;
@@ -137,13 +173,15 @@ const SHIM = String.raw`(() => {
   addEventListener("DOMContentLoaded", () => { new ResizeObserver(report).observe(document.body); report(); });
 })();`
 
-const themeVariables = Object.entries(WIDGET_THEME)
-  .map(([key, value]) => `--tg-theme-${key.replaceAll("_", "-")}:${value}`)
-  .join(";")
+const themeStyle = (scheme: ChatTheme) => {
+  const vars = Object.entries(WIDGET_THEMES[scheme])
+    .map(([key, value]) => `--tg-theme-${key.replaceAll("_", "-")}:${value}`)
+    .join(";")
+  return `:root{${vars};--tg-color-scheme:${scheme};color-scheme:${scheme}}`
+}
 
 // Approximates the default stylesheet Telegram apps put under a widget's own
-const DEFAULT_STYLES = `:root{${themeVariables};--tg-color-scheme:light;color-scheme:light}
-html,body{background:transparent}
+const DEFAULT_STYLES = `html,body{background:transparent}
 body{display:flow-root;margin:8px 12px;font:15px/1.35 system-ui,sans-serif;color:var(--tg-theme-text-color)}
 a{color:var(--tg-theme-link-color)}
 button{font:inherit;padding:6px 14px;border:0;border-radius:8px;background:var(--tg-theme-button-color);color:var(--tg-theme-button-text-color);cursor:pointer}
@@ -156,10 +194,14 @@ const CSP =
 /** The iframe's document: the policy, the default styles, the shim, then the widget. */
 export const widgetDocument = (html: string, init: WidgetInit): string => {
   // JSON in a script: "<" escaped, so no "</script>" can end it early
-  const initJson = JSON.stringify({ ...init, theme: WIDGET_THEME }).replaceAll("<", "\\u003c")
+  const initJson = JSON.stringify({ ...init, theme: WIDGET_THEMES[init.colorScheme] }).replaceAll(
+    "<",
+    "\\u003c"
+  )
   return [
     '<!doctype html><html><head><meta charset="utf-8">',
     `<meta http-equiv="Content-Security-Policy" content="${CSP}">`,
+    `<style id="tg-theme">${themeStyle(init.colorScheme)}</style>`,
     `<style>${DEFAULT_STYLES}</style>`,
     `<script>${SHIM.replace("__INIT__", initJson)}</script>`,
     `</head><body>${html}</body></html>`
@@ -210,9 +252,12 @@ export const WidgetFrame = ({
 
   // The document is built once per code: state changes go in by message
   const initial = useRef(widget)
+  const theme = services?.theme ?? "light"
+  const initialTheme = useRef(theme)
   const srcDoc = useMemo(
     () =>
       widgetDocument(widget.html, {
+        colorScheme: initialTheme.current,
         chatData: initial.current.chat_data ?? null,
         publicData: initial.current.public_data ?? null,
         viewer
@@ -267,6 +312,16 @@ export const WidgetFrame = ({
     window.addEventListener("message", onMessage)
     return () => window.removeEventListener("message", onMessage)
   }, [services, message_id, widget.height])
+
+  // The chat's theme changed: the widget redraws with the new palette
+  const firstTheme = useRef(true)
+  useEffect(() => {
+    if (firstTheme.current) {
+      firstTheme.current = false
+      return
+    }
+    toFrame({ type: "theme", colorScheme: theme, theme: WIDGET_THEMES[theme] })
+  }, [theme])
 
   // The bot changed the state: tell the running widget
   const first = useRef(true)

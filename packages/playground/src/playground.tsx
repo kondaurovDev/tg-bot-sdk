@@ -25,6 +25,7 @@ import type { PlaygroundMode, WorkerEvent } from "./protocol"
 import { storage } from "./storage"
 import { decodeCode, encodeCode, readShareLink, shareLink } from "./share"
 import { deleteWebhook, getBotName, getWebhook } from "./telegram"
+import { useTheme } from "./theme"
 
 type BotStatus = "idle" | "running" | "error"
 
@@ -90,6 +91,7 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
     return wanted && findExample(wanted) ? wanted : DEFAULT_EXAMPLE
   })
   const [build, setBuild] = useState<Build>({ kind: "idle" })
+  const [theme, setTheme] = useTheme()
   const [status, setStatus] = useState<BotStatus>("idle")
   const [port, setPort] = useState<EmulatorPort>(idlePort)
   const [real, setReal] = useState<RealBot | null>(null)
@@ -169,6 +171,9 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
   )
 
   useEffect(() => () => runner.stop(), [runner])
+
+  // Monaco has its own themes; the editor may come after the first render
+  useEffect(() => editor.current?.setTheme(theme), [theme])
 
   // The split's position, read by the stylesheet
   useEffect(() => {
@@ -258,6 +263,7 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
 
   const onEditorReady = async (ready: CodeEditor) => {
     editor.current = ready
+    ready.setTheme(theme)
     const file = latest.current.example
     const original = findExample(file)?.code ?? ""
     storage.setExample(file)
@@ -382,7 +388,7 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
   const canRun = mode === "virtual" || real !== null
 
   return (
-    <div className="pg-root">
+    <div className="pg-root" data-theme={theme}>
       <header className="pg-header">
         <a href={docsHref} className="pg-back" title="Docs">
           ←<span className="pg-wide-only"> Docs</span>
@@ -437,6 +443,15 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
         )}
 
         <div className="pg-header-end">
+          <button
+            type="button"
+            className="pg-theme-toggle"
+            data-testid="theme-toggle"
+            title={theme === "dark" ? "Switch to the light theme" : "Switch to the dark theme"}
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          >
+            {theme === "dark" ? "☀" : "☾"}
+          </button>
           {mode === "real" ? (
             <>
               <span className="pg-status pg-wide-only">
@@ -513,11 +528,12 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
         <section className="pg-side">
           {mode === "virtual" ? (
             <div className="pg-stage">
-              <PhoneFrame>
+              <PhoneFrame theme={theme}>
                 <Chat
                   port={port}
                   title="Playground Bot"
                   botUsername="emulator_bot"
+                  theme={theme}
                   status={status}
                   onRestart={() => void run()}
                   onNotice={showToast}

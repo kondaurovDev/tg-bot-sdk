@@ -221,6 +221,18 @@ for (const name of chosen) {
     console.log(`FAIL  ${name}: ${reason}\n      ${shot}`)
   }
 }
+// The theme toggle switches the chat to night mode and back
+try {
+  await web.tap("#theme-toggle")
+  await web.wait('[data-testid="chat"][data-theme="dark"]', 5)
+  await web.tap("#theme-toggle")
+  await web.wait('[data-testid="chat"][data-theme="light"]', 5)
+  console.log("ok    theme toggle")
+} catch (error) {
+  failures++
+  console.log(`FAIL  theme toggle: ${error instanceof Error ? error.message : String(error)}`)
+}
+
 // A deep link opens its example
 try {
   await web.open(`${PLAYGROUND}?example=rich`)

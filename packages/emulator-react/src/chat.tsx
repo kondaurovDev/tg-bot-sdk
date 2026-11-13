@@ -8,7 +8,7 @@ import type { InlineKeyboardButton, Message } from "@effect-ak/tg-bot-api"
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import { CommandsMenu, InlineResults, ReplyKeyboard } from "./chat-keyboards"
-import { ChatServicesContext, type ChatServices } from "./chat-services"
+import { ChatServicesContext, type ChatServices, type ChatTheme } from "./chat-services"
 import { MessageMenu } from "./chat-menu"
 import { MessageRow } from "./chat-message"
 import type { ChatPortEvent, EmulatorPort } from "./port"
@@ -50,6 +50,8 @@ export interface ChatProps {
    * composer then asks the bot inline, as in Telegram.
    */
   botUsername?: string
+  /** Light or dark, as Telegram's day and night themes. Default: `"light"`. */
+  theme?: ChatTheme
   /** The reactions in the message menu; the first is the double-tap one. */
   quickReactions?: readonly string[]
   className?: string
@@ -72,6 +74,7 @@ export const Chat = ({
   startCommand = "/start",
   quickReactions = QUICK_REACTIONS,
   botUsername,
+  theme = "light",
   className
 }: ChatProps) => {
   const handleEvent = useCallback(
@@ -146,9 +149,10 @@ export const Chat = ({
     () => ({
       getFile: (file_id) => port.getFile(file_id),
       widgetRequest: (message_id, data) => port.widgetRequest(message_id, data),
-      copy
+      copy,
+      theme
     }),
-    [port, copy]
+    [port, copy, theme]
   )
 
   const handlersFor = useCallback(
@@ -192,6 +196,7 @@ export const Chat = ({
       <div
         className={`tgc-chat${className ? ` ${className}` : ""}`}
         data-testid="chat"
+        data-theme={theme}
         data-bot={status}
         data-busy={String(busy)}
       >

@@ -11,6 +11,23 @@
   --tgc-text: #0f172a;
   --tgc-muted: #8a9aa8;
   --tgc-border: #e5e7eb;
+  --tgc-accent-rgb: 36, 129, 204;
+  /* The ink of tints on surfaces (code, tables, dividers) as an r, g, b triplet */
+  --tgc-ink: 15, 23, 42;
+  --tgc-bar: rgba(255, 255, 255, 0.95);
+  --tgc-popover: #ffffff;
+  --tgc-field: #f3f4f6;
+  --tgc-hover: #f9fafb;
+  --tgc-text-2: #6b7280;
+  --tgc-icon: #9ca3af;
+  --tgc-chosen: #eff6ff;
+  --tgc-danger-soft: #fef2f2;
+  --tgc-key-board: #e5e7eb;
+  --tgc-home-bar: #d1d5db;
+  --tgc-status-text: #1f2937;
+  --tgc-inline-button: rgba(255, 255, 255, 0.7);
+  --tgc-inline-button-text: #3a76a8;
+  --tgc-empty-bg: rgba(255, 255, 255, 0.7);
   --tgc-surface: #ffffff;
   --tgc-bubble-in: #ffffff;
   --tgc-bubble-out: #effdde;
@@ -23,6 +40,43 @@
     radial-gradient(520px 400px at 92% 28%, rgba(196, 181, 253, 0.32), transparent 60%),
     radial-gradient(640px 520px at 45% 105%, rgba(134, 239, 172, 0.3), transparent 62%),
     linear-gradient(180deg, #eef4fb 0%, #e9f1ef 100%);
+}
+
+/* Dark: Telegram's night palette. `theme="dark"` on <Chat> and <PhoneFrame> */
+.tgc-chat[data-theme="dark"],
+.tgc-phone[data-theme="dark"] {
+  --tgc-accent: #6ab2f2;
+  --tgc-accent-rgb: 106, 178, 242;
+  --tgc-accent-soft: rgba(106, 178, 242, 0.14);
+  --tgc-text: #f5f5f5;
+  --tgc-muted: #7f91a4;
+  --tgc-border: #2b3a4a;
+  --tgc-surface: #17212b;
+  --tgc-bubble-in: #182533;
+  --tgc-bubble-out: #2b5278;
+  --tgc-ticks: #6ab2f2;
+  --tgc-danger: #ef5b5b;
+  --tgc-ink: 255, 255, 255;
+  --tgc-bar: rgba(23, 33, 43, 0.95);
+  --tgc-popover: #1e2c3a;
+  --tgc-field: #242f3d;
+  --tgc-hover: #22303f;
+  --tgc-text-2: #9aa9b8;
+  --tgc-icon: #7f91a4;
+  --tgc-chosen: #2b3f55;
+  --tgc-danger-soft: #3a2228;
+  --tgc-key-board: #0e1621;
+  --tgc-home-bar: #4a5868;
+  --tgc-status-text: #e6edf3;
+  --tgc-inline-button: rgba(24, 37, 51, 0.85);
+  --tgc-inline-button-text: #6ab2f2;
+  --tgc-empty-bg: rgba(24, 37, 51, 0.75);
+  --tgc-wallpaper:
+    radial-gradient(600px 420px at 12% 8%, rgba(37, 99, 235, 0.22), transparent 62%),
+    radial-gradient(520px 400px at 92% 28%, rgba(124, 58, 237, 0.18), transparent 60%),
+    radial-gradient(640px 520px at 45% 105%, rgba(16, 185, 129, 0.14), transparent 62%),
+    linear-gradient(180deg, #0e1621 0%, #101b26 100%);
+  color-scheme: dark;
 }
 
 .tgc-chat {
@@ -45,7 +99,7 @@
   align-items: center;
   gap: 10px;
   padding: 8px 16px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--tgc-bar);
   border-bottom: 1px solid var(--tgc-border);
 }
 .tgc-avatar {
@@ -183,8 +237,8 @@
   line-height: 1;
   padding: 3px 7px;
   border-radius: 9999px;
-  background: rgba(36, 129, 204, 0.12);
-  border: 1px solid rgba(36, 129, 204, 0.25);
+  background: rgba(var(--tgc-accent-rgb), 0.12);
+  border: 1px solid rgba(var(--tgc-accent-rgb), 0.25);
 }
 
 /* --- Inline keyboard --- */
@@ -199,8 +253,8 @@
   font-size: 12px;
   border: none;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.7);
-  color: #3a76a8;
+  background: var(--tgc-inline-button);
+  color: var(--tgc-inline-button-text);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
   cursor: pointer;
   overflow: hidden;
@@ -208,7 +262,7 @@
   white-space: nowrap;
 }
 .tgc-keyboard-button:hover {
-  background: #fff;
+  background: var(--tgc-popover);
 }
 
 /* --- Typing, draft, empty chat --- */
@@ -277,11 +331,11 @@
   margin-top: 40px;
   padding: 12px 16px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.7);
+  background: var(--tgc-empty-bg);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
   text-align: center;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--tgc-text-2);
 }
 .tgc-empty p {
   margin: 0;
@@ -311,7 +365,7 @@
   font-weight: 500;
 }
 .tgc-reply-bar-preview {
-  color: #6b7280;
+  color: var(--tgc-text-2);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -339,14 +393,14 @@
   padding: 6px 14px;
   border: none;
   border-radius: 9999px;
-  background: #f3f4f6;
+  background: var(--tgc-field);
   font: inherit;
   font-size: 14px;
   color: inherit;
   outline: none;
 }
 .tgc-input:focus {
-  background: #f9fafb;
+  background: var(--tgc-hover);
   box-shadow: 0 0 0 1px #60a5fa;
 }
 .tgc-send {
@@ -399,9 +453,9 @@
   max-height: 240px;
   overflow-y: auto;
   padding: 4px 0;
-  border: 1px solid #f3f4f6;
+  border: 1px solid var(--tgc-field);
   border-radius: 12px;
-  background: #fff;
+  background: var(--tgc-popover);
   box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15);
 }
 .tgc-command-item {
@@ -416,7 +470,7 @@
   cursor: pointer;
 }
 .tgc-command-item:hover {
-  background: #f9fafb;
+  background: var(--tgc-hover);
 }
 .tgc-command-name {
   color: var(--tgc-accent);
@@ -424,7 +478,7 @@
   font-weight: 500;
 }
 .tgc-command-description {
-  color: #6b7280;
+  color: var(--tgc-text-2);
   font-size: 12px;
 }
 
@@ -442,13 +496,13 @@
   width: 100%;
   padding: 8px 14px;
   border: none;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--tgc-field);
   background: none;
   text-align: left;
   cursor: pointer;
 }
 .tgc-inline-result:hover {
-  background: #f9fafb;
+  background: var(--tgc-hover);
 }
 .tgc-inline-title {
   font-size: 14px;
@@ -457,7 +511,7 @@
 }
 .tgc-inline-description {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--tgc-text-2);
 }
 .tgc-via {
   display: block;
@@ -479,7 +533,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 8px;
-  background: #e5e7eb;
+  background: var(--tgc-key-board);
   border-top: 1px solid var(--tgc-border);
 }
 .tgc-reply-row {
@@ -492,7 +546,7 @@
   padding: 6px 8px;
   border: none;
   border-radius: 8px;
-  background: #fff;
+  background: var(--tgc-popover);
   box-shadow: 0 1px 1px rgba(15, 23, 42, 0.15);
   color: var(--tgc-text);
   font-size: 14px;
@@ -502,7 +556,7 @@
   min-height: 34px;
 }
 .tgc-reply-key:active {
-  background: #f3f4f6;
+  background: var(--tgc-field);
 }
 
 /* --- Photos and documents --- */
@@ -517,7 +571,7 @@
 .tgc-photo-loading {
   width: 200px;
   height: 140px;
-  background: rgba(15, 23, 42, 0.06);
+  background: rgba(var(--tgc-ink), 0.06);
 }
 .tgc-document {
   display: flex;
@@ -591,8 +645,8 @@
   width: max-content;
   margin-bottom: 6px;
   padding: 4px 6px;
-  background: #fff;
-  border: 1px solid #f3f4f6;
+  background: var(--tgc-popover);
+  border: 1px solid var(--tgc-field);
   border-radius: 9999px;
   box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15);
 }
@@ -608,17 +662,17 @@
   transition: transform 0.1s;
 }
 .tgc-menu-reaction:hover {
-  background: #f3f4f6;
+  background: var(--tgc-field);
   transform: scale(1.25);
 }
 .tgc-menu-reaction.tgc-chosen {
-  background: #eff6ff;
+  background: var(--tgc-chosen);
 }
 .tgc-menu-items {
   width: 176px;
   padding: 4px 0;
-  background: #fff;
-  border: 1px solid #f3f4f6;
+  background: var(--tgc-popover);
+  border: 1px solid var(--tgc-field);
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.15);
   font-size: 14px;
@@ -636,19 +690,19 @@
   cursor: pointer;
 }
 .tgc-menu-item:hover {
-  background: #f9fafb;
+  background: var(--tgc-hover);
 }
 .tgc-menu-icon {
-  color: #9ca3af;
+  color: var(--tgc-icon);
 }
 .tgc-menu-danger {
   color: var(--tgc-danger);
 }
 .tgc-menu-danger:hover {
-  background: #fef2f2;
+  background: var(--tgc-danger-soft);
 }
 .tgc-menu-separator {
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--tgc-field);
   margin: 4px 0;
 }
 
@@ -656,7 +710,7 @@
 .tgc-code {
   font-family: var(--tgc-mono);
   font-size: 0.78em;
-  background: rgba(15, 23, 42, 0.07);
+  background: rgba(var(--tgc-ink), 0.07);
   border-radius: 4px;
   padding: 1px 4px;
 }
@@ -665,7 +719,7 @@
   font-family: var(--tgc-mono);
   font-size: 0.72rem;
   line-height: 1.45;
-  background: rgba(15, 23, 42, 0.06);
+  background: rgba(var(--tgc-ink), 0.06);
   border-radius: 8px;
   padding: 7px 9px;
   margin: 4px 0 2px;
@@ -692,13 +746,13 @@
   text-underline-offset: 2px;
 }
 .tgc-spoiler {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(var(--tgc-ink), 0.85);
   color: transparent;
   border-radius: 3px;
   transition: all 0.15s;
 }
 .tgc-spoiler:hover {
-  background: rgba(15, 23, 42, 0.08);
+  background: rgba(var(--tgc-ink), 0.08);
   color: inherit;
 }
 .tgc-quote {
@@ -711,7 +765,7 @@
 .tgc-reply {
   display: block;
   border-left: 2px solid var(--tgc-accent);
-  background: rgba(36, 129, 204, 0.08);
+  background: rgba(var(--tgc-accent-rgb), 0.08);
   border-radius: 4px;
   padding: 2px 6px;
   margin-bottom: 3px;
@@ -757,7 +811,7 @@
 }
 .tgc-rich-divider {
   border: none;
-  border-top: 1px solid rgba(15, 23, 42, 0.12);
+  border-top: 1px solid rgba(var(--tgc-ink), 0.12);
   margin: 6px 0;
 }
 .tgc-rich-list {
@@ -793,11 +847,11 @@
 }
 .tgc-rich-table th,
 .tgc-rich-table td {
-  border: 1px solid rgba(15, 23, 42, 0.15);
+  border: 1px solid rgba(var(--tgc-ink), 0.15);
   padding: 3px 7px;
 }
 .tgc-rich-table th {
-  background: rgba(15, 23, 42, 0.05);
+  background: rgba(var(--tgc-ink), 0.05);
 }
 .tgc-rich-table-caption {
   caption-side: bottom;
@@ -822,7 +876,7 @@
   text-decoration: none;
 }
 .tgc-rich-btn:hover {
-  background: rgba(36, 129, 204, 0.18);
+  background: rgba(var(--tgc-accent-rgb), 0.18);
 }
 .tgc-rich-btn-primary {
   background: var(--tgc-accent);
@@ -908,7 +962,7 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: 2.85rem;
-  background: #fff;
+  background: var(--tgc-surface);
 }
 .tgc-phone-notch {
   position: absolute;
@@ -928,14 +982,14 @@
   padding: 10px 20px 4px;
   font-size: 11px;
   font-weight: 600;
-  color: #1f2937;
-  background: rgba(255, 255, 255, 0.95);
+  color: var(--tgc-status-text);
+  background: var(--tgc-bar);
 }
 .tgc-phone-status-icons {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #374151;
+  color: var(--tgc-status-text);
 }
 .tgc-phone-screen > .tgc-chat .tgc-header {
   padding-top: 4px;
@@ -945,13 +999,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: var(--tgc-surface);
 }
 .tgc-phone-home-bar {
   width: 96px;
   height: 4px;
   border-radius: 9999px;
-  background: #d1d5db;
+  background: var(--tgc-home-bar);
 }
 
 /* Narrow screens: no frame, the chat fills the space */
