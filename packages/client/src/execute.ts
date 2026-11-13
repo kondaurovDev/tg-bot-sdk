@@ -201,6 +201,19 @@ export async function executeTgBotMethod<M extends keyof Api>(params: {
   return { ok: true, data: response.result as ReturnType<Api[M]> }
 }
 
+/** A file the client uploads: raw bytes with a name, or a `Blob` / `File`. */
+const isUpload = (value: unknown): value is FileContent | Blob =>
+  value instanceof Blob || isFileContent(value)
+
+/**
+ * The multipart body of a call. Scalars become text fields, a file passed as a
+ * parameter becomes a file part, and any other object is sent as JSON.
+ *
+ * A file nested inside an object — an album item, a sticker, a profile photo —
+ * can't travel inside JSON. It becomes a part of its own named `file<N>`, and
+ * the JSON carries `"attach://file<N>"` in its place, which is how the Bot API
+ * expects such uploads.
+ */
 export const makePayload = (body: object): FormData | undefined => {
   const entries = Object.entries(body)
 
@@ -208,17 +221,34 @@ export const makePayload = (body: object): FormData | undefined => {
 
   const result = new FormData()
 
+  const appendFile = (name: string, file: FileContent | Blob) => {
+    if (file instanceof Blob) result.append(name, file)
+    else result.append(name, new Blob([file.file_content]), file.file_name)
+  }
+
+  let attached = 0
+  const withAttachments = (value: unknown): unknown => {
+    if (isUpload(value)) {
+      const name = `file${attached++}`
+      appendFile(name, value)
+      return `attach://${name}`
+    }
+    if (Array.isArray(value)) return value.map(withAttachments)
+    if (typeof value === "object" && value !== null) {
+      return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, withAttachments(v)]))
+    }
+    return value
+  }
+
   for (const [key, value] of entries) {
     if (value == null) continue
 
     if (typeof value !== "object") {
       result.append(key, `${value}`)
-    } else if (value instanceof Blob) {
-      result.append(key, value)
-    } else if (isFileContent(value)) {
-      result.append(key, new Blob([value.file_content]), value.file_name)
+    } else if (isUpload(value)) {
+      appendFile(key, value)
     } else {
-      result.append(key, JSON.stringify(value))
+      result.append(key, JSON.stringify(withAttachments(value)))
     }
   }
 

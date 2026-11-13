@@ -158,6 +158,26 @@ const result = await client.execute("send_photo", {
 })
 ```
 
+A `Blob` or `File` works too: `photo: new File([bytes], "image.jpg")`.
+
+#### Files inside objects: albums, stickers, profile photos
+
+Some methods take files inside objects — the items of `send_media_group`, the media of `edit_message_media`, a sticker in `create_new_sticker_set`, the photo in `set_my_profile_photo`. Put the file right there; the client uploads it as its own part and sends the `attach://…` reference the Bot API expects:
+
+```typescript
+await client.execute("send_media_group", {
+  chat_id: "123456789",
+  media: [
+    { type: "photo", media: { file_content: first, file_name: "1.jpg" } },
+    { type: "photo", media: new File([second], "2.jpg"), caption: "Two new photos" }
+  ]
+})
+
+await client.execute("set_my_profile_photo", {
+  photo: { type: "static", photo: { file_content: avatarJpeg, file_name: "avatar.jpg" } }
+})
+```
+
 ### File Download
 
 ```typescript

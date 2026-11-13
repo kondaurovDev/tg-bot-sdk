@@ -54,7 +54,7 @@ type ClientErrorReason =
 ```
 
 - **Method and parameter names** match https://core.telegram.org/bots/api in `snake_case` (`send_message`, `edit_message_text`, `answer_callback_query`). Both are autocompleted; return types are inferred.
-- **Files**: pass `{ file_content: Uint8Array, file_name: string }` wherever the API accepts `InputFile` — the client switches to multipart automatically. Or pass a `file_id` / URL string.
+- **Files**: pass `{ file_content: Uint8Array, file_name: string }` (or a `Blob` / `File`) wherever the API accepts `InputFile` — the client switches to multipart automatically. Files inside objects (album items in `send_media_group`, stickers, `set_my_profile_photo`) work the same way: the client uploads each as its own part and sends the `attach://…` reference. Or pass a `file_id` / URL string.
 - **Message effects**: `message_effect_id` accepts an emoji key of `MESSAGE_EFFECTS` (`"🔥" | "👍" | "👎" | "❤️" | "🎉" | "💩"`) and is mapped to the real id.
 - **Errors**: `execute` throws `TgBotClientError` (`error.reason` is the tagged union above); `executeSafe` returns the union — pick one style and stick to it.
 - **Options**: `{ timeout }` per call; `base_url` for a self-hosted Bot API server.

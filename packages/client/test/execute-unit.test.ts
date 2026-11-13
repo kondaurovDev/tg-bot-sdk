@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { makePayload, TgBotClientError } from "~/execute"
+import { makePayload, TgBotClientError, type MethodInput } from "~/execute"
 import { makeTgBotClient } from "~/client"
 
 const TOKEN = "TEST_TOKEN"
@@ -46,6 +46,52 @@ describe("makePayload", () => {
     expect(payload?.get("empty")).toBe("")
     expect(payload?.has("nullish")).toBe(false)
     expect(payload?.has("missing")).toBe(false)
+  })
+
+  // A file inside an object can't travel in JSON: it becomes its own part,
+  // referenced from the JSON as attach://<name>, as the Bot API expects.
+  it("moves files nested in objects into parts referenced by attach://", async () => {
+    const bytes = (text: string) => new TextEncoder().encode(text)
+    const payload = makePayload({
+      chat_id: 1,
+      media: [
+        { type: "photo", media: { file_content: bytes("one"), file_name: "1.jpg" } },
+        { type: "photo", media: "AgACAgIAAxkBAAI", caption: "kept as is" },
+        { type: "photo", media: new File(["three"], "3.jpg") }
+      ]
+    })
+
+    expect(JSON.parse(String(payload?.get("media")))).toEqual([
+      { type: "photo", media: "attach://file0" },
+      { type: "photo", media: "AgACAgIAAxkBAAI", caption: "kept as is" },
+      { type: "photo", media: "attach://file1" }
+    ])
+    const first = payload?.get("file0")
+    const third = payload?.get("file1")
+    expect(first).toBeInstanceOf(File)
+    expect(first instanceof File && first.name).toBe("1.jpg")
+    expect(first instanceof File && (await first.text())).toBe("one")
+    expect(third instanceof File && (await third.text())).toBe("three")
+  })
+
+  it("attaches a file nested in a single object (a profile photo)", () => {
+    // The generated types accept a file where the docs allow attach:// uploads
+    const input: MethodInput<"set_my_profile_photo"> = {
+      photo: { type: "static", photo: new Blob([new Uint8Array([1, 2])]) }
+    }
+    const album: MethodInput<"send_media_group"> = {
+      chat_id: 1,
+      media: [{ type: "photo", media: { file_content: new Uint8Array([1]), file_name: "a.jpg" } }]
+    }
+    expect(album.media).toHaveLength(1)
+    const payload = makePayload({
+      ...input
+    })
+    expect(JSON.parse(String(payload?.get("photo")))).toEqual({
+      type: "static",
+      photo: "attach://file0"
+    })
+    expect(payload?.get("file0")).toBeInstanceOf(Blob)
   })
 
   it("serializes objects as JSON", () => {

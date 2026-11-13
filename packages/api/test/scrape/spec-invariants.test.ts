@@ -157,6 +157,27 @@ describe("Bot API spec invariants", () => {
     expect(stale).toEqual([])
   })
 
+  fixture("every field documented as an attach:// upload accepts an InputFile", ({ apiPage }) => {
+    const { types, methods } = botApi(apiPage)
+    const fields = [
+      ...[...fieldsOf(types)].flatMap(([owner, fs]) => fs.map((f) => ({ owner, f }))),
+      ...methods.flatMap((m) =>
+        (m.parameters?.fields ?? []).map((f) => ({ owner: m.methodName, f }))
+      )
+    ]
+    const rejecting = fields
+      .filter(({ f }) => f.description.some((line) => line.includes("attach://")))
+      .filter(({ f }) => {
+        let accepts = false
+        walk(f.type.spec, (t) => (accepts ||= t.kind === "ref" && t.name === "InputFile"))
+        return !accepts
+      })
+      .map(({ owner, f }) => `${owner}.${f.name}`)
+    // Such a field takes a file uploaded as its own multipart part; without
+    // InputFile in its type, users cannot pass one. See globalFieldOverrides.
+    expect(rejecting).toEqual([])
+  })
+
   /**
    * String fields whose description lists values in quotes but that are
    * deliberately left a plain string, with the reason.

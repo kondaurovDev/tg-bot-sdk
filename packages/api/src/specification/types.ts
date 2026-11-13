@@ -1952,8 +1952,8 @@ export type InputMedia =
  */
 export interface InputMediaAnimation {
   type: "animation"
-  media: string
-  thumbnail?: string
+  media: InputFile | string
+  thumbnail?: InputFile | string
   caption?: string
   parse_mode?: "HTML" | "MarkdownV2"
   caption_entities?: MessageEntity[]
@@ -1970,8 +1970,8 @@ export interface InputMediaAnimation {
  */
 export interface InputMediaAudio {
   type: "audio"
-  media: string
-  thumbnail?: string
+  media: InputFile | string
+  thumbnail?: InputFile | string
   caption?: string
   parse_mode?: "HTML" | "MarkdownV2"
   caption_entities?: MessageEntity[]
@@ -1986,8 +1986,8 @@ export interface InputMediaAudio {
  */
 export interface InputMediaDocument {
   type: "document"
-  media: string
-  thumbnail?: string
+  media: InputFile | string
+  thumbnail?: InputFile | string
   caption?: string
   parse_mode?: "HTML" | "MarkdownV2"
   caption_entities?: MessageEntity[]
@@ -2009,8 +2009,8 @@ export interface InputMediaLink {
  */
 export interface InputMediaLivePhoto {
   type: "live_photo"
-  media: string
-  photo: string
+  media: InputFile | string
+  photo: InputFile | string
   caption?: string
   parse_mode?: "HTML" | "MarkdownV2"
   caption_entities?: MessageEntity[]
@@ -2035,7 +2035,7 @@ export interface InputMediaLocation {
  */
 export interface InputMediaPhoto {
   type: "photo"
-  media: string
+  media: InputFile | string
   caption?: string
   parse_mode?: "HTML" | "MarkdownV2"
   caption_entities?: MessageEntity[]
@@ -2049,7 +2049,7 @@ export interface InputMediaPhoto {
  */
 export interface InputMediaSticker {
   type: "sticker"
-  media: string
+  media: InputFile | string
   emoji?: string
 }
 
@@ -2075,9 +2075,9 @@ export interface InputMediaVenue {
  */
 export interface InputMediaVideo {
   type: "video"
-  media: string
-  thumbnail?: string
-  cover?: string
+  media: InputFile | string
+  thumbnail?: InputFile | string
+  cover?: InputFile | string
   start_timestamp?: number
   caption?: string
   parse_mode?: "HTML" | "MarkdownV2"
@@ -2096,7 +2096,7 @@ export interface InputMediaVideo {
  */
 export interface InputMediaVoiceNote {
   type: "voice_note"
-  media: string
+  media: InputFile | string
   caption?: string
   parse_mode?: "HTML" | "MarkdownV2"
   caption_entities?: MessageEntity[]
@@ -2131,8 +2131,8 @@ export type InputPaidMedia = InputPaidMediaLivePhoto | InputPaidMediaPhoto | Inp
  */
 export interface InputPaidMediaLivePhoto {
   type: "live_photo"
-  media: string
-  photo: string
+  media: InputFile | string
+  photo: InputFile | string
 }
 
 /**
@@ -2141,7 +2141,7 @@ export interface InputPaidMediaLivePhoto {
  */
 export interface InputPaidMediaPhoto {
   type: "photo"
-  media: string
+  media: InputFile | string
 }
 
 /**
@@ -2150,9 +2150,9 @@ export interface InputPaidMediaPhoto {
  */
 export interface InputPaidMediaVideo {
   type: "video"
-  media: string
-  thumbnail?: string
-  cover?: string
+  media: InputFile | string
+  thumbnail?: InputFile | string
+  cover?: InputFile | string
   start_timestamp?: number
   width?: number
   height?: number
@@ -2214,7 +2214,7 @@ export type InputProfilePhoto = InputProfilePhotoStatic | InputProfilePhotoAnima
  */
 export interface InputProfilePhotoAnimated {
   type: "animated"
-  animation: string
+  animation: InputFile | string
   main_frame_timestamp?: number
 }
 
@@ -2224,7 +2224,7 @@ export interface InputProfilePhotoAnimated {
  */
 export interface InputProfilePhotoStatic {
   type: "static"
-  photo: string
+  photo: InputFile | string
 }
 
 /**
@@ -2569,7 +2569,7 @@ export interface InputSharedWidgetMessageContent {
  * @see https://tg-bot-sdk.website/api/types/input-sticker/
  */
 export interface InputSticker {
-  sticker: string
+  sticker: InputFile | string
   format: "static" | "animated" | "video"
   emoji_list: string[]
   mask_position?: MaskPosition
@@ -2589,7 +2589,7 @@ export type InputStoryContent = InputStoryContentPhoto | InputStoryContentVideo
  */
 export interface InputStoryContentPhoto {
   type: "photo"
-  photo: string
+  photo: InputFile | string
 }
 
 /**
@@ -2598,7 +2598,7 @@ export interface InputStoryContentPhoto {
  */
 export interface InputStoryContentVideo {
   type: "video"
-  video: string
+  video: InputFile | string
   duration?: number
   cover_frame_timestamp?: number
   is_animation?: boolean

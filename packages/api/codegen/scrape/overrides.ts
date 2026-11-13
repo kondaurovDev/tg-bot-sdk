@@ -80,6 +80,15 @@ export const globalFieldOverrides: GlobalFieldOverride[] = [
     // values are fixed. Covers `parse_mode`, `explanation_parse_mode`, etc.
     match: (f) => f.fieldName.endsWith("parse_mode"),
     override: enumOf("HTML", "MarkdownV2")
+  },
+  {
+    // A String field described with "pass “attach://<file_attach_name>” to
+    // upload a new one" (InputMedia*, InputSticker, InputProfilePhoto*, …):
+    // the file travels as its own multipart part. The client builds that part
+    // and the `attach://` reference from an InputFile placed right here.
+    match: (f) =>
+      f.pseudoType === "String" && f.description.some((line) => line.includes("attach://")),
+    override: union(ref("InputFile"), P.string)
   }
 ]
 
