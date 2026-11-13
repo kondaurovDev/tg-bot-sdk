@@ -28,14 +28,29 @@ interface StoredFile {
   file_size?: number
 }
 
-/** Register the payload (when it carries bytes) and mint a file descriptor. */
-const storeFile = (state: EmulatorState, media: unknown, fallbackName: string): StoredFile => {
-  if (isFileContent(media)) {
-    const file_id = state.registerUpload({
-      content: media.file_content,
-      file_name: media.file_name
-    })
-    return { file_id, file_name: media.file_name, file_size: media.file_content.byteLength }
+const registerBytes = (
+  state: EmulatorState,
+  content: Uint8Array,
+  file_name: string
+): StoredFile => ({
+  file_id: state.registerUpload({ content, file_name }),
+  file_name,
+  file_size: content.byteLength
+})
+
+/**
+ * Register the payload (when it carries bytes) and mint a file descriptor.
+ * A `Blob` is read, like the client sends it; a `File` keeps its name.
+ */
+const storeFile = async (
+  state: EmulatorState,
+  media: unknown,
+  fallbackName: string
+): Promise<StoredFile> => {
+  if (isFileContent(media)) return registerBytes(state, media.file_content, media.file_name)
+  if (media instanceof Blob) {
+    const name = media instanceof File && media.name ? media.name : fallbackName
+    return registerBytes(state, new Uint8Array(await media.arrayBuffer()), name)
   }
   if (typeof media === "string") {
     // an existing file_id or a URL — pass it through
@@ -58,8 +73,8 @@ const sendMedia = (
 }
 
 export const mediaMethods = (state: EmulatorState) => ({
-  send_photo: (input: SendPhotoInput): Message => {
-    const file = storeFile(state, input.photo, "photo.jpg")
+  send_photo: async (input: SendPhotoInput): Promise<Message> => {
+    const file = await storeFile(state, input.photo, "photo.jpg")
     return sendMedia(state, input, {
       photo: [
         {
@@ -73,8 +88,8 @@ export const mediaMethods = (state: EmulatorState) => ({
     })
   },
 
-  send_document: (input: SendDocumentInput): Message => {
-    const file = storeFile(state, input.document, "file.bin")
+  send_document: async (input: SendDocumentInput): Promise<Message> => {
+    const file = await storeFile(state, input.document, "file.bin")
     return sendMedia(state, input, {
       document: {
         file_id: file.file_id,
@@ -85,8 +100,8 @@ export const mediaMethods = (state: EmulatorState) => ({
     })
   },
 
-  send_video: (input: SendVideoInput): Message => {
-    const file = storeFile(state, input.video, "video.mp4")
+  send_video: async (input: SendVideoInput): Promise<Message> => {
+    const file = await storeFile(state, input.video, "video.mp4")
     return sendMedia(state, input, {
       video: {
         file_id: file.file_id,
@@ -98,22 +113,22 @@ export const mediaMethods = (state: EmulatorState) => ({
     })
   },
 
-  send_audio: (input: SendAudioInput): Message => {
-    const file = storeFile(state, input.audio, "audio.mp3")
+  send_audio: async (input: SendAudioInput): Promise<Message> => {
+    const file = await storeFile(state, input.audio, "audio.mp3")
     return sendMedia(state, input, {
       audio: { file_id: file.file_id, file_unique_id: `${file.file_id}-u`, duration: 0 }
     })
   },
 
-  send_voice: (input: SendVoiceInput): Message => {
-    const file = storeFile(state, input.voice, "voice.ogg")
+  send_voice: async (input: SendVoiceInput): Promise<Message> => {
+    const file = await storeFile(state, input.voice, "voice.ogg")
     return sendMedia(state, input, {
       voice: { file_id: file.file_id, file_unique_id: `${file.file_id}-u`, duration: 0 }
     })
   },
 
-  send_animation: (input: SendAnimationInput): Message => {
-    const file = storeFile(state, input.animation, "animation.mp4")
+  send_animation: async (input: SendAnimationInput): Promise<Message> => {
+    const file = await storeFile(state, input.animation, "animation.mp4")
     return sendMedia(state, input, {
       animation: {
         file_id: file.file_id,
@@ -125,8 +140,8 @@ export const mediaMethods = (state: EmulatorState) => ({
     })
   },
 
-  send_sticker: (input: SendStickerInput): Message => {
-    const file = storeFile(state, input.sticker, "sticker.webp")
+  send_sticker: async (input: SendStickerInput): Promise<Message> => {
+    const file = await storeFile(state, input.sticker, "sticker.webp")
     return sendMedia(state, input, {
       sticker: {
         file_id: file.file_id,

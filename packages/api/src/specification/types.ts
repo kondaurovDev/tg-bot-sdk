@@ -1891,7 +1891,7 @@ export interface InputContactMessageContent {
  * Must be posted using multipart/form-data in the usual way that files are uploaded via the browser.
  * @see https://tg-bot-sdk.website/api/types/input-file/
  */
-export type InputFile = { file_content: Uint8Array; file_name: string }
+export type InputFile = { file_content: Uint8Array; file_name: string } | Blob
 
 /**
  * Represents the content of an invoice message to be sent as the result of an inline query.

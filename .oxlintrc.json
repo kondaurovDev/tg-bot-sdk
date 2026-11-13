@@ -50,5 +50,5 @@
       }
     }
   ],
-  "ignorePatterns": ["**/dist", "**/src/specification", "apps/website/.astro", "example"]
+  "ignorePatterns": ["**/dist", "**/src/specification", "apps/website/.astro"]
 }

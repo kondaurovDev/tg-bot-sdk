@@ -28,7 +28,7 @@ The details of each package and app load from `.claude/rules/` when you touch it
 - No type assertions (`as`), `any` or non-null `!` in `packages/*/src` — oxlint enforces it. Reach for narrowing (`in`, type guards), a function generic in the key, or a real runtime check first. The few assertions the compiler cannot do without carry an `oxlint-disable-next-line` and a comment saying why; a new one needs the same.
 - Functional style: builder pattern, handler chaining, immutable data.
 - Snake_case Telegram API method names (e.g. `send_message`) are converted to camelCase for HTTP paths internally.
-- Webhook handlers must support `secret_token`; never add code paths that process updates without it being verifiable.
+- Webhook handlers must support `secret_token`; never add code paths that process updates without it being verifiable. Code that receives webhook requests outside `createWebhook` (a router for several bots) goes through `parseWebhookRequest` and refuses to run without a secret.
 
 ## Build & test
 

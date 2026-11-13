@@ -11,7 +11,12 @@
  *   GET  /setup   — registers the webhook once (protected by the same secret)
  *   GET  /        — health check
  */
-import { extractUpdate, resolveChatId, SECRET_TOKEN_HEADER } from "@effect-ak/tg-bot"
+import {
+  extractUpdate,
+  parseWebhookRequest,
+  resolveChatId,
+  SECRET_TOKEN_HEADER
+} from "@effect-ak/tg-bot"
 import { makeTgBotClient } from "@effect-ak/tg-bot-client"
 import type { WebhookHandler } from "@effect-ak/tg-bot"
 import type { Update } from "@effect-ak/tg-bot-api"
@@ -115,12 +120,14 @@ export default {
     }
 
     if (request.method === "POST" && url.pathname === "/webhook") {
-      if (request.headers.get(SECRET_TOKEN_HEADER) !== env.WEBHOOK_SECRET) {
-        return new Response("forbidden", { status: 403 })
+      // Without a secret nothing here could tell Telegram from a forger.
+      if (!env.WEBHOOK_SECRET) {
+        return new Response("WEBHOOK_SECRET is not configured", { status: 500 })
       }
+      const parsed = await parseWebhookRequest(request, env.WEBHOOK_SECRET)
+      if (!parsed.ok) return new Response(parsed.reason, { status: parsed.status })
       try {
-        const update = (await request.json()) as Update
-        await dispatch(update, runtime)
+        await dispatch(parsed.update, runtime)
         return new Response("ok")
       } catch (error) {
         console.error("webhook error", error)

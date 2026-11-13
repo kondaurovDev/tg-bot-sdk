@@ -4,6 +4,7 @@ import * as Path from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { createBot } from "~/bot-builder"
+import { parseWebhookRequest, SECRET_TOKEN_HEADER } from "~/run"
 import { BotResponse, type AvailableUpdateTypes } from "~/types"
 
 // ---------------------------------------------------------------------------
@@ -569,7 +570,7 @@ describe("createBot — error handling", () => {
     expect(body?.text).toContain("BotHandlerError")
   })
 
-  it("returns 500 if request body is not valid JSON", async () => {
+  it("returns 400 if request body is not valid JSON", async () => {
     const handler = createBot()
       .onMessage(({ command }) => [command("/start", ({ ctx }) => ctx.reply("hi"))])
       .webhook({ bot_token: TOKEN, logger: silentLogger })
@@ -580,7 +581,7 @@ describe("createBot — error handling", () => {
       headers: { "content-type": "text/plain" }
     })
     const res = await handler(req)
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(400)
   })
 
   it("returns 400 if the JSON body is not an Update", async () => {
@@ -983,5 +984,44 @@ describe("createBot — shortcuts, array results, command matching", () => {
       })
     )
     expect(seen).toEqual(["start", "start", "help:/help"])
+  })
+})
+
+// ---------------------------------------------------------------------------
+// parseWebhookRequest — for routers that dispatch updates themselves
+// ---------------------------------------------------------------------------
+
+describe("parseWebhookRequest", () => {
+  const post = (body: string, secret?: string) =>
+    new Request("https://example.test/webhook", {
+      method: "POST",
+      body,
+      headers: secret ? { [SECRET_TOKEN_HEADER]: secret } : {}
+    })
+  const update = JSON.stringify({ update_id: 7, message: { message_id: 1 } })
+
+  it("returns the update when the secret matches", async () => {
+    const result = await parseWebhookRequest(post(update, "s3cret"), "s3cret")
+    expect(result).toEqual({ ok: true, update: JSON.parse(update) })
+  })
+
+  it("rejects a missing or wrong secret with 403", async () => {
+    expect(await parseWebhookRequest(post(update), "s3cret")).toMatchObject({
+      ok: false,
+      status: 403
+    })
+    expect(await parseWebhookRequest(post(update, "nope"), "s3cret")).toMatchObject({
+      ok: false,
+      status: 403
+    })
+  })
+
+  it("rejects a body that is not JSON, or not an Update, with 400", async () => {
+    expect(await parseWebhookRequest(post("{"), "s")).toMatchObject({ ok: false, status: 403 })
+    expect(await parseWebhookRequest(post("{", "s"), "s")).toMatchObject({ ok: false, status: 400 })
+    expect(await parseWebhookRequest(post("{}", "s"), "s")).toMatchObject({
+      ok: false,
+      status: 400
+    })
   })
 })

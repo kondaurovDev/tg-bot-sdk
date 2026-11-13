@@ -34,6 +34,31 @@ describe("media methods", () => {
     expect(file.file_name).toBe("hello.txt")
   })
 
+  it("a File upload round-trips its bytes and keeps its name", async () => {
+    const emulator = makeTgBotEmulator()
+    const message = await emulator.client.execute("send_document", {
+      chat_id: emulator.chat.id,
+      document: new File([new TextEncoder().encode("from a File")], "notes.txt")
+    })
+
+    expect(message.document?.file_name).toBe("notes.txt")
+    const file = await emulator.client.getFile({ fileId: message.document!.file_id })
+    expect(new TextDecoder().decode(file.content)).toBe("from a File")
+  })
+
+  it("a Blob upload round-trips its bytes under the default name", async () => {
+    const emulator = makeTgBotEmulator()
+    const message = await emulator.client.execute("send_photo", {
+      chat_id: emulator.chat.id,
+      photo: new Blob([new Uint8Array([1, 2, 3])])
+    })
+
+    const photo = message.photo?.[0]
+    expect(photo?.file_size).toBe(3)
+    const file = await emulator.client.getFile({ fileId: photo!.file_id })
+    expect([...new Uint8Array(file.content)]).toEqual([1, 2, 3])
+  })
+
   it("get_file fails for unknown ids", async () => {
     const emulator = makeTgBotEmulator()
     const result = await emulator.client.getFileSafe({ fileId: "nope" })

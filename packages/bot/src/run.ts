@@ -172,6 +172,10 @@ const isUpdate = (body: unknown): body is Update =>
   "update_id" in body &&
   typeof body.update_id === "number"
 
+export type WebhookRequestResult =
+  | { readonly ok: true; readonly update: Update }
+  | { readonly ok: false; readonly status: 400 | 403; readonly reason: string }
+
 /** Compares two strings without leaking their common-prefix length. */
 const timingSafeEqual = (a: string, b: string): boolean => {
   const encoder = new TextEncoder()
@@ -183,6 +187,32 @@ const timingSafeEqual = (a: string, b: string): boolean => {
     diff |= (bytesA[i] ?? 0) ^ (bytesB[i] ?? 0)
   }
   return diff === 0
+}
+
+/**
+ * Verify a webhook request and read the update from it: the secret token
+ * (when one is given) compared in constant time, then a JSON body with a
+ * numeric `update_id`. `createWebhook` uses it; so should a router that
+ * dispatches updates itself, e.g. several bots behind one token.
+ */
+export const parseWebhookRequest = async (
+  request: Request,
+  secret_token?: string
+): Promise<WebhookRequestResult> => {
+  if (secret_token) {
+    const header = request.headers.get(SECRET_TOKEN_HEADER)
+    if (header === null || !timingSafeEqual(header, secret_token)) {
+      return { ok: false, status: 403, reason: "missing or invalid secret token" }
+    }
+  }
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return { ok: false, status: 400, reason: "the body is not JSON" }
+  }
+  if (!isUpdate(body)) return { ok: false, status: 400, reason: "the body is not an Update" }
+  return { ok: true, update: body }
 }
 
 export const createWebhook = (config: WebhookBotConfig): WebhookHandler => {
@@ -209,24 +239,16 @@ export const createWebhook = (config: WebhookBotConfig): WebhookHandler => {
     )
   }
 
-  const isAuthorized = (request: Request): boolean => {
-    if (!secret_token) return true
-    const header = request.headers.get(SECRET_TOKEN_HEADER)
-    return header !== null && timingSafeEqual(header, secret_token)
-  }
-
   const handler = async (request: Request): Promise<Response> => {
-    if (!isAuthorized(request)) {
-      log.warn("webhook: rejected request with missing or invalid secret token")
-      return new Response("forbidden", { status: 403 })
+    const parsed = await parseWebhookRequest(request, secret_token)
+    if (!parsed.ok) {
+      log.warn(`webhook: rejected a request — ${parsed.reason}`)
+      return new Response(parsed.status === 403 ? "forbidden" : "bad request", {
+        status: parsed.status
+      })
     }
     try {
-      const body: unknown = await request.json()
-      if (!isUpdate(body)) {
-        log.warn("webhook: rejected a request whose body is not an Update")
-        return new Response("bad request", { status: 400 })
-      }
-      await handleUpdate(body)
+      await handleUpdate(parsed.update)
       return new Response("ok", { status: 200 })
     } catch (error) {
       log.error("Webhook error", error)

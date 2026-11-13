@@ -37,8 +37,14 @@ export type {
 
 export { extractUpdate } from "./bot-processor"
 
-export { runBot, defineBot, createWebhook, SECRET_TOKEN_HEADER } from "./run"
-export type { BotInstance, WebhookBotConfig, WebhookHandler, SetWebhookParams } from "./run"
+export { runBot, defineBot, createWebhook, parseWebhookRequest, SECRET_TOKEN_HEADER } from "./run"
+export type {
+  BotInstance,
+  WebhookBotConfig,
+  WebhookHandler,
+  WebhookRequestResult,
+  SetWebhookParams
+} from "./run"
 
 export { createBot } from "./bot-builder"
 export type {

@@ -36,7 +36,7 @@ describe("extracted-entity", () => {
     const e = expectRight(apiPage.getEntity("InputFile"), "getEntity(InputFile)")
     expect(e.entityName).toEqual("InputFile")
     assert(e.type._tag == "NormalType")
-    expect(e.type.getTsType()).toEqual("{ file_content: Uint8Array, file_name: string }")
+    expect(e.type.getTsType()).toEqual("{ file_content: Uint8Array, file_name: string } | Blob")
   })
 
   fixture("sendMediaGroup", ({ apiPage }) => {

@@ -12,7 +12,7 @@
  * - {@link globalFieldOverrides} — pattern-matched overrides applied across
  *   all entities (e.g. every `*parse_mode` field)
  */
-import { array, enumOf, object, P, raw, ref, type SpecType } from "~/scrape/type"
+import { array, enumOf, object, P, raw, ref, union, type SpecType } from "~/scrape/type"
 import type { ExtractedEntityField } from "~/scrape/type-system"
 import { INITIALING_MINI_APPS } from "./constants"
 
@@ -38,11 +38,15 @@ export const returnTypeOverrides: Record<string, SpecType> = {
  */
 export const typeAliasOverrides: Record<string, SpecType> = {
   // Documented only as prose ("See section on uploading files..."); represent
-  // the upload payload we actually accept from SDK users.
-  InputFile: object([
-    { name: "file_content", type: P.bytes, required: true },
-    { name: "file_name", type: P.string, required: true }
-  ])
+  // the upload payloads the client accepts: raw bytes with a file name, or a
+  // `Blob` / `File` (sent as is, a `File` keeps its name).
+  InputFile: union(
+    object([
+      { name: "file_content", type: P.bytes, required: true },
+      { name: "file_name", type: P.string, required: true }
+    ]),
+    raw("Blob")
+  )
 }
 
 // ── Union extension overrides ──
