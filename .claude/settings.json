@@ -22,6 +22,7 @@
       "Bash(pnpm --filter @effect-ak/tg-bot-api gen)",
       "Bash(pnpm --filter @effect-ak/tg-bot-api gen:bot:api)",
       "Bash(pnpm --filter @effect-ak/tg-bot-api gen:webapp:api)",
+      "Bash(pnpm --filter @effect-ak/tg-bot-api gen:refresh)",
       "Bash(node_modules/.bin/tsc *)",
       "Bash(node_modules/.bin/tsup *)",
       "Bash(node_modules/.bin/vitest *)",
@@ -60,7 +61,8 @@
       "pnpm build",
       "pnpm --filter @effect-ak/tg-bot-api gen",
       "pnpm --filter @effect-ak/tg-bot-api gen:bot:api",
-      "pnpm --filter @effect-ak/tg-bot-api gen:webapp:api"
+      "pnpm --filter @effect-ak/tg-bot-api gen:webapp:api",
+      "pnpm --filter @effect-ak/tg-bot-api gen:refresh"
     ],
     "network": {
       "allowedDomains": ["localhost", "*.localhost", "127.0.0.1", "core.telegram.org"],

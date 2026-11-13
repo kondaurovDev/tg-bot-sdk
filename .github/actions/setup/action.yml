@@ -1,18 +1,14 @@
 name: Setup
-description: Setup pnpm and Node.js, install dependencies
+description: Install pnpm (the version in `packageManager`) and Node, restore the pnpm store cache, and install dependencies.
 
 runs:
   using: composite
   steps:
-    - name: Setup pnpm
-      uses: pnpm/action-setup@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v5
+    # pnpm v11+ ships a standalone binary and installs the runtime itself, so
+    # this one step replaces setup-node, a separate store cache and `pnpm install`.
+    - name: Setup pnpm, Node and dependencies
+      uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
       with:
-        node-version: 24
-        cache: pnpm
-
-    - name: Install dependencies
-      run: pnpm install --frozen-lockfile
-      shell: bash
+        runtime: node@24
+        cache: true
+        require-lockfile: true

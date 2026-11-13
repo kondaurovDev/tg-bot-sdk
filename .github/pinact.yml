@@ -1,0 +1,12 @@
+version: 3
+
+min_age:
+  # Hold back action releases younger than a week (supply-chain cooldown).
+  value: 7
+
+rules:
+  # changesets/action v2 needs Changesets 3 and renames its inputs; the repo is
+  # on @changesets/cli 2. Lift this together with that upgrade.
+  - ignore: true
+    conditions:
+      - expr: ActionName == "changesets/action"
