@@ -3,7 +3,7 @@
  * What sits around the composer, as in Telegram: the Menu button with the
  * bot's commands (`set_my_commands`) and the reply keyboard the bot set.
  */
-import type { BotCommand, ReplyKeyboardMarkup } from "@effect-ak/tg-bot-api"
+import type { BotCommand, InlineQueryResult, ReplyKeyboardMarkup } from "@effect-ak/tg-bot-api"
 import { useEffect, useRef, useState } from "react"
 
 export interface CommandsMenuProps {
@@ -94,6 +94,38 @@ export const ReplyKeyboard = ({ keyboard, onPress }: ReplyKeyboardProps) => (
           </button>
         ))}
       </div>
+    ))}
+  </div>
+)
+
+export interface InlineResultsProps {
+  results: readonly InlineQueryResult[]
+  onPick(result_id: string): void
+}
+
+const resultTitle = (result: InlineQueryResult): string =>
+  "title" in result && typeof result.title === "string" ? result.title : result.type
+
+const resultDescription = (result: InlineQueryResult): string | undefined =>
+  "description" in result && typeof result.description === "string" ? result.description : undefined
+
+/** The bot's answer to `@bot query`, above the composer; a tap sends the result. */
+export const InlineResults = ({ results, onPick }: InlineResultsProps) => (
+  <div className="tgc-inline-results" data-testid="inline-results">
+    {results.map((result) => (
+      <button
+        key={result.id}
+        type="button"
+        className="tgc-inline-result"
+        data-testid="inline-result"
+        data-id={result.id}
+        onClick={() => onPick(result.id)}
+      >
+        <span className="tgc-inline-title">{resultTitle(result)}</span>
+        {resultDescription(result) && (
+          <span className="tgc-inline-description">{resultDescription(result)}</span>
+        )}
+      </button>
     ))}
   </div>
 )

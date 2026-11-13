@@ -107,6 +107,33 @@ describe("inline mode", () => {
     expect(types).toEqual(["inline_query", "chosen_inline_result", "message"])
   })
 
+  it("a chosen result is formatted, says via the bot, and keeps its keyboard", async () => {
+    const emulator = makeTgBotEmulator()
+    const query = emulator.sendInlineQuery("")
+    const keyboard = { inline_keyboard: [[{ text: "More", callback_data: "more" }]] }
+    await emulator.client.execute("answer_inline_query", {
+      inline_query_id: query.id,
+      results: [
+        {
+          type: "article",
+          id: "r1",
+          title: "Bold",
+          input_message_content: { message_text: "<b>Hi</b> there", parse_mode: "HTML" },
+          reply_markup: keyboard
+        }
+      ]
+    })
+
+    emulator.chooseInlineResult("r1")
+
+    expect(emulator.messages.at(-1)).toMatchObject({
+      text: "Hi there",
+      entities: [{ type: "bold", offset: 0, length: 2 }],
+      via_bot: { username: "emulator_bot" },
+      reply_markup: keyboard
+    })
+  })
+
   it("answering an unknown query id fails like the real API", async () => {
     const emulator = makeTgBotEmulator()
     const result = await emulator.client.executeSafe("answer_inline_query", {

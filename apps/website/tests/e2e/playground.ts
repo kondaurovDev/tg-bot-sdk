@@ -149,6 +149,19 @@ const examples: Record<string, () => Promise<void>> = {
     await web.wait('[data-testid="widget"][data-ready="true"]', 15)
     await web.wait('[data-testid="widget"][data-chat-data="---------p"]')
   },
+  inline: async () => {
+    await web.wait(IDLE, 15)
+    await web.type("#chat-input", "@emulator_bot ot")
+    await web.wait('[data-testid="inline-result"][data-id="otter"]', 10)
+    await web.tap('[data-testid="inline-result"][data-id="otter"]')
+    await web.wait('[data-testid="message"][data-from="user"]', 10)
+    const [sent] = await web.texts('[data-testid="message"][data-from="user"]')
+    check(
+      sent?.includes("via @emulator_bot") === true,
+      `the chosen result says ${JSON.stringify(sent)}`
+    )
+    check(sent?.includes("Otter") === true, "the chosen result is not the otter")
+  },
   stream: async () => {
     await send("/story")
     await web.wait("#chat-draft", 10)

@@ -273,3 +273,39 @@ describe("chatReducer", () => {
     })
   })
 })
+
+describe("<Chat> inline mode", () => {
+  it("asks the bot for @username queries and sends the picked result via it", async () => {
+    const { port } = await start(
+      createBot().onInlineQuery(({ fallback }) => [
+        fallback(({ payload, ctx }) =>
+          ctx.call("answer_inline_query", {
+            inline_query_id: payload.id,
+            results: [
+              {
+                type: "article",
+                id: "cat",
+                title: `Cat for "${payload.query}"`,
+                description: "A cat",
+                input_message_content: { message_text: "<b>Cat</b> 🐈", parse_mode: "HTML" }
+              }
+            ]
+          })
+        )
+      ])
+    )
+    render(<Chat port={port} botUsername="emulator_bot" />)
+    const input = screen.getByTestId("chat-input")
+
+    fireEvent.change(input, { target: { value: "@emulator_bot ca" } })
+    await until(() => screen.queryByTestId("inline-result")?.textContent?.includes('"ca"') === true)
+
+    fireEvent.click(screen.getByTestId("inline-result"))
+    await until(() => document.querySelector('[data-testid="message"][data-from="user"]') !== null)
+    const sent = document.querySelector('[data-testid="message"][data-from="user"]')
+    expect(sent?.textContent).toContain("via @emulator_bot")
+    expect(sent?.querySelector("strong")?.textContent).toBe("Cat")
+    expect(screen.queryByTestId("inline-results")).toBeNull()
+    expect(input).toHaveProperty("value", "")
+  })
+})

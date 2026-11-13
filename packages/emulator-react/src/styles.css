@@ -428,6 +428,45 @@
   font-size: 12px;
 }
 
+/* --- Inline mode: results above the composer, "via @bot" in a message --- */
+.tgc-inline-results {
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--tgc-surface);
+  border-top: 1px solid var(--tgc-border);
+}
+.tgc-inline-result {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  border-bottom: 1px solid #f3f4f6;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.tgc-inline-result:hover {
+  background: #f9fafb;
+}
+.tgc-inline-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--tgc-text);
+}
+.tgc-inline-description {
+  font-size: 12px;
+  color: #6b7280;
+}
+.tgc-via {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tgc-accent);
+}
+
 /* --- Reply keyboard --- */
 .tgc-keyboard-toggle {
   font-size: 18px;

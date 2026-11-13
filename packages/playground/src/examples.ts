@@ -9,6 +9,7 @@ import dice from "../examples/dice.ts?raw"
 import echo from "../examples/echo.ts?raw"
 import empty from "../examples/empty.ts?raw"
 import file from "../examples/file.ts?raw"
+import inline from "../examples/inline.ts?raw"
 import rich from "../examples/rich.ts?raw"
 import screens from "../examples/screens.ts?raw"
 import stream from "../examples/stream.ts?raw"
@@ -65,6 +66,13 @@ export const EXAMPLES: readonly Example[] = [
     group: "UI & navigation",
     hint: "HTML widget in a message, requests to the bot (Bot API 10.4)",
     code: widget
+  },
+  {
+    file: "inline.ts",
+    label: "Inline mode",
+    group: "UI & navigation",
+    hint: "@bot query → results → sent via the bot",
+    code: inline
   },
   {
     file: "stream.ts",

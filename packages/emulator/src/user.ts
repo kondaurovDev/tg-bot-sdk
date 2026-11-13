@@ -17,7 +17,7 @@ import type { FileContent } from "@effect-ak/tg-bot-client"
 
 import { isInlineKeyboard } from "./outgoing"
 import type { EmulatorState } from "./state"
-import { commandEntities } from "./text"
+import { commandEntities, parseOutgoingText } from "./text"
 import type {
   TapButtonOptions,
   UserMediaOptions,
@@ -207,7 +207,21 @@ export const userActions = (state: EmulatorState) => {
       }
       state.pushUpdate({ chosen_inline_result: chosen })
       const content = "input_message_content" in result ? result.input_message_content : undefined
-      if (content && "message_text" in content) sendMessage(content.message_text)
+      if (content && "message_text" in content) {
+        // Sent by the user, made by the bot: its parse mode (or entities)
+        // applies, the message says "via @bot", and the result's keyboard comes along
+        const parsed = content.entities
+          ? { text: content.message_text, entities: content.entities }
+          : parseOutgoingText(content.message_text, content.parse_mode)
+        const markup = "reply_markup" in result ? result.reply_markup : undefined
+        deliver({
+          ...baseMessage(),
+          text: parsed.text,
+          ...(parsed.entities ? { entities: parsed.entities } : {}),
+          via_bot: state.bot,
+          ...(isInlineKeyboard(markup) ? { reply_markup: markup } : {})
+        })
+      }
       return chosen
     }
     throw new Error(`chooseInlineResult: no answered result with id "${result_id}"`)

@@ -32,6 +32,8 @@ export type WorkerCommand =
       caption?: string
     }
   | { command: "user-react"; message_id: number; emoji: string | null }
+  | { command: "inline-query"; query: string }
+  | { command: "choose-inline-result"; result_id: string }
   /** A file's bytes for the chat; answered by a `file` event with the same id. */
   | { command: "get-file"; request_id: number; file_id: string }
   /** A widget's request; answered by a `widget-answer` event with the same id. */

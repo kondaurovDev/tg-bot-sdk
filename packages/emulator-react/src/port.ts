@@ -40,6 +40,10 @@ export interface EmulatorPort {
   getFile(file_id: string): Promise<ChatFile>
   /** A widget's `TelegramWidget.request(data)` in a message; resolves with the bot's answer. */
   widgetRequest(message_id: number, data: string): Promise<WidgetRequestOutcome>
+  /** The user typed `@bot query`; the bot's results come as an `inline_results` event. */
+  sendInlineQuery(query: string): void
+  /** The user picked one of the results: it is sent to the chat via the bot. */
+  chooseInlineResult(result_id: string): void
 }
 
 /**
@@ -89,6 +93,8 @@ export const createEmulatorPort = (emulator: TgBotEmulator): EmulatorPort => {
       const file = await emulator.client.getFile({ fileId: file_id })
       return { bytes: new Uint8Array(file.content), file_name: file.file_name }
     },
-    widgetRequest: (message_id, data) => emulator.widgetRequest(message_id, data)
+    widgetRequest: (message_id, data) => emulator.widgetRequest(message_id, data),
+    sendInlineQuery: (query) => attempt(() => emulator.sendInlineQuery(query)),
+    chooseInlineResult: (result_id) => attempt(() => emulator.chooseInlineResult(result_id))
   }
 }

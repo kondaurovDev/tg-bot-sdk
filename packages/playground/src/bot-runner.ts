@@ -99,6 +99,8 @@ export const createBotRunner = (): BotRunner => {
         tapButton: (data, message_id) => send({ command: "tap-button", data, message_id }),
         react: (message_id, emoji) => send({ command: "user-react", message_id, emoji }),
         deleteMessage: (message_id) => send({ command: "delete-message", message_id }),
+        sendInlineQuery: (query) => send({ command: "inline-query", query }),
+        chooseInlineResult: (result_id) => send({ command: "choose-inline-result", result_id }),
         getFile: (file_id) =>
           new Promise((resolve, reject) => {
             const request_id = nextRequestId++

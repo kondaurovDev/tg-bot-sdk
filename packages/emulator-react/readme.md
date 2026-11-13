@@ -30,7 +30,7 @@ export const Demo = () => (
 
 `<Chat>` never touches the emulator: it talks to an `EmulatorPort` — chat
 events in, user actions out (`sendMessage`, `tapButton`, `react`,
-`deleteMessage`, `sendFile`), `getFile` for the photos it shows and the
+`deleteMessage`, `sendFile`, `sendInlineQuery`, `chooseInlineResult`), `getFile` for the photos it shows and the
 documents it saves, and `widgetRequest` for HTML widgets. `createEmulatorPort(emulator)` is the port to an
 emulator in the same thread. When the bot runs in a Web Worker, implement the
 same interface over `postMessage`: the worker forwards the emulator's events
@@ -43,7 +43,9 @@ A new port is a new chat: `<Chat>` resets when the `port` prop changes.
 
 ## Pieces
 
-- `<Chat port title status onRestart onNotice onEvent emptyHint startCommand quickReactions />`
+- `<Chat port title status onRestart onNotice onEvent emptyHint startCommand quickReactions botUsername />`
+  — with `botUsername`, typing `@<username> query` asks the bot inline and
+  shows its results above the composer.
 - `<PhoneFrame>` — an iPhone-like frame with a ticking clock; below 768 px wide
   it steps aside (`alwaysFramed` keeps it).
 - `useChat(port)` — the chat state (`messages`, `draft`, `reactions`,

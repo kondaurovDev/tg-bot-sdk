@@ -56,6 +56,9 @@ export const MessageContent = ({ message, h }: { message: Message; h: RenderHand
   )
   return (
     <>
+      {message.via_bot?.username && (
+        <span className="tgc-via">via @{message.via_bot.username}</span>
+      )}
       <ReplyQuote message={message} />
       {media}
       {renderEntities(textOf(message) ?? "", entities, h)}

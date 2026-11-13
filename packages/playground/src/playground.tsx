@@ -69,7 +69,9 @@ const idlePort = (): EmulatorPort => {
     react: refuse,
     deleteMessage: refuse,
     getFile: () => Promise.reject(new Error("Bot is not running")),
-    widgetRequest: () => Promise.resolve({ ok: false, code: "NOT_ALLOWED" })
+    widgetRequest: () => Promise.resolve({ ok: false, code: "NOT_ALLOWED" }),
+    sendInlineQuery: refuse,
+    chooseInlineResult: refuse
   }
 }
 
@@ -515,6 +517,7 @@ export const Playground = ({ docsHref = "/" }: PlaygroundProps) => {
                 <Chat
                   port={port}
                   title="Playground Bot"
+                  botUsername="emulator_bot"
                   status={status}
                   onRestart={() => void run()}
                   onNotice={showToast}

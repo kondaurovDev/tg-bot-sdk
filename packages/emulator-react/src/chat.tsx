@@ -7,7 +7,7 @@
 import type { InlineKeyboardButton, Message } from "@effect-ak/tg-bot-api"
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
-import { CommandsMenu, ReplyKeyboard } from "./chat-keyboards"
+import { CommandsMenu, InlineResults, ReplyKeyboard } from "./chat-keyboards"
 import { ChatServicesContext, type ChatServices } from "./chat-services"
 import { MessageMenu } from "./chat-menu"
 import { MessageRow } from "./chat-message"
@@ -15,6 +15,15 @@ import type { ChatPortEvent, EmulatorPort } from "./port"
 import { RichMessageView } from "./render-rich"
 import { renderEntities, textOf, type RenderHandlers } from "./render-text"
 import { useChat } from "./use-chat"
+
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+/** The query in "@<username> query", or `null` when the composer is not in inline mode. */
+export const inlineQueryOf = (input: string, botUsername: string | undefined): string | null => {
+  if (!botUsername) return null
+  const match = new RegExp(`^@${escapeRegExp(botUsername)}(?:\\s+([\\s\\S]*))?$`, "i").exec(input)
+  return match ? (match[1] ?? "") : null
+}
 
 export const QUICK_REACTIONS = ["👍", "🔥", "❤️", "😁", "🤣", "💩"]
 
@@ -36,6 +45,11 @@ export interface ChatProps {
   emptyHint?: ReactNode
   /** The command the empty chat offers to send; `null` offers none. Default: `"/start"`. */
   startCommand?: string | null
+  /**
+   * The bot's username, without "@". Typing `@<username> query` in the
+   * composer then asks the bot inline, as in Telegram.
+   */
+  botUsername?: string
   /** The reactions in the message menu; the first is the double-tap one. */
   quickReactions?: readonly string[]
   className?: string
@@ -57,6 +71,7 @@ export const Chat = ({
   emptyHint = "Your bot runs right here in the browser.",
   startCommand = "/start",
   quickReactions = QUICK_REACTIONS,
+  botUsername,
   className
 }: ChatProps) => {
   const handleEvent = useCallback(
@@ -97,6 +112,19 @@ export const Chat = ({
   useEffect(() => setKeyboardFolded(false), [state.replyKeyboard])
 
   const replyKeyboard = state.replyKeyboard
+
+  // Inline mode: "@<botUsername> query" in the composer
+  const inlineQuery = inlineQueryOf(input, botUsername)
+  const { inlineQuery: askInline, closeInline } = actions
+  useEffect(() => {
+    if (inlineQuery === null) {
+      closeInline()
+      return
+    }
+    // As in Telegram, the query goes out once the user pauses typing
+    const timer = setTimeout(() => askInline(inlineQuery), 300)
+    return () => clearTimeout(timer)
+  }, [inlineQuery, askInline, closeInline])
 
   const copy = useCallback(
     (text: string) => {
@@ -248,6 +276,16 @@ export const Chat = ({
             </div>
           )}
         </div>
+
+        {inlineQuery !== null && state.inlineResults.length > 0 && (
+          <InlineResults
+            results={state.inlineResults}
+            onPick={(result_id) => {
+              actions.chooseInlineResult(result_id)
+              setInput("")
+            }}
+          />
+        )}
 
         {replyTo && (
           <div className="tgc-reply-bar">

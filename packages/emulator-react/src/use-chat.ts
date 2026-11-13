@@ -4,7 +4,12 @@
  * draft, reactions, and whether the bot is busy. `useChat` is what `<Chat>`
  * renders from; a custom UI can use it alone.
  */
-import type { BotCommand, Message, ReplyKeyboardMarkup } from "@effect-ak/tg-bot-api"
+import type {
+  BotCommand,
+  InlineQueryResult,
+  Message,
+  ReplyKeyboardMarkup
+} from "@effect-ak/tg-bot-api"
 import type { EmulatorDraft } from "@effect-ak/tg-bot-emulator"
 import { useEffect, useMemo, useReducer, useRef } from "react"
 
@@ -26,6 +31,8 @@ export interface ChatState {
   commands: readonly BotCommand[]
   /** The reply keyboard the bot set last, until it removes it. */
   replyKeyboard: ReplyKeyboardMarkup | null
+  /** The bot's answer to the latest inline query. */
+  inlineResults: readonly InlineQueryResult[]
 }
 
 export const initialChatState: ChatState = {
@@ -35,13 +42,16 @@ export const initialChatState: ChatState = {
   waiting: false,
   typing: false,
   commands: [],
-  replyKeyboard: null
+  replyKeyboard: null,
+  inlineResults: []
 }
 
 export type ChatAction =
   | ChatPortEvent
   | { type: "user_acted" }
   | { type: "typing_over" }
+  /** The user left inline mode: the results go away. */
+  | { type: "inline_closed" }
   | { type: "reset" }
 
 const withoutKey = <V>(record: Readonly<Record<number, V>>, key: number): Record<number, V> =>
@@ -91,6 +101,10 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
       return { ...state, commands: action.commands }
     case "reply_keyboard":
       return { ...state, replyKeyboard: action.keyboard }
+    case "inline_results":
+      return { ...state, inlineResults: action.results }
+    case "inline_closed":
+      return { ...state, inlineResults: [] }
     case "widget_data_changed":
       return {
         ...state,
@@ -112,6 +126,9 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
 }
 
 export interface ChatActions {
+  inlineQuery(query: string): void
+  chooseInlineResult(result_id: string): void
+  closeInline(): void
   send(text: string, options?: { reply_to?: number }): void
   sendFile(file: UserFile): void
   tapButton(callback_data: string, message_id: number): void
@@ -165,6 +182,13 @@ export const useChat = (
         port.tapButton(callback_data, message_id)
       },
       react: (message_id, emoji) => port.react(message_id, emoji),
+      inlineQuery: (query) => port.sendInlineQuery(query),
+      chooseInlineResult: (result_id) => {
+        dispatch({ type: "inline_closed" })
+        acted()
+        port.chooseInlineResult(result_id)
+      },
+      closeInline: () => dispatch({ type: "inline_closed" }),
       deleteMessage: (message_id) => port.deleteMessage(message_id)
     }
   }, [port])

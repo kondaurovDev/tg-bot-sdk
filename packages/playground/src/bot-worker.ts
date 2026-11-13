@@ -183,6 +183,12 @@ addEventListener("message", (msg: MessageEvent<WorkerCommand>) => {
     case "user-react":
       userAction((e) => e.react(data.message_id, data.emoji))
       break
+    case "inline-query":
+      userAction((e) => e.sendInlineQuery(data.query))
+      break
+    case "choose-inline-result":
+      userAction((e) => e.chooseInlineResult(data.result_id))
+      break
     case "get-file":
       void sendFile(data.request_id, data.file_id)
       break
