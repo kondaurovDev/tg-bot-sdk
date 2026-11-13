@@ -12,6 +12,7 @@
 import { Config, Effect, String } from "effect"
 import { execFile } from "node:child_process"
 import { writeFile, mkdir } from "node:fs/promises"
+import { createRequire } from "node:module"
 import { promisify } from "node:util"
 import * as Path from "path"
 
@@ -29,10 +30,20 @@ import {
 
 const execFileAsync = promisify(execFile)
 
+// The formatter's own entry script, run with the current Node: no package
+// manager in between (which may try to install) and no shell wrapper, so it
+// behaves the same on every platform.
+// (`bin/` is not in the package's exports, so it is found next to `package.json`.)
+const oxfmtBin = Path.join(
+  Path.dirname(createRequire(import.meta.url).resolve("oxfmt/package.json")),
+  "bin",
+  "oxfmt"
+)
+
 const writeTsFile = async (outPath: string, source: string) => {
   await mkdir(Path.dirname(outPath), { recursive: true })
   await writeFile(outPath, source)
-  await execFileAsync("pnpm", ["exec", "oxfmt", "--write", outPath])
+  await execFileAsync(process.execPath, [oxfmtBin, "--write", outPath])
   console.log("Wrote", outPath)
 }
 

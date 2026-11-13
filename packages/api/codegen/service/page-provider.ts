@@ -1,18 +1,21 @@
 /**
  * @module page-provider
  *
- * Fetches and caches Telegram documentation HTML pages.
+ * Provides the Telegram documentation pages codegen reads.
  *
- * Downloads the Bot API and Mini Apps pages from `core.telegram.org`,
- * caches them as `input/api.html` and `input/webapp.html`, and returns
- * parsed {@link DocPage} / {@link WebAppPage} instances.
+ * The pages are a committed snapshot (`input/api.html`, `input/webapp.html`),
+ * so a build — the release build included — always generates the types that
+ * were reviewed and committed, with no network access. Only a refresh
+ * (`CODEGEN_REFRESH=true`, the `gen:refresh` script) downloads the live pages
+ * and replaces the snapshot.
  */
 import { Effect, Schedule } from "effect"
-import { writeFile, readFile, mkdir, stat } from "fs/promises"
+import { mkdir, readFile, writeFile } from "node:fs/promises"
+import * as Path from "node:path"
 
 import { DocPage, WebAppPage } from "~/scrape/page"
 
-// ── HTML fetching ──
+// ── HTML snapshot ──
 
 export type HtmlPageName = keyof typeof HtmlPages
 
@@ -23,40 +26,46 @@ export const HtmlPages = {
   webapp: `${baseUrl}/bots/webapps`
 } as const
 
-const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
+const inputDir = Path.resolve(import.meta.dirname, "..", "..", "input")
 
-const forceRefresh = process.env.FORCE_REFRESH === "true"
-const cacheTtlMs = process.env.CACHE_TTL_MS ? Number(process.env.CACHE_TTL_MS) : DEFAULT_TTL_MS
+const snapshotPath = (page: HtmlPageName) => Path.join(inputDir, `${page}.html`)
 
-const readFresh = async (fileName: string) => {
-  if (forceRefresh) return undefined
-  const mtimeMs = await stat(fileName)
-    .then((s) => s.mtimeMs)
-    .catch(() => undefined)
-  if (mtimeMs === undefined) return undefined
-  if (Date.now() - mtimeMs > cacheTtlMs) return undefined
-  return readFile(fileName).catch(() => undefined)
+const refresh = process.env.CODEGEN_REFRESH === "true"
+
+/**
+ * Telegram stamps every response with the time it took to render. Dropping
+ * the stamp makes the snapshot change only when the documentation does.
+ */
+export const normalizeDocsHtml = (html: string): string =>
+  html.replace(/<!-- page generated in [\d.]+m?s -->\s*/g, "")
+
+const readSnapshot = async (page: HtmlPageName): Promise<string> => {
+  const path = snapshotPath(page)
+  const saved = await readFile(path, "utf-8").catch(() => undefined)
+  if (saved === undefined) {
+    throw new Error(
+      `No docs snapshot at ${path}. Run \`pnpm --filter @effect-ak/tg-bot-api gen:refresh\` to download it.`
+    )
+  }
+  return saved
+}
+
+const downloadSnapshot = async (page: HtmlPageName): Promise<string> => {
+  console.log(`fetching '${page}'`)
+  const response = await fetch(HtmlPages[page])
+  if (!response.ok) throw new Error(`Fetching ${HtmlPages[page]} failed: HTTP ${response.status}`)
+  const content = normalizeDocsHtml(await response.text())
+  await mkdir(inputDir, { recursive: true })
+  await writeFile(snapshotPath(page), content)
+  return content
 }
 
 const getPageHtml = (page: HtmlPageName) =>
-  Effect.tryPromise(async () => {
-    const fileName = `input/${page}.html`
-    const saved = await readFresh(fileName)
-    if (saved) {
-      console.log(`cached '${page}'`)
-      return saved.toString("utf-8")
-    }
-
-    console.log(`fetching '${page}'`)
-    const content = await fetch(HtmlPages[page]).then((_) => _.text())
-
-    await mkdir("input", { recursive: true })
-    await writeFile(fileName, content)
-
-    return content
-  }).pipe(
-    Effect.retry(Schedule.exponential("2 seconds").pipe(Schedule.compose(Schedule.recurs(3))))
-  )
+  refresh
+    ? Effect.tryPromise(() => downloadSnapshot(page)).pipe(
+        Effect.retry(Schedule.exponential("2 seconds").pipe(Schedule.compose(Schedule.recurs(3))))
+      )
+    : Effect.tryPromise(() => readSnapshot(page))
 
 // ── PageProviderService ──
 

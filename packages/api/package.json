@@ -44,6 +44,7 @@
     "build": "tsup",
     "typecheck": "tsc",
     "gen": "pnpm run gen:bot:api && pnpm run gen:webapp:api",
+    "gen:refresh": "CODEGEN_REFRESH=true pnpm run gen",
     "gen:bot:api": "MODULE_NAME=bot_api tsx ./codegen/main.ts",
     "gen:webapp:api": "MODULE_NAME=webapp tsx ./codegen/main.ts",
     "test": "vitest run"

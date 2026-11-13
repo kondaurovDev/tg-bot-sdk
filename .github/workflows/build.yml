@@ -22,6 +22,15 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Codegen ran from the committed docs snapshot as part of the build. Any
+      # change it made means the committed generated files are stale: the
+      # codegen changed without a regeneration, or the snapshot was edited.
+      - name: Generated files are up to date
+        run: git diff --exit-code
+
+      - name: Lint
+        run: pnpm lint
+
       - name: Typecheck
         run: pnpm typecheck
 
