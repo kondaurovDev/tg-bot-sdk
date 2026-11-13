@@ -8,6 +8,7 @@ paths:
 - Fluent builder API: `createBot().command("/start", h).onText(h).onCallback(data, h)` shortcuts, `.onMessage(({ command, text, fallback }) => [...])` for ordered handler lists, `bot.use(plugin)`.
 - Guarded handler pattern; handlers receive `{ payload, ctx }`, where `payload` is the typed `Message` / `CallbackQuery`, not the `Update`.
 - Handlers return a `BotResponse` (a list of API calls); the processor executes them and auto-answers callback queries.
+- A refused call is only logged unless the response has a fallback: `orElse` wraps actions in an `attempt` action; the first failed call skips the rest and runs the fallback with the `ClientErrorReason`. Code that walks actions (`callsOf`, `describeResponseType`) looks inside attempts.
 - Long polling with offset management; webhook support with secret token verification.
 - `defineScreens` (`src/screens.ts`) describes inline-keyboard navigation as data.
 - Queries are auto-answered when a handler responds without answering: `callback_query` with `answer_callback_query`, `widget_query` / `shared_widget_query` with `answer_widget_query` (`withAutoAnswer` in `bot-processor.ts`). A new query-like update kind gets its empty answer there.

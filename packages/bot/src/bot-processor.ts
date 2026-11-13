@@ -5,7 +5,7 @@
  * the handler, and sends the response back to Telegram.
  */
 import type { Api, Update } from "@effect-ak/tg-bot-api"
-import type { TgBotClient } from "@effect-ak/tg-bot-client"
+import type { ClientErrorReason, TgBotClient } from "@effect-ak/tg-bot-client"
 import type {
   AvailableUpdateTypes,
   ExtractedUpdate,
@@ -272,6 +272,21 @@ const handleOneUpdate = async (
   return undefined
 }
 
+/** Run actions in order; the first failed call stops them and is returned. */
+const executeActions = async (
+  actions: readonly BotAction[],
+  update: ExtractedUpdate,
+  client: TgBotClient,
+  settings: PollSettings,
+  log: BotLogger
+): Promise<ClientErrorReason | undefined> => {
+  for (const action of actions) {
+    const error = await executeAction(action, update, client, settings, log)
+    if (error) return error
+  }
+  return undefined
+}
+
 /** The call that answers a query update with no text or data, if the update is one. */
 const emptyAnswerFor = (update: ExtractedUpdate): BotApiCall | undefined => {
   if (update.type === "callback_query") {
@@ -288,12 +303,16 @@ const emptyAnswerFor = (update: ExtractedUpdate): BotApiCall | undefined => {
  * spinning, a widget request or the widget gets `TIMEOUT`. When a handler
  * responds to one without answering it, prepend an empty answer.
  */
+// The calls a response makes, those inside `orElse` included (not its fallback)
+const callsOf = (actions: readonly BotAction[]): BotApiCall[] =>
+  actions.flatMap((a) =>
+    "call" in a ? [a.call] : "attempt" in a ? callsOf(a.attempt.actions) : []
+  )
+
 const withAutoAnswer = (update: ExtractedUpdate, response: BotResponse): readonly BotAction[] => {
   const answer = emptyAnswerFor(update)
   if (!answer || response.isEmpty) return response.actions
-  const alreadyAnswered = response.actions.some(
-    (a) => "call" in a && a.call.method === answer.method
-  )
+  const alreadyAnswered = callsOf(response.actions).some((call) => call.method === answer.method)
   return alreadyAnswered ? response.actions : [{ call: answer }, ...response.actions]
 }
 
@@ -366,13 +385,14 @@ const executeCall = async <K extends keyof Api>(
   client: TgBotClient,
   settings: PollSettings,
   log: BotLogger
-): Promise<void> => {
+): Promise<ClientErrorReason | undefined> => {
   const result = await client.executeSafe(call.method, call.params)
   if (!result.ok) {
     log.warn(`failed to execute ${call.method}`, result.error)
-  } else if (settings.log_level === "debug") {
-    log.debug(`bot response (${call.method})`, result.data)
+    return result.error
   }
+  if (settings.log_level === "debug") log.debug(`bot response (${call.method})`, result.data)
+  return undefined
 }
 
 const executeAction = async (
@@ -381,27 +401,40 @@ const executeAction = async (
   client: TgBotClient,
   settings: PollSettings,
   log: BotLogger
-): Promise<void> => {
+): Promise<ClientErrorReason | undefined> => {
   if ("stream" in action) {
     await executeStream(action.stream, update, client, log)
-    return
+    return undefined
   }
 
-  if ("call" in action) {
-    await executeCall(action.call, client, settings, log)
-    return
+  if ("call" in action) return executeCall(action.call, client, settings, log)
+
+  if ("attempt" in action) {
+    const error = await executeActions(action.attempt.actions, update, client, settings, log)
+    if (!error) return undefined
+    // The failure is handled by the fallback: it does not stop what follows
+    let fallback: BotResponse
+    try {
+      fallback = action.attempt.fallback(error)
+    } catch (cause) {
+      log.error("orElse fallback threw", cause)
+      return undefined
+    }
+    await executeActions(fallback.actions, update, client, settings, log)
+    return undefined
   }
 
   const chat_id = resolveChatId(update.payload)
   if (chat_id === undefined) {
     log.warn("cannot send response: update has no chat", { updateType: update.type })
-    return
+    return undefined
   }
-  await executeCall(toSendCall(action.send, chat_id), client, settings, log)
+  return executeCall(toSendCall(action.send, chat_id), client, settings, log)
 }
 
 const describeResponseType = (response: BotResponse): string | undefined => {
-  const first = response.actions[0]
+  let first = response.actions[0]
+  while (first && "attempt" in first) first = first.attempt.actions[0]
   if (!first) return undefined
   if ("stream" in first) return "stream"
   return "send" in first ? first.send.type : first.call.method

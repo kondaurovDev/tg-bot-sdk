@@ -21,7 +21,7 @@ import menu from "../src/bots/menu"
 import { demos } from "../src/bots/registry"
 import { applyBotProfile, BOT_PROFILE } from "../src/profile"
 import { ANSWERS, answerFor, makeStreamBot } from "../src/bots/stream"
-import tictactoe, { NEW_GAME, play, WIDGET_HTML } from "../src/bots/tictactoe"
+import tictactoe, { NEW_GAME, play, PLAYGROUND_URL, WIDGET_HTML } from "../src/bots/tictactoe"
 
 const silentLogger = { debug: () => {}, info: () => {}, warn: () => {}, error: () => {} }
 
@@ -91,6 +91,37 @@ describe("tic-tac-toe", () => {
         result: "invalid move"
       })
     }))
+})
+
+describe("tic-tac-toe when Telegram refuses widgets", () => {
+  it("says so and points to the playground instead of staying silent", async () => {
+    const emulator = makeTgBotEmulator()
+    // The client as Telegram answered on 2026-11-13: send_widget refused
+    const refusing: typeof emulator.client = {
+      ...emulator.client,
+      executeSafe: (method, input) =>
+        method === "send_widget"
+          ? Promise.resolve({
+              ok: false,
+              error: {
+                _tag: "NotOkResponse",
+                errorCode: 400,
+                details: "Bad Request: INPUT_MEDIA_WIDGET_NOT_ALLOWED"
+              }
+            })
+          : emulator.client.executeSafe(method, input)
+    }
+    const instance = await tictactoe.run({ client: refusing, logger: silentLogger })
+    try {
+      emulator.sendMessage("let's play")
+      const reply = await emulator.nextBotMessage()
+      expect(reply.widget).toBeUndefined()
+      expect(reply.text).toContain("INPUT_MEDIA_WIDGET_NOT_ALLOWED")
+      expect(reply.text).toContain(PLAYGROUND_URL)
+    } finally {
+      instance.stop()
+    }
+  })
 })
 
 describe("streaming", () => {

@@ -4,7 +4,7 @@
  * Every other module in the package depends on this one.
  */
 import type { Api, Update } from "@effect-ak/tg-bot-api"
-import type { MethodInput, TgBotClient } from "@effect-ak/tg-bot-client"
+import type { ClientErrorReason, MethodInput, TgBotClient } from "@effect-ak/tg-bot-client"
 
 import type { PollSettings } from "./polling"
 
@@ -61,13 +61,20 @@ export interface StreamOptions {
 
 /**
  * A single action the runner performs after a handler returns:
- * a `send_*` shorthand, an explicit API call, or a streamed reply
- * (`send_message_draft` per chunk, finalized with `send_message`).
+ * a `send_*` shorthand, an explicit API call, a streamed reply
+ * (`send_message_draft` per chunk, finalized with `send_message`), or
+ * actions with a fallback for when one of their calls fails (`orElse`).
  */
 export type BotAction =
   | { send: BotResult }
   | { call: BotApiCall }
   | { stream: { source: StreamSource; options?: StreamOptions } }
+  | {
+      attempt: {
+        actions: readonly BotAction[]
+        fallback: (error: ClientErrorReason) => BotResponse
+      }
+    }
 
 export class BotResponse {
   readonly actions: readonly BotAction[]
@@ -122,6 +129,20 @@ export class BotResponse {
   /** Append another response's actions after this one. */
   and(other: BotResponse): BotResponse {
     return new BotResponse([...this.actions, ...other.actions])
+  }
+
+  /**
+   * What to do when Telegram refuses one of this response's calls: the rest
+   * of this response is skipped and the fallback runs instead, given the
+   * error. Without `orElse` a failed call is only logged — the user sees
+   * nothing.
+   *
+   * `BotResponse.make({ type: "widget", html }).orElse((error) => ctx.reply("No widget: " + error._tag))`
+   */
+  orElse(fallback: BotResponse | ((error: ClientErrorReason) => BotResponse)): BotResponse {
+    if (this.isEmpty) return this
+    const handle = typeof fallback === "function" ? fallback : () => fallback
+    return new BotResponse([{ attempt: { actions: this.actions, fallback: handle } }])
   }
 }
 

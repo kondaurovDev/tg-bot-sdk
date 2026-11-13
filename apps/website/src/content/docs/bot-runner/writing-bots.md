@@ -237,6 +237,29 @@ If a handler throws an error, the bot:
 
 Up to 10 updates are processed concurrently. If some handlers fail, others continue.
 
+### When Telegram refuses a call
+
+A handler's response runs after the handler returns, so a call Telegram
+refuses (a `400 Bad Request`, a timeout) does not throw into your code: it is
+logged, and the user sees nothing. To answer anyway, give the response a
+fallback with `orElse`. If one of its calls fails, the rest of it is skipped
+and the fallback runs, given the error:
+
+```typescript
+command("/play", ({ ctx }) =>
+  BotResponse.make({ type: "widget", html: GAME_HTML, allow_queries: true }).orElse((error) =>
+    ctx.reply(
+      error._tag === "NotOkResponse"
+        ? `Telegram didn't take the game: ${error.details}`
+        : "Couldn't send the game, try again later"
+    )
+  )
+)
+```
+
+`orElse` also takes a plain response: `ctx.reply("one").orElse(ctx.reply("fallback"))`.
+The live demo bot's tic-tac-toe does this when Telegram refuses widgets.
+
 ## Next steps
 
 - [Running Bots](/bot-runner/running-bots/) — start your bot with long polling or deploy it with webhooks

@@ -12,6 +12,7 @@
  * keep the board on the server.
  */
 import { BotResponse, createBot } from "@effect-ak/tg-bot"
+import type { ClientErrorReason } from "@effect-ak/tg-bot-client"
 
 export const description =
   "Tic-tac-toe against the bot, played inside an HTML widget (Bot API 10.4)"
@@ -106,9 +107,21 @@ W.onEvent("chatDataChanged",()=>{st=W.chatData||st;draw()});
 draw();W.ready()
 </script>`
 
+export const PLAYGROUND_URL = "https://tg-bot-sdk.website/playground/?example=widget"
+
+/** The reply when Telegram does not take the widget. */
+export const widgetRefused = (error: ClientErrorReason): string => {
+  const reason = error._tag === "NotOkResponse" ? (error.details ?? error._tag) : error._tag
+  return (
+    `Telegram didn't take the widget (${reason.replace(/^Bad Request: /, "")}). ` +
+    "HTML widgets (Bot API 10.4) are still rolling out — try again later, " +
+    `or play the same game in the playground: ${PLAYGROUND_URL}`
+  )
+}
+
 export default createBot()
   .onMessage(({ fallback }) => [
-    fallback(() =>
+    fallback(({ ctx }) =>
       BotResponse.make({
         type: "widget",
         html: WIDGET_HTML,
@@ -116,6 +129,9 @@ export default createBot()
         allow_queries: true,
         caption: "Tic-tac-toe inside a widget. Tap a cell — you play ✕."
       })
+        // Telegram may refuse widgets (they are still rolling out): say so
+        // instead of staying silent, and point to where the game runs anyway
+        .orElse((error) => ctx.reply(widgetRefused(error)))
     )
   ])
   .onWidgetQuery(({ fallback }) => [
