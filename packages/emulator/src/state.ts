@@ -27,6 +27,8 @@ export interface BotProfile {
   description: string
   short_description: string
   commands: BotCommand[]
+  /** Set by `set_my_profile_photo`. */
+  photo?: { file_id: string; file_size?: number }
 }
 
 /** What the server knows about a widget message beyond what `Message.widget` shows. */

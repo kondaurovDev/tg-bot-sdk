@@ -3,6 +3,8 @@
   "name": "tg-bot-sdk-demo",
   "main": "src/worker.ts",
   "compatibility_date": "2026-07-08",
+  // `import avatar from "../assets/avatar.jpg"` gives the file's bytes (ArrayBuffer)
+  "rules": [{ "type": "Data", "globs": ["**/*.jpg"], "fallthrough": true }],
   "observability": {
     "enabled": true
   },

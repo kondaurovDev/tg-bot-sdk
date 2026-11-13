@@ -4,7 +4,10 @@
  * description in an empty chat ("What can this bot do?"), and the "/" menu.
  * The Worker's /setup route applies it on every deploy.
  *
- * The profile photo is set once by hand in @BotFather (/setuserpic).
+ * The profile photo (`assets/avatar.jpg`, rendered from `assets/avatar.svg`)
+ * is uploaded only while the bot has none: Telegram has no way to compare it,
+ * and a new upload on every deploy would pile up photos. To replace it,
+ * remove the current one in @BotFather and deploy again.
  */
 import type { TgBotClient } from "@effect-ak/tg-bot-client"
 import type { BotCommand } from "@effect-ak/tg-bot-api"
@@ -37,7 +40,10 @@ const sameCommands = (a: readonly BotCommand[], b: readonly BotCommand[]) =>
  * and a deploy that changes nothing should change nothing. Returns what was
  * updated.
  */
-export const applyBotProfile = async (client: TgBotClient): Promise<string[]> => {
+export const applyBotProfile = async (
+  client: TgBotClient,
+  options: { photo?: Uint8Array<ArrayBuffer> } = {}
+): Promise<string[]> => {
   const updated: string[] = []
 
   const { description } = await client.execute("get_my_description", {})
@@ -58,6 +64,22 @@ export const applyBotProfile = async (client: TgBotClient): Promise<string[]> =>
   if (!sameCommands(commands, BOT_PROFILE.commands)) {
     await client.execute("set_my_commands", { commands: BOT_PROFILE.commands })
     updated.push("commands")
+  }
+
+  if (options.photo) {
+    const me = await client.execute("get_me", {})
+    const { total_count } = await client.execute("get_user_profile_photos", {
+      user_id: me.id,
+      limit: 1
+    })
+    if (total_count === 0) {
+      // A file nested in the call's object: the client uploads it as its own
+      // part and sends `attach://…` in its place
+      await client.execute("set_my_profile_photo", {
+        photo: { type: "static", photo: { file_content: options.photo, file_name: "avatar.jpg" } }
+      })
+      updated.push("photo")
+    }
   }
 
   return updated

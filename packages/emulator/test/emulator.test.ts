@@ -314,4 +314,25 @@ describe("bot profile", () => {
       { command: "start", description: "Start" }
     ])
   })
+
+  it("sets, reports and removes the bot's profile photo", async () => {
+    const emulator = makeTgBotEmulator()
+    const photos = () =>
+      emulator.client.execute("get_user_profile_photos", { user_id: emulator.bot.id })
+    expect((await photos()).total_count).toBe(0)
+
+    await emulator.client.execute("set_my_profile_photo", {
+      photo: {
+        type: "static",
+        photo: { file_content: new Uint8Array([7, 7]), file_name: "me.jpg" }
+      }
+    })
+    const set = await photos()
+    expect(set.total_count).toBe(1)
+    const file = await emulator.client.getFile({ fileId: set.photos[0]![0]!.file_id })
+    expect([...new Uint8Array(file.content)]).toEqual([7, 7])
+
+    await emulator.client.execute("remove_my_profile_photo", {})
+    expect((await photos()).total_count).toBe(0)
+  })
 })

@@ -23,6 +23,7 @@ import type { Update } from "@effect-ak/tg-bot-api"
 
 import { makeHomeBot, isHomeUpdate, SOURCE_URL } from "./bots/home"
 import { applyBotProfile } from "./profile"
+import avatar from "../assets/avatar.jpg"
 import type { ModeStore } from "./bots/home"
 import { demos, DEFAULT_DEMO } from "./bots/registry"
 
@@ -108,8 +109,10 @@ export default {
           allowed_updates: ["message", "callback_query", "inline_query", "widget_query"],
           drop_pending_updates: true
         })
-        // Description, short description and the "/" menu (src/profile.ts)
-        const updated = await applyBotProfile(makeTgBotClient({ bot_token: env.BOT_TOKEN }))
+        // Description, short description, the "/" menu and the photo (src/profile.ts)
+        const updated = await applyBotProfile(makeTgBotClient({ bot_token: env.BOT_TOKEN }), {
+          photo: new Uint8Array(avatar)
+        })
         const profile = updated.length > 0 ? `updated ${updated.join(", ")}` : "unchanged"
         return new Response(`webhook registered: ${webhookUrl}; profile ${profile}`)
       } catch (error) {

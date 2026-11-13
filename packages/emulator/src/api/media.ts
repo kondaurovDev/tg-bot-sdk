@@ -22,7 +22,7 @@ import { EmulatorApiError } from "../errors"
 import { captionFields, isFileContent, outgoingBase } from "../outgoing"
 import type { EmulatorState } from "../state"
 
-interface StoredFile {
+export interface StoredFile {
   file_id: string
   file_name?: string
   file_size?: number
@@ -42,7 +42,7 @@ const registerBytes = (
  * Register the payload (when it carries bytes) and mint a file descriptor.
  * A `Blob` is read, like the client sends it; a `File` keeps its name.
  */
-const storeFile = async (
+export const storeFile = async (
   state: EmulatorState,
   media: unknown,
   fallbackName: string

@@ -9,6 +9,7 @@ import { chatMethods } from "./api/chat"
 import { draftMethods } from "./api/drafts"
 import { mediaMethods } from "./api/media"
 import { messageMethods } from "./api/messages"
+import { profileMethods } from "./api/profile"
 import { updateMethods } from "./api/updates"
 import { widgetMethods } from "./api/widgets"
 import { makeEmulatorClient } from "./client"
@@ -48,6 +49,7 @@ export const makeTgBotEmulator = (options: EmulatorOptions = {}): TgBotEmulator 
     ...mediaMethods(state),
     ...draftMethods(state),
     ...chatMethods(state),
+    ...profileMethods(state),
     ...widgetMethods(state)
   })
 

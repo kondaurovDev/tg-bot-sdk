@@ -8,7 +8,7 @@ The bots themselves live in [`src/bots/`](src/bots) — plain `createBot()` defi
 
 ## Deployment (GitHub Actions)
 
-[`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml) builds the packages, deploys the Worker with `wrangler`, pushes the bot secrets and registers the Telegram webhook via the Worker's `/setup` route. It runs after every green Build of a push to `main`, and on manual dispatch. The run's summary names the bot (`t.me/<username>`, from `getMe`) and the Worker URL. `/setup` also applies the bot's profile from [`src/profile.ts`](src/profile.ts) — description, short description and the "/" menu — writing only what differs; the profile photo is set once in @BotFather (`/setuserpic`).
+[`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml) builds the packages, deploys the Worker with `wrangler`, pushes the bot secrets and registers the Telegram webhook via the Worker's `/setup` route. It runs after every green Build of a push to `main`, and on manual dispatch. The run's summary names the bot (`t.me/<username>`, from `getMe`) and the Worker URL. `/setup` also applies the bot's profile from [`src/profile.ts`](src/profile.ts) — description, short description, the "/" menu, writing only what differs — and uploads [`assets/avatar.jpg`](assets/avatar.jpg) as the profile photo while the bot has none (to replace it, remove the current photo in @BotFather and deploy again).
 
 Repository secrets it needs:
 

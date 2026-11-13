@@ -5,6 +5,7 @@
  */
 import { makeTgBotEmulator } from "@effect-ak/tg-bot-emulator"
 import type { Bot } from "@effect-ak/tg-bot"
+import { readFileSync } from "node:fs"
 import { deflateSync } from "node:zlib"
 import { describe, expect, it } from "vitest"
 
@@ -193,5 +194,18 @@ describe("bot profile", () => {
     ])
     expect(await emulator.client.execute("get_my_commands", {})).toEqual(BOT_PROFILE.commands)
     expect(await applyBotProfile(emulator.client)).toEqual([])
+  })
+
+  it("uploads the photo only while the bot has none", async () => {
+    const emulator = makeTgBotEmulator()
+    const photo = new Uint8Array(readFileSync(new URL("../assets/avatar.jpg", import.meta.url)))
+    expect(await applyBotProfile(emulator.client, { photo })).toContain("photo")
+    expect(await applyBotProfile(emulator.client, { photo })).toEqual([])
+
+    const { photos } = await emulator.client.execute("get_user_profile_photos", {
+      user_id: emulator.bot.id
+    })
+    const file = await emulator.client.getFile({ fileId: photos[0]![0]!.file_id })
+    expect(file.content.byteLength).toBe(photo.byteLength)
   })
 })
