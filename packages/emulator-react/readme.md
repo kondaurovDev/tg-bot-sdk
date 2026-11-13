@@ -30,8 +30,8 @@ export const Demo = () => (
 
 `<Chat>` never touches the emulator: it talks to an `EmulatorPort` — chat
 events in, user actions out (`sendMessage`, `tapButton`, `react`,
-`deleteMessage`, `sendFile`), and `getFile` for the photos it shows and the
-documents it saves. `createEmulatorPort(emulator)` is the port to an
+`deleteMessage`, `sendFile`), `getFile` for the photos it shows and the
+documents it saves, and `widgetRequest` for HTML widgets. `createEmulatorPort(emulator)` is the port to an
 emulator in the same thread. When the bot runs in a Web Worker, implement the
 same interface over `postMessage`: the worker forwards the emulator's events
 and performs the actions it receives. Besides the emulator's events a port may
@@ -49,6 +49,16 @@ A new port is a new chat: `<Chat>` resets when the `port` prop changes.
 - `useChat(port)` — the chat state (`messages`, `draft`, `reactions`,
   `waiting`, `typing`) and the actions, for a UI of your own.
 - `RichMessageView`, `renderRichText`, `renderEntities` — the renderers.
+
+## HTML widgets
+
+A message with a widget (Bot API 10.4) runs it in a sandboxed iframe —
+an opaque origin with the network closed by a Content-Security-Policy — with a
+shim of `window.TelegramWidget`: `chatData` / `publicData` and their change
+events, `request()` through the port, `themeParams` and the `--tg-theme-*`
+variables, `copyText`, `openLink`, `ready`. Not emulated: the wallet, previews
+and forwards, haptics, background requests and rate limits, and the profile's
+filtering of HTML and CSS.
 
 ## Styling
 

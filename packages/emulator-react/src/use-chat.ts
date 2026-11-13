@@ -91,6 +91,13 @@ export const chatReducer = (state: ChatState, action: ChatAction): ChatState => 
       return { ...state, commands: action.commands }
     case "reply_keyboard":
       return { ...state, replyKeyboard: action.keyboard }
+    case "widget_data_changed":
+      return {
+        ...state,
+        messages: state.messages.map((m) =>
+          m.message_id === action.message_id ? { ...m, widget: action.widget } : m
+        )
+      }
     case "reactions":
       return {
         ...state,

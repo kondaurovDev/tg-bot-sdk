@@ -9,6 +9,7 @@ import { useRef, type MouseEvent, type TouchEvent } from "react"
 
 import { ChatDocument, ChatPhoto } from "./chat-media"
 import { RichMessageView } from "./render-rich"
+import { WidgetFrame } from "./widget-frame"
 import {
   describeMedia,
   renderEntities,
@@ -44,7 +45,9 @@ export const MessageContent = ({ message, h }: { message: Message; h: RenderHand
   if (message.rich_message) return <RichMessageView rich={message.rich_message} h={h} />
   const entities = message.entities ?? message.caption_entities ?? []
   // Photos and documents are shown; other media get a label
-  const media = message.photo ? (
+  const media = message.widget ? (
+    <WidgetFrame message_id={message.message_id} widget={message.widget} />
+  ) : message.photo ? (
     <ChatPhoto photo={message.photo} />
   ) : message.document ? (
     <ChatDocument document={message.document} />

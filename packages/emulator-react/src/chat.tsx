@@ -8,7 +8,7 @@ import type { InlineKeyboardButton, Message } from "@effect-ak/tg-bot-api"
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import { CommandsMenu, ReplyKeyboard } from "./chat-keyboards"
-import { FileSourceContext } from "./chat-media"
+import { ChatServicesContext, type ChatServices } from "./chat-services"
 import { MessageMenu } from "./chat-menu"
 import { MessageRow } from "./chat-message"
 import type { ChatPortEvent, EmulatorPort } from "./port"
@@ -96,7 +96,6 @@ export const Chat = ({
 
   useEffect(() => setKeyboardFolded(false), [state.replyKeyboard])
 
-  const getFile = useCallback((file_id: string) => port.getFile(file_id), [port])
   const replyKeyboard = state.replyKeyboard
 
   const copy = useCallback(
@@ -114,6 +113,15 @@ export const Chat = ({
     setInput("")
     setReplyTo(null)
   }
+
+  const services = useMemo<ChatServices>(
+    () => ({
+      getFile: (file_id) => port.getFile(file_id),
+      widgetRequest: (message_id, data) => port.widgetRequest(message_id, data),
+      copy
+    }),
+    [port, copy]
+  )
 
   const handlersFor = useCallback(
     (message_id: number): RenderHandlers => ({
@@ -152,7 +160,7 @@ export const Chat = ({
   const menuText = menu ? textOf(menu.message) : undefined
 
   return (
-    <FileSourceContext.Provider value={getFile}>
+    <ChatServicesContext.Provider value={services}>
       <div
         className={`tgc-chat${className ? ` ${className}` : ""}`}
         data-testid="chat"
@@ -370,6 +378,6 @@ export const Chat = ({
           />
         )}
       </div>
-    </FileSourceContext.Provider>
+    </ChatServicesContext.Provider>
   )
 }

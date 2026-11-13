@@ -144,6 +144,17 @@ const sendFile = async (request_id: number, file_id: string) => {
   }
 }
 
+// `null`: the request could not be made (no emulator, no such widget)
+const answerWidget = async (request_id: number, message_id: number, data: string) => {
+  try {
+    const outcome = emulator ? await emulator.widgetRequest(message_id, data) : null
+    sendEvent({ type: "widget-answer", request_id, outcome })
+  } catch (error) {
+    log("warn", `Widget request failed: ${error instanceof Error ? error.message : String(error)}`)
+    sendEvent({ type: "widget-answer", request_id, outcome: null })
+  }
+}
+
 addEventListener("message", (msg: MessageEvent<WorkerCommand>) => {
   const data = msg.data
   switch (data.command) {
@@ -174,6 +185,9 @@ addEventListener("message", (msg: MessageEvent<WorkerCommand>) => {
       break
     case "get-file":
       void sendFile(data.request_id, data.file_id)
+      break
+    case "widget-request":
+      void answerWidget(data.request_id, data.message_id, data.data)
       break
   }
 })

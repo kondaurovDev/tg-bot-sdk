@@ -59,11 +59,21 @@ export const createBotRunner = (): BotRunner => {
         number,
         (event: Extract<WorkerEvent, { type: "file" }>) => void
       >()
+      // Widget requests waiting for the bot's answer, by request id
+      const widgetRequests = new Map<
+        number,
+        (event: Extract<WorkerEvent, { type: "widget-answer" }>) => void
+      >()
       let nextRequestId = 1
       current.addEventListener("message", (msg: MessageEvent<WorkerEvent>) => {
         if (msg.data.type === "file") {
           fileRequests.get(msg.data.request_id)?.(msg.data)
           fileRequests.delete(msg.data.request_id)
+          return
+        }
+        if (msg.data.type === "widget-answer") {
+          widgetRequests.get(msg.data.request_id)?.(msg.data)
+          widgetRequests.delete(msg.data.request_id)
           return
         }
         for (const listener of listeners) listener(msg.data)
@@ -96,6 +106,14 @@ export const createBotRunner = (): BotRunner => {
               file ? resolve(file) : reject(new Error(error ?? "File not found"))
             )
             send({ command: "get-file", request_id, file_id })
+          }),
+        widgetRequest: (message_id, data) =>
+          new Promise((resolve, reject) => {
+            const request_id = nextRequestId++
+            widgetRequests.set(request_id, ({ outcome }) =>
+              outcome ? resolve(outcome) : reject(new Error("Widget request failed"))
+            )
+            send({ command: "widget-request", request_id, message_id, data })
           })
       }
     },

@@ -142,6 +142,13 @@ const examples: Record<string, () => Promise<void>> = {
     await web.tap('button[data-callback="report:reject"]')
     await reply("Rejected")
   },
+  widget: async () => {
+    // The widget loads in its sandbox with the bot's first state. A tap inside
+    // the iframe is out of the DOM driver's reach (another origin).
+    await send("game")
+    await web.wait('[data-testid="widget"][data-ready="true"]', 15)
+    await web.wait('[data-testid="widget"][data-chat-data="---------p"]')
+  },
   stream: async () => {
     await send("/story")
     await web.wait("#chat-draft", 10)

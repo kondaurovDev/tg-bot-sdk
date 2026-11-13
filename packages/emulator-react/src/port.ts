@@ -4,7 +4,7 @@
  * emulator may run in the same thread (`createEmulatorPort`) or in a Web
  * Worker behind `postMessage` — the chat cannot tell the difference.
  */
-import type { EmulatorEvent, TgBotEmulator } from "@effect-ak/tg-bot-emulator"
+import type { EmulatorEvent, TgBotEmulator, WidgetRequestOutcome } from "@effect-ak/tg-bot-emulator"
 
 export type ChatPortEvent =
   | EmulatorEvent
@@ -38,6 +38,8 @@ export interface EmulatorPort {
   deleteMessage(message_id: number): void
   /** A file's content by its `file_id` (a photo to show, a document to save). */
   getFile(file_id: string): Promise<ChatFile>
+  /** A widget's `TelegramWidget.request(data)` in a message; resolves with the bot's answer. */
+  widgetRequest(message_id: number, data: string): Promise<WidgetRequestOutcome>
 }
 
 /**
@@ -86,6 +88,7 @@ export const createEmulatorPort = (emulator: TgBotEmulator): EmulatorPort => {
     getFile: async (file_id) => {
       const file = await emulator.client.getFile({ fileId: file_id })
       return { bytes: new Uint8Array(file.content), file_name: file.file_name }
-    }
+    },
+    widgetRequest: (message_id, data) => emulator.widgetRequest(message_id, data)
   }
 }

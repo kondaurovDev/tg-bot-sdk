@@ -3,7 +3,7 @@
  * The messages between the page and the bot worker.
  */
 import type { Update } from "@effect-ak/tg-bot-api"
-import type { EmulatorEvent } from "@effect-ak/tg-bot-emulator"
+import type { EmulatorEvent, WidgetRequestOutcome } from "@effect-ak/tg-bot-emulator"
 
 export type PlaygroundMode = "virtual" | "real"
 
@@ -34,6 +34,8 @@ export type WorkerCommand =
   | { command: "user-react"; message_id: number; emoji: string | null }
   /** A file's bytes for the chat; answered by a `file` event with the same id. */
   | { command: "get-file"; request_id: number; file_id: string }
+  /** A widget's request; answered by a `widget-answer` event with the same id. */
+  | { command: "widget-request"; request_id: number; message_id: number; data: string }
 
 // -- worker → page --
 
@@ -60,3 +62,4 @@ export type WorkerEvent =
       file?: { bytes: Uint8Array<ArrayBuffer>; file_name: string }
       error?: string
     }
+  | { type: "widget-answer"; request_id: number; outcome: WidgetRequestOutcome | null }

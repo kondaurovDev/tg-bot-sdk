@@ -12,6 +12,7 @@ import file from "../examples/file.ts?raw"
 import rich from "../examples/rich.ts?raw"
 import screens from "../examples/screens.ts?raw"
 import stream from "../examples/stream.ts?raw"
+import widget from "../examples/widget.ts?raw"
 
 export interface Example {
   /** The file name; also the key of the visitor's saved edits. */
@@ -57,6 +58,13 @@ export const EXAMPLES: readonly Example[] = [
     group: "UI & navigation",
     hint: "Blocks: headings, tables, code, styled buttons",
     code: rich
+  },
+  {
+    file: "widget.ts",
+    label: "Widget: tic-tac-toe",
+    group: "UI & navigation",
+    hint: "HTML widget in a message, requests to the bot (Bot API 10.4)",
+    code: widget
   },
   {
     file: "stream.ts",

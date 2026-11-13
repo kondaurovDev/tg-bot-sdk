@@ -68,7 +68,8 @@ const idlePort = (): EmulatorPort => {
     tapButton: refuse,
     react: refuse,
     deleteMessage: refuse,
-    getFile: () => Promise.reject(new Error("Bot is not running"))
+    getFile: () => Promise.reject(new Error("Bot is not running")),
+    widgetRequest: () => Promise.resolve({ ok: false, code: "NOT_ALLOWED" })
   }
 }
 

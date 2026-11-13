@@ -4,13 +4,10 @@
  * come through the port (`getFile`), which the chat hands down here.
  */
 import type { Document, PhotoSize } from "@effect-ak/tg-bot-api"
-import { createContext, useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 
+import { ChatServicesContext } from "./chat-services"
 import type { ChatFile } from "./port"
-
-export const FileSourceContext = createContext<((file_id: string) => Promise<ChatFile>) | null>(
-  null
-)
 
 const toBlob = (file: ChatFile, type?: string) =>
   new Blob([file.bytes], type === undefined ? {} : { type })
@@ -23,7 +20,7 @@ const formatSize = (bytes: number) =>
       : `${(bytes / 1024 / 1024).toFixed(1)} MB`
 
 export const ChatPhoto = ({ photo }: { photo: readonly PhotoSize[] }) => {
-  const getFile = useContext(FileSourceContext)
+  const getFile = useContext(ChatServicesContext)?.getFile
   const largest = photo.at(-1)
   const [url, setUrl] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
@@ -53,7 +50,7 @@ export const ChatPhoto = ({ photo }: { photo: readonly PhotoSize[] }) => {
 }
 
 export const ChatDocument = ({ document }: { document: Document }) => {
-  const getFile = useContext(FileSourceContext)
+  const getFile = useContext(ChatServicesContext)?.getFile
   const name = document.file_name ?? "document"
   const [error, setError] = useState(false)
 

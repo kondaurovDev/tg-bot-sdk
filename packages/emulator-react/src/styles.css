@@ -524,6 +524,21 @@
   font-size: 11px;
 }
 
+/* --- HTML widgets (Bot API 10.4) --- */
+.tgc-widget {
+  max-width: 100%;
+  width: 260px;
+  margin: -1px -4px 4px -6px;
+  overflow: hidden;
+  border-radius: 12px;
+}
+.tgc-widget-frame {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+}
+
 /* --- Message menu --- */
 .tgc-menu {
   position: fixed;
