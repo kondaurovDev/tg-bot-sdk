@@ -1,5 +1,5 @@
 <!-- Virtual Telegram client: an iPhone-style mockup running the emulator chat -->
-<div x-show="mode === 'virtual'" x-cloak class="flex-1 min-h-0 flex items-center justify-center px-4 py-5">
+<div x-show="mode === 'virtual'" x-cloak data-testid="chat" :data-bot="botDot" :data-busy="String(botBusy)" class="flex-1 min-h-0 flex items-center justify-center px-4 py-5">
   <div class="phone-frame">
     <div class="phone-screen">
       <div class="phone-notch"></div>
@@ -22,6 +22,7 @@
             <div class="text-[11px]" :class="botBusy ? 'text-blue-600' : 'text-gray-400'" x-text="botBusy ? 'typing…' : 'bot'"></div>
           </div>
           <button
+            data-testid="chat-restart"
             @click="runCurrentCode()"
             class="text-gray-400 hover:text-gray-600 text-base leading-none"
             title="Restart the bot and clear the chat"
@@ -30,12 +31,15 @@
       </div>
 
       <!-- Messages -->
-      <div x-ref="chatContainer" class="flex-1 min-h-0 overflow-y-auto hide-scrollbar chat-wallpaper px-3 py-3 space-y-1.5">
+      <div x-ref="chatContainer" data-testid="chat-messages" class="flex-1 min-h-0 overflow-y-auto hide-scrollbar chat-wallpaper px-3 py-3 space-y-1.5">
         <template x-for="m in chatMessages" :key="m.message_id">
           <div class="flex" :class="isBotMessage(m) ? 'justify-start' : 'justify-end'">
             <div class="max-w-[82%]">
               <div
                 class="bubble"
+                data-testid="message"
+                :data-from="isBotMessage(m) ? 'bot' : 'user'"
+                :data-message-id="m.message_id"
                 :class="isBotMessage(m) ? 'bubble-in' : 'bubble-out'"
                 @click="onBubbleClick($event, m)"
                 @contextmenu.prevent="openContextMenu($event, m)"
@@ -48,13 +52,14 @@
               </div>
               <div x-show="chatReactions[m.message_id]" class="flex gap-1 mt-0.5 px-1">
                 <template x-for="r in chatReactions[m.message_id] ?? []" :key="r">
-                  <span class="reaction-chip" x-text="r"></span>
+                  <span class="reaction-chip" data-testid="reaction" x-text="r"></span>
                 </template>
               </div>
               <template x-for="(row, ri) in keyboardRows(m)" :key="ri">
                 <div class="flex gap-1 mt-1">
                   <template x-for="btn in row" :key="btn.text">
                     <button
+                      data-testid="keyboard-button"
                       @click="tapChatButton(btn, m)"
                       class="flex-1 px-2 py-1.5 text-xs rounded-md bg-white/70 hover:bg-white active:bg-white/90 text-[#3a76a8] shadow-sm truncate"
                       x-text="btn.text"
@@ -67,13 +72,13 @@
         </template>
 
         <!-- Streaming draft (send_message_draft / send_rich_message_draft) -->
-        <div x-show="chatDraft" class="flex justify-start">
+        <div x-show="chatDraft" data-testid="chat-draft" class="flex justify-start">
           <div class="bubble bubble-in max-w-[82%]">
             <span x-html="renderDraftHtml()"></span><span class="draft-cursor"></span>
           </div>
         </div>
 
-        <div x-show="botBusy && !chatDraft" class="flex justify-start">
+        <div x-show="botBusy && !chatDraft" data-testid="chat-typing" class="flex justify-start">
           <div class="bubble bubble-in flex items-center gap-1 px-3 py-2.5">
             <span class="typing-dot"></span>
             <span class="typing-dot"></span>
@@ -86,7 +91,7 @@
             <p>Your bot runs right here in the browser.</p>
             <p class="mt-1">
               Try
-              <button @click="sendQuickCommand('/start')" class="text-blue-600 hover:underline font-medium">/start</button>
+              <button data-testid="chat-start" @click="sendQuickCommand('/start')" class="text-blue-600 hover:underline font-medium">/start</button>
             </p>
           </div>
         </div>
@@ -105,6 +110,7 @@
       <div class="px-2.5 py-2 bg-white border-t border-gray-200 flex items-center gap-2">
         <input type="file" class="hidden" x-ref="chatFile" @change="attachChatFile($event.target)" />
         <button
+          data-testid="chat-attach"
           @click="$refs.chatFile.click()"
           class="w-8 h-8 shrink-0 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center"
           title="Attach a file (typed text becomes the caption)"
@@ -112,6 +118,7 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M21 12.5 12.6 20.9a5.5 5.5 0 0 1-7.8-7.8l8.5-8.5a3.7 3.7 0 0 1 5.2 5.2l-8.5 8.5a1.8 1.8 0 0 1-2.6-2.6l7.8-7.8"/></svg>
         </button>
         <input
+          data-testid="chat-input"
           x-model="chatInput"
           @keydown.enter="sendChatMessage()"
           type="text"
@@ -121,6 +128,7 @@
           spellcheck="false"
         />
         <button
+          data-testid="chat-send"
           @click="sendChatMessage()"
           class="w-8 h-8 shrink-0 rounded-full bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white flex items-center justify-center"
           title="Send"
@@ -140,6 +148,7 @@
   <div
     x-show="ctxMenu.open"
     x-cloak
+    data-testid="message-menu"
     @click.outside="closeContextMenu()"
     @contextmenu.prevent
     @keydown.escape.window="closeContextMenu()"

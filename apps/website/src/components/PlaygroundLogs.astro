@@ -22,10 +22,13 @@
     </div>
     <div
       x-ref="logsContainer"
+      data-testid="console-logs"
       class="flex-1 min-h-0 overflow-y-auto hide-scrollbar p-2 font-mono text-xs"
     >
       <template x-for="(log, i) in filteredLogs" :key="i">
         <div
+          data-testid="console-log"
+          :data-level="log.level"
           class="px-2 py-1.5 border-b border-gray-200 border-l-2 whitespace-pre-wrap"
           :class="[logBorderClass(log), _isCollapsible(log) ? 'cursor-pointer hover:bg-gray-100' : '']"
           @click="toggleLog(i)"
@@ -45,6 +48,8 @@
 
   <!-- Status strip -->
   <button
+    data-testid="console-toggle"
+    :data-errors="stats.errors"
     @click="logsOpen = !logsOpen"
     class="w-full h-9 flex items-center gap-4 px-3 bg-white border-t border-gray-200 text-xs font-mono hover:bg-gray-50"
   >

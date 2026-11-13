@@ -37,7 +37,9 @@
       "Bash(../../node_modules/.bin/tsup *)",
       "Bash(../../node_modules/.bin/vitest *)",
       "Bash(node --test .claude/hooks/guard.test.ts)",
-      "Bash(procdeck *)"
+      "Bash(procdeck *)",
+      "Bash(node apps/website/tests/e2e/playground.ts)",
+      "Bash(node apps/website/tests/e2e/playground.ts *)"
     ],
     "deny": []
   },
