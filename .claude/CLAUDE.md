@@ -40,7 +40,7 @@ pnpm lint         # oxlint
 pnpm format:check # oxfmt check (pnpm format to write)
 ```
 
-CI: GitHub Actions, Node.js 24, pnpm at the version pinned in `packageManager`. Release via changesets with npm provenance.
+CI: GitHub Actions, Node.js 24, pnpm at the version pinned in `packageManager`; actions pinned to commit SHAs (`pinact run`, config `.github/pinact.yml`). Build checks generated files, format, lint, types, tests and pins. Release (changesets, npm provenance) and Deploy Demo run after a green Build of `main`; the website deploys from Release, once packages are published.
 
 ## Sandbox and guarded commands
 

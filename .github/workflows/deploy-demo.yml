@@ -1,15 +1,16 @@
 name: Deploy Demo Bot
 
+# After every green Build of a push to main — the SDK and the demo's own tests
+# have passed — or by hand.
 on:
-  push:
+  workflow_run:
+    workflows: [Build]
+    types: [completed]
     branches: [main]
-    paths:
-      - "packages/**"
-      - "apps/example/src/bots/**"
-      - "apps/example/src/worker.ts"
-      - "apps/example/wrangler.jsonc"
-      - ".github/workflows/deploy-demo.yml"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency: deploy-demo
 
@@ -17,6 +18,9 @@ jobs:
   deploy:
     name: Deploy to Cloudflare Workers
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -25,6 +29,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The commit Build tested, not whatever main points at by now
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
 
       - name: Setup
         uses: ./.github/actions/setup
@@ -68,3 +76,28 @@ jobs:
           exit 1
         env:
           DEMO_WEBHOOK_SECRET: ${{ secrets.DEMO_WEBHOOK_SECRET }}
+
+      # Name the bot in the run's summary (and as an annotation), so the
+      # deploy says whom to write to. A failed lookup does not fail the
+      # deploy, which has already succeeded by now.
+      - name: Summary
+        run: |
+          if ! me=$(curl --fail --silent --show-error "https://api.telegram.org/bot${DEMO_BOT_TOKEN}/getMe"); then
+            echo "::warning::getMe failed — the bot's name is not in the summary"
+            exit 0
+          fi
+          username=$(jq -r '.result.username' <<<"$me")
+          echo "::notice title=Demo bot::https://t.me/${username}"
+          {
+            echo "### Demo bot deployed"
+            echo
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| Bot | [@${username}](https://t.me/${username}) |"
+            echo "| Worker | ${WORKER_URL} |"
+            echo "| Commit | \`${COMMIT:0:7}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+        env:
+          DEMO_BOT_TOKEN: ${{ secrets.DEMO_BOT_TOKEN }}
+          WORKER_URL: ${{ steps.deploy.outputs.url }}
+          COMMIT: ${{ github.event.workflow_run.head_sha || github.sha }}

@@ -6,7 +6,7 @@ The bots themselves live in [`src/bots/`](src/bots) — plain `createBot()` defi
 
 ## Deployment (GitHub Actions)
 
-[`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml) builds the packages, deploys the Worker with `wrangler`, pushes the bot secrets and registers the Telegram webhook via the Worker's `/setup` route. It runs on every push to `main` that touches the SDK or the demo, and on manual dispatch.
+[`.github/workflows/deploy-demo.yml`](../../.github/workflows/deploy-demo.yml) builds the packages, deploys the Worker with `wrangler`, pushes the bot secrets and registers the Telegram webhook via the Worker's `/setup` route. It runs after every green Build of a push to `main`, and on manual dispatch. The run's summary names the bot (`t.me/<username>`, from `getMe`) and the Worker URL.
 
 Repository secrets it needs:
 

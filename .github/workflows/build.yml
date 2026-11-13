@@ -7,6 +7,15 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  # A newer push to a pull request makes the older run moot. On main every
+  # run counts: Release and Deploy Demo start from it.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     name: Build and Test
@@ -15,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup
         uses: ./.github/actions/setup
@@ -28,6 +39,9 @@ jobs:
       - name: Generated files are up to date
         run: git diff --exit-code
 
+      - name: Format
+        run: pnpm format:check
+
       - name: Lint
         run: pnpm lint
 
@@ -36,3 +50,23 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Guard hook tests
+        run: node --test .claude/hooks/guard.test.ts
+
+  actions-pinned:
+    name: Actions are pinned
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Validate only: fails when an action is not pinned to a commit SHA.
+      # Pin locally with `pinact run` (config: .github/pinact.yml).
+      - name: Check pins
+        uses: suzuki-shunsuke/pinact-action@b1a1f46bb10f2908950d95f626ca8cc109e2cf7d # v3.1.0
+        with:
+          fix: "false"
