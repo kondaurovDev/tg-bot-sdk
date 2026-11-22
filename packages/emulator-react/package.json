@@ -45,7 +45,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup && node -e \"require('node:fs').copyFileSync('src/styles.css', 'dist/styles.css')\"",
+    "build": "tsdown && node -e \"require('node:fs').copyFileSync('src/styles.css', 'dist/styles.css')\"",
     "typecheck": "tsc",
     "test": "vitest run"
   },

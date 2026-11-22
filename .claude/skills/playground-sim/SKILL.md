@@ -18,7 +18,7 @@ README has every command). Input goes through the DOM: a tap is the element's
   while the server runs; if the URL does not answer, `procdeck restart website`.
 - The playground and its worker import the SDK packages' `dist/` (the
   playground itself is compiled from source): after changing
-  `packages/*`, rebuild that package (`../../node_modules/.bin/tsup` in it)
+  `packages/*`, rebuild that package (`../../node_modules/.bin/tsdown` in it)
   before looking.
 - A booted simulator (`xcrun simctl list devices booted`). With several, pass
   `@ipad` / `@iphone` — otherwise the driver takes the first.

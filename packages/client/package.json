@@ -20,6 +20,11 @@
     "url": "https://github.com/kondaurovDev/tg-bot-sdk",
     "directory": "packages/client"
   },
+  "files": [
+    "dist/*.js",
+    "dist/*.cjs",
+    "dist/*.d.ts"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -41,7 +46,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "typecheck": "tsc",
     "test": "vitest run"
   },

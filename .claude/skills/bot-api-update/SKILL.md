@@ -31,7 +31,7 @@ Sandboxed, the same run is `CODEGEN_REFRESH=true NODE_USE_ENV_PROXY=1 MODULE_NAM
 Packages resolve each other through `dist/`, so build in dependency order, then typecheck and test each:
 
 ```bash
-for p in api client bot emulator; do (cd packages/$p && ../../node_modules/.bin/tsup); done
+for p in api client bot emulator; do (cd packages/$p && ../../node_modules/.bin/tsdown); done
 for p in api client bot emulator; do (cd packages/$p && ../../node_modules/.bin/tsc && ../../node_modules/.bin/vitest run); done
 ```
 

@@ -41,7 +41,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "typecheck": "tsc",
     "gen": "pnpm run gen:bot:api && pnpm run gen:webapp:api",
     "gen:refresh": "CODEGEN_REFRESH=true pnpm run gen",

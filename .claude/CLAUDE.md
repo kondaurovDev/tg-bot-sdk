@@ -23,7 +23,7 @@ The details of each package and app load from `.claude/rules/` when you touch it
 
 ## Key conventions
 
-- TypeScript strict mode, ESNext target, ESM + CJS dual output via tsup.
+- TypeScript strict mode, ESNext target, ESM + CJS dual output via tsdown (`tsdown.config.ts` in each package). TypeScript 7: `tsc` is the native compiler and the `typescript` package has no JavaScript API, so a tool that needs one does not work here.
 - No semicolons, no trailing commas (oxfmt).
 - Effect-ts is used ONLY in codegen (`packages/api/codegen/`), NOT in runtime packages.
 - Native `fetch` everywhere, no external HTTP libraries.
@@ -47,7 +47,7 @@ CI: GitHub Actions, Node.js 24, pnpm at the version pinned in `packageManager`; 
 
 ## Sandbox and guarded commands
 
-- Bash runs sandboxed. Call binaries directly — `node_modules/.bin/tsc`, `vitest`, `oxfmt`, `oxlint`, `tsup` (from a package directory: `../../node_modules/.bin/…`); `pnpm exec`, `pnpm dlx` and `npx` may start an install that cannot complete there.
+- Bash runs sandboxed. Call binaries directly — `node_modules/.bin/tsc`, `vitest`, `oxfmt`, `oxlint`, `tsdown` (from a package directory: `../../node_modules/.bin/…`); `pnpm exec`, `pnpm dlx` and `npx` may start an install that cannot complete there.
 - `pnpm build` and codegen need the network and run outside the sandbox only in the spellings listed in `.claude/settings.json`, from the repo root with no `cd` in the same command.
 - Dependencies are installed by the author. When `node_modules` is missing, say so and ask for `pnpm install` instead of running it.
 - `.claude/hooks/guard.ts` asks before deploys, releases, calls to the live bot, `git push` and history rewrites, dependency changes and package runners. Deploys and releases are CI's job; push only on an explicit ask.
