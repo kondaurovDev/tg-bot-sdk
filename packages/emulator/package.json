@@ -7,10 +7,16 @@
     "mock",
     "telegram",
     "telegram-bot",
+    "telegram-bot-api",
+    "test",
     "testing",
-    "typescript"
+    "typescript",
+    "vitest"
   ],
   "homepage": "https://tg-bot-sdk.website",
+  "bugs": {
+    "url": "https://github.com/kondaurovDev/tg-bot-sdk/issues"
+  },
   "license": "MIT",
   "author": {
     "name": "Aleksandr Kondaurov",

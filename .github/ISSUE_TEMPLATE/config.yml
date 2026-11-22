@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://tg-bot-sdk.website
+    about: Guides, the API reference and a playground that runs a bot in the browser
+  - name: A wrong or missing Bot API type
+    url: https://core.telegram.org/bots/api-changelog
+    about: The types are generated from the Telegram docs. If Telegram has released a new Bot API version, open an issue and name it.
+  - name: Security vulnerability
+    url: https://github.com/kondaurovDev/tg-bot-sdk/security/advisories/new
+    about: Report it privately, not as an issue

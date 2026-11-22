@@ -3,14 +3,20 @@
   "version": "1.14.0",
   "description": "TypeScript types for Telegram Bot Api and Telegram Mini Apps",
   "keywords": [
+    "bot-api",
     "mini-app",
     "telegram",
     "telegram-bot",
     "telegram-bot-api",
+    "telegram-mini-apps",
+    "telegram-web-app",
     "types",
     "typescript"
   ],
   "homepage": "https://tg-bot-sdk.website",
+  "bugs": {
+    "url": "https://github.com/kondaurovDev/tg-bot-sdk/issues"
+  },
   "license": "MIT",
   "author": {
     "name": "Aleksandr Kondaurov",

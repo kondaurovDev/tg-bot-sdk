@@ -1,0 +1,22 @@
+name: Feature request
+description: Something the SDK should do, or do more simply
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The bot or the task behind the request. It often shows a better solution than the one asked for.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What would you like the SDK to do?
+      description: An API sketch is welcome
+      render: typescript
+  - type: textarea
+    id: today
+    attributes:
+      label: How do you do it today?
+      description: The workaround, if there is one
