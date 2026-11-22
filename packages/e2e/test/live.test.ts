@@ -74,9 +74,10 @@ describe.skipIf(!configured)("Bot API against the real Telegram", () => {
   })
 
   afterAll(async () => {
-    // Whatever a failed step left behind; the result is not part of the run
-    if (sent.length > 0) {
-      await h.client.executeSafe("delete_messages", { chat_id, message_ids: sent.slice(0, 100) })
+    // Whatever a failed step left behind; the result is not part of the run. One by one,
+    // so a message that cannot be deleted does not keep the rest in the chat
+    for (const message_id of sent) {
+      await h.client.executeSafe("delete_message", { chat_id, message_id })
     }
     h.writeSummary()
   })
@@ -281,7 +282,8 @@ describe.skipIf(!configured)("Bot API against the real Telegram", () => {
     keep(
       await h.call("send_contact", { ...quiet, phone_number: "+10000000000", first_name: "E2E" })
     )
-    keep(await h.call("send_dice", { ...quiet, emoji: "🎲" }))
+    // A dice in a private chat cannot be deleted for 24 hours, and the run leaves nothing behind
+    if (chatType !== "private") keep(await h.call("send_dice", { ...quiet, emoji: "🎲" }))
   })
 
   step("poll: send and stop", async () => {
@@ -350,10 +352,15 @@ describe.skipIf(!configured)("Bot API against the real Telegram", () => {
   // ── Cleanup, which is two more methods to check ──
 
   step("delete what the run sent", async () => {
-    const first = sent.shift()
-    if (first !== undefined) await h.call("delete_message", { chat_id, message_id: first })
+    // An id leaves `sent` only once its message is gone: afterAll retries what is left
+    const [first] = sent
+    if (first !== undefined) {
+      await h.call("delete_message", { chat_id, message_id: first })
+      sent.shift()
+    }
     while (sent.length > 0) {
-      await h.call("delete_messages", { chat_id, message_ids: sent.splice(0, 100) })
+      await h.call("delete_messages", { chat_id, message_ids: sent.slice(0, 100) })
+      sent.splice(0, 100)
     }
   })
 })

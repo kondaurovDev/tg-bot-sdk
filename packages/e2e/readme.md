@@ -16,7 +16,7 @@ The types in `@effect-ak/tg-bot-api` are generated from the Telegram docs. This 
 
 Any of them fails the run. An issue names the place in the spec (`User.first_name`) and in the response (`result.chat.first_name`), never the values: the log of a public CI run shows no ids, names or texts.
 
-A difference that is known and accepted goes into `src/known-drift.ts` with its reason; it is then reported without failing. On an `unknown-field`, check the [changelog](https://core.telegram.org/bots/api-changelog) first: it usually means a new Bot API version, and the fix is to regenerate the types.
+A difference that is known and accepted goes into `src/known-drift.ts` with its reason; it is then reported without failing. On an `unknown-field`, check the [changelog](https://core.telegram.org/bots/api-changelog) first: it usually means a new Bot API version, and the fix is to regenerate the types. The other source is a field the docs renamed or replaced long ago and the server still sends (`Sticker.thumb`, `Message.forward_from`): the types follow the docs, so it is listed as known.
 
 ## Running it
 
