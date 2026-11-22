@@ -14,7 +14,7 @@
  * - {@link removeHtmlTags} — utility reused by the OpenAPI writer
  */
 import { Array, Data, Either, Match, Option, pipe } from "effect"
-import he from "he"
+import { decode } from "he"
 
 import type { HtmlElement } from "~/types"
 import { collectWarning } from "~/warnings"
@@ -107,7 +107,7 @@ const html_tags_regex = /<\/?[^>]+>/g
 const isReturnSentence = (_: string) =>
   _.startsWith("On success") || _.endsWith("is returned") || _.startsWith("Returns ")
 
-export const removeHtmlTags = (input: string) => he.decode(input.replaceAll(html_tags_regex, ""))
+export const removeHtmlTags = (input: string) => decode(input.replaceAll(html_tags_regex, ""))
 
 /** Split HTML by sentence boundaries, keeping only non-empty parts with letters. */
 const splitHtmlToSentences = (html: string): string[] => {

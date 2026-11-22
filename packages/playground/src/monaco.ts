@@ -14,6 +14,7 @@ import clientTypes from "@effect-ak/tg-bot-client/dist/index.d.ts?raw"
 
 type Monaco = typeof MonacoApi
 
+// The same version as the `monaco-editor` dependency, which is only its types
 const MONACO_CDN = "https://cdn.jsdelivr.net/npm/monaco-editor@0.54.0/min/vs"
 
 const declareModule = (name: string, dts: string) => `declare module "${name}" {\n${dts}\n}`

@@ -45,6 +45,12 @@ pnpm format:check # oxfmt check (pnpm format to write)
 
 CI: GitHub Actions, Node.js 24, pnpm at the version pinned in `packageManager`; actions pinned to commit SHAs (`pinact run`, config `.github/pinact.yml`). Build checks generated files, format, lint, types, tests and pins. Release (changesets, npm provenance) and Deploy Demo run after a green Build of `main`; the website deploys from Release, once packages are published.
 
+Dependencies are updated by hand, in one commit, not by pull requests from Dependabot: it only raises alerts. pnpm itself refuses a version published less than a day ago (`minimumReleaseAge`). Held back on purpose, each a migration of its own:
+
+- `effect` 3: version 4 means rewriting codegen.
+- `monaco-editor` 0.54: the npm package is only the types for the copy the playground loads from the CDN (`MONACO_CDN` in `packages/playground/src/monaco.ts`), so both move together; 0.55+ moves the TypeScript API to a top-level namespace and needs a check in the browser.
+- `@changesets/cli` 2 with `changesets/action` v1: the action's v2 needs Changesets 3 and renames its inputs. It is the release pipeline, so do it when no release is pending.
+
 ## Sandbox and guarded commands
 
 - Bash runs sandboxed. Call binaries directly — `node_modules/.bin/tsc`, `vitest`, `oxfmt`, `oxlint`, `tsdown` (from a package directory: `../../node_modules/.bin/…`); `pnpm exec`, `pnpm dlx` and `npx` may start an install that cannot complete there.

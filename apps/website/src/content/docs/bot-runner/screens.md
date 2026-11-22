@@ -99,12 +99,7 @@ const store = {
   set: (chatId, stack) =>
     env.KV.put(`nav:${chatId}`, JSON.stringify(stack), { expirationTtl: 86400 })
 }
-const screens = defineScreens(
-  {
-    /* … */
-  },
-  { store }
-)
+const screens = defineScreens({/* … */}, { store })
 ```
 
 ## Custom entry points and composition

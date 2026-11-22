@@ -76,7 +76,7 @@ apart — too slow for a double tap.
 - `text=<words>` matches the Monaco editor too — an example's source holds
   the same words as its buttons and replies. Use the hooks above.
 - Safari keeps old worker modules across a reload: after a rebuild, `start
---fresh` (it also resets the remembered example to Hello, world).
+  --fresh` (it also resets the remembered example to Hello, world).
 - `wait "#chat"` is true while the bot is still starting; wait for
   `[data-testid="chat"][data-bot="running"][data-busy="false"]` before sending.
 - The bottom bar over the editor is Astro's dev toolbar, not the playground.
