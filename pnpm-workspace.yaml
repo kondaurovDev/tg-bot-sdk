@@ -2,6 +2,17 @@ packages:
   - packages/**/*
   - apps/*
 
+# Versions of the dependencies more than one package declares: a package
+# refers to them as "catalog:". Peer ranges stay in the packages, they are
+# deliberately wider.
+catalog:
+  "@types/react": ^19.3.0
+  "@types/react-dom": ^19.3.0
+  react: ^19.3.1
+  react-dom: ^19.3.1
+  typescript: ^5.9.3
+  wrangler: ^4.166.0
+
 overrides:
   dompurify: ^3.4.12
   esbuild: ^0.28.1

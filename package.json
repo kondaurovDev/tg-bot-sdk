@@ -21,7 +21,7 @@
     "procdeck": "^1.1.1",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
-    "typescript": "^5.9.3",
+    "typescript": "catalog:",
     "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.12"
   },

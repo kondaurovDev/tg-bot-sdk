@@ -19,11 +19,11 @@
     "@effect-ak/tg-bot-playground": "workspace:^",
     "@tailwindcss/vite": "^4.3.5",
     "astro": "^7.4.13",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
+    "react": "catalog:",
+    "react-dom": "catalog:",
     "sharp": "^0.35.5",
     "tailwindcss": "^4.3.5",
-    "typescript": "^5.9.3",
-    "wrangler": "^4.166.0"
+    "typescript": "catalog:",
+    "wrangler": "catalog:"
   }
 }

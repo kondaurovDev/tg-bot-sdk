@@ -162,6 +162,27 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@types/react':
+      specifier: ^19.3.0
+      version: 19.3.0
+    '@types/react-dom':
+      specifier: ^19.3.0
+      version: 19.3.0
+    react:
+      specifier: ^19.3.1
+      version: 19.3.1
+    react-dom:
+      specifier: ^19.3.1
+      version: 19.3.1
+    typescript:
+      specifier: ^5.9.3
+      version: 5.9.3
+    wrangler:
+      specifier: ^4.166.0
+      version: 4.166.0
+
 overrides:
   dompurify: ^3.4.12
   esbuild: ^0.28.1
@@ -200,7 +221,7 @@ importers:
         specifier: ^4.23.15
         version: 4.23.15
       typescript:
-        specifier: ^5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
       vite-tsconfig-paths:
         specifier: ^6.1.1
@@ -225,10 +246,10 @@ importers:
         specifier: workspace:*
         version: link:../../packages/emulator
       typescript:
-        specifier: ^5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
       wrangler:
-        specifier: ^4.166.0
+        specifier: 'catalog:'
         version: 4.166.0(@types/node@25.9.9)(vitest@4.1.12(@types/node@25.9.9)(jsdom@31.0.1)(vite@8.3.8(@types/node@25.9.9)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
 
   apps/website:
@@ -261,10 +282,10 @@ importers:
         specifier: ^7.4.13
         version: 7.4.13(@types/node@25.9.9)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       react:
-        specifier: ^19.3.1
+        specifier: 'catalog:'
         version: 19.3.1
       react-dom:
-        specifier: ^19.3.1
+        specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
       sharp:
         specifier: ^0.35.5
@@ -273,10 +294,10 @@ importers:
         specifier: ^4.3.5
         version: 4.3.5
       typescript:
-        specifier: ^5.9.3
+        specifier: 'catalog:'
         version: 5.9.3
       wrangler:
-        specifier: ^4.166.0
+        specifier: 'catalog:'
         version: 4.166.0(@types/node@25.9.9)(vitest@4.1.12(@types/node@25.9.9)(jsdom@31.0.1)(vite@8.3.8(@types/node@25.9.9)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)))
 
   packages/api:
@@ -351,19 +372,19 @@ importers:
         specifier: ^16.3.3
         version: 16.3.3(@testing-library/dom@10.4.2)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@types/react':
-        specifier: ^19.3.0
+        specifier: 'catalog:'
         version: 19.3.0
       '@types/react-dom':
-        specifier: ^19.3.0
+        specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
       jsdom:
         specifier: ^31.0.1
         version: 31.0.1
       react:
-        specifier: ^18.0.0 || ^19.0.0
+        specifier: 'catalog:'
         version: 19.3.1
       react-dom:
-        specifier: ^19.3.1
+        specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
 
   packages/playground:
@@ -391,16 +412,16 @@ importers:
         version: 0.54.0
     devDependencies:
       '@types/react':
-        specifier: ^19.3.0
+        specifier: 'catalog:'
         version: 19.3.0
       '@types/react-dom':
-        specifier: ^19.3.0
+        specifier: 'catalog:'
         version: 19.3.0(@types/react@19.3.0)
       react:
-        specifier: ^19.3.1
+        specifier: 'catalog:'
         version: 19.3.1
       react-dom:
-        specifier: ^19.3.1
+        specifier: 'catalog:'
         version: 19.3.1(react@19.3.1)
 
 packages:
