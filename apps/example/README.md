@@ -2,7 +2,7 @@
 
 **Live:** [@effect_ak_bot](https://t.me/effect_ak_bot)
 
-One Worker, one Telegram bot account, several demo bots inside. `/start` describes the library; `/demo` opens an inline menu to pick the active demo — the choice is stored per chat in KV and all other messages are routed to it.
+One Worker, one Telegram bot account, several demo bots inside. `/start` describes the library and lists the demos. A demo is switched on by its own command (`/inspector`), by a deep link (`t.me/effect_ak_bot?start=inspector`) or from the `/demo` menu — the choice is stored per chat in KV and all other messages are routed to it.
 
 The bots themselves live in [`src/bots/`](src/bots) — plain `createBot()` definitions. The Worker is the primary way to run them; the same bots can also be started locally with long polling (`pnpm polling <name>`).
 
@@ -23,13 +23,13 @@ Nothing needs to be installed or deployed locally. For the inline snippets, swit
 
 ## The demos
 
-| Demo             | Shows                                                                                               |
-| ---------------- | --------------------------------------------------------------------------------------------------- |
-| 🔘 Menu Bot      | `defineScreens`: inline-keyboard navigation declared as data, edited in place                       |
-| ⭕ Tic-tac-toe   | An HTML widget (Bot API 10.4): taps become `widget_query` requests, the bot answers and saves state |
-| 💬 Streaming Bot | `ctx.stream`: "Thinking…", then the reply typed in word by word (fixed answers, no LLM)             |
-| 📄 File Bot      | Sending a file built in memory                                                                      |
-| 🔍 Inspector     | The raw JSON of any message you send or forward: ids, file ids, entities, forward origins           |
+| Demo             | Open                                                       | Shows                                                                                               |
+| ---------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 🔘 Menu Bot      | [`/menu`](https://t.me/effect_ak_bot?start=menu)           | `defineScreens`: inline-keyboard navigation declared as data, edited in place                       |
+| ⭕ Tic-tac-toe   | [`/tictactoe`](https://t.me/effect_ak_bot?start=tictactoe) | An HTML widget (Bot API 10.4): taps become `widget_query` requests, the bot answers and saves state |
+| 💬 Streaming Bot | [`/stream`](https://t.me/effect_ak_bot?start=stream)       | `ctx.stream`: "Thinking…", then the reply typed in word by word (fixed answers, no LLM)             |
+| 📄 File Bot      | [`/file`](https://t.me/effect_ak_bot?start=file)           | Sending a file built in memory                                                                      |
+| 🔍 Inspector     | [`/inspector`](https://t.me/effect_ak_bot?start=inspector) | The raw JSON of any message you send or forward: ids, file ids, entities, forward origins           |
 
 The home bot answers `/features` with a rich message (table, details, buttons), `/id` with the chat's ID and the sender's (in a group: the group's), and inline queries (`@bot widget`) with code snippets.
 
@@ -37,7 +37,7 @@ The home bot answers `/features` with a rich message (table, details, buttons), 
 
 ## Layout
 
-- [`src/bots/`](src/bots) — the demo bots (`menu`, `tictactoe`, `stream`, `file`, `inspector`), their [`registry.ts`](src/bots/registry.ts), and the [`home.ts`](src/bots/home.ts) bot (/start, /source, /install, /features, /id, /demo menu, inline snippets)
+- [`src/bots/`](src/bots) — the demo bots (`menu`, `tictactoe`, `stream`, `file`, `inspector`), their [`registry.ts`](src/bots/registry.ts), and the [`home.ts`](src/bots/home.ts) bot (/start, /source, /install, /features, /id, the demo commands and deep links, /demo menu, inline snippets)
 - [`src/worker.ts`](src/worker.ts) — Cloudflare Worker: routing (`POST /webhook`, `GET /setup`), dispatch to home or the active demo, KV state
 - [`wrangler.jsonc`](wrangler.jsonc) — Worker config; the KV namespace is provisioned automatically on first deploy
 - [`src/polling/`](src/polling) — long polling: `run.ts` starts any bot from `src/bots` (`pnpm polling menu`); `batch-bot.ts` / `reload-bot.ts` show the low-level `runBot` API (batch mode, hot reload)

@@ -42,10 +42,11 @@ const withBot = async (
 }
 
 describe("registry", () => {
-  it("every demo has a title, a description and a bot", () => {
+  it("every demo has a title, a description, a prompt and a bot", () => {
     for (const demo of Object.values(demos)) {
       expect(demo.title).not.toBe("")
       expect(demo.description).not.toBe("")
+      expect(demo.prompt).not.toBe("")
       expect(typeof demo.bot.run).toBe("function")
     }
   })
@@ -211,6 +212,51 @@ describe("home", () => {
       expect(message.rich_message?.blocks).toHaveLength(featuresBlocks.length)
     }))
 
+  it("a demo's own command switches to it and says what to do next", () =>
+    withBot(home, async (emulator) => {
+      emulator.sendMessage("/inspector")
+      const reply = await emulator.nextBotMessage()
+      expect(memory.get(emulator.chat.id)).toBe("inspector")
+      expect(reply.text).toContain(`${demos["inspector"]!.title} is active.`)
+      expect(reply.text).toContain(demos["inspector"]!.prompt)
+    }))
+
+  it("a deep link (/start <demo>) opens the demo instead of the welcome", () =>
+    withBot(home, async (emulator) => {
+      emulator.sendMessage("/start stream")
+      const linked = await emulator.nextBotMessage()
+      expect(memory.get(emulator.chat.id)).toBe("stream")
+      expect(linked.text).toContain(demos["stream"]!.prompt)
+
+      // A payload that names no demo is an ordinary /start
+      emulator.sendMessage("/start toString")
+      const welcome = await emulator.nextBotMessage()
+      expect(welcome.text).toMatch(/^Welcome!/)
+      expect(memory.get(emulator.chat.id)).toBe("stream")
+    }))
+
+  it('every demo has a command: in the welcome, in the "/" menu, routed to the home bot', () =>
+    withBot(home, async (emulator) => {
+      emulator.sendMessage("/start")
+      const welcome = await emulator.nextBotMessage()
+      for (const [id, demo] of Object.entries(demos)) {
+        expect(welcome.text).toContain(`/${id} — ${demo.title}`)
+        expect(BOT_PROFILE.commands.map((c) => c.command)).toContain(id)
+        expect(
+          isHomeUpdate({
+            update_id: 1,
+            message: {
+              message_id: 1,
+              date: 0,
+              chat: { id: 1, type: "private" },
+              text: `/${id}`,
+              entities: [{ type: "bot_command", offset: 0, length: id.length + 1 }]
+            }
+          })
+        ).toBe(true)
+      }
+    }))
+
   it("answers /id with the chat's id and the sender's", () =>
     withBot(home, async (emulator) => {
       emulator.sendMessage("/id")
@@ -277,6 +323,11 @@ describe("bot profile", () => {
   it("fits Telegram's limits", () => {
     expect(BOT_PROFILE.short_description.length).toBeLessThanOrEqual(120)
     expect(BOT_PROFILE.description.length).toBeLessThanOrEqual(512)
+    expect(BOT_PROFILE.commands.length).toBeLessThanOrEqual(100)
+    for (const { command, description } of BOT_PROFILE.commands) {
+      expect(command).toMatch(/^[a-z0-9_]{1,32}$/)
+      expect(description.length).toBeLessThanOrEqual(256)
+    }
   })
 
   it("is applied once, and a second deploy changes nothing", async () => {

@@ -6,7 +6,7 @@
 
 Type-safe TypeScript SDK for building Telegram bots. Types are generated from the official Bot API documentation; everything else is a thin layer over native `fetch` with zero runtime dependencies.
 
-🤖 **Try it live:** [@effect_ak_bot](https://t.me/effect_ak_bot) — tic-tac-toe in a widget, an AI-style streaming reply, inline-keyboard screens, and code snippets via inline mode.
+🤖 **Try it live:** [@effect_ak_bot](https://t.me/effect_ak_bot) — [tic-tac-toe in a widget](https://t.me/effect_ak_bot?start=tictactoe), [an AI-style streaming reply](https://t.me/effect_ak_bot?start=stream), [inline-keyboard screens](https://t.me/effect_ak_bot?start=menu), [the raw JSON of any message](https://t.me/effect_ak_bot?start=inspector), and code snippets via inline mode.
 
 ## 📦 Packages
 

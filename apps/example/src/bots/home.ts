@@ -1,8 +1,9 @@
 /**
  * Home bot: what you talk to when no demo is active. Describes the library
- * (/start, /source, /install, /features), tells a chat its id (/id) and lets
- * you switch the active demo (/demo + inline buttons). The active demo is stored per chat via `ModeStore`
- * — KV on Cloudflare, an in-memory Map for local polling.
+ * (/start, /source, /install, /features), tells a chat its id (/id) and
+ * switches the active demo: by its own command (/inspector), by a deep link
+ * (`?start=inspector`) or from the /demo menu. The active demo is stored per
+ * chat via `ModeStore` — KV on Cloudflare, an in-memory Map for local polling.
  */
 import { BotResponse, createBot } from "@effect-ak/tg-bot"
 import type { BotContext } from "@effect-ak/tg-bot"
@@ -28,7 +29,9 @@ export const SOURCE_URL = `${GITHUB_URL}/tree/main/apps/example/src/bots`
 
 /** Commands handled by the home bot regardless of the active demo (also registered via set_my_commands). */
 export const HOME_COMMAND_LIST = [
-  { command: "demo", description: "Choose the active demo bot" },
+  { command: "demo", description: "The demos, with what each one shows" },
+  // A command per demo, named after its key in the registry
+  ...Object.entries(demos).map(([id, d]) => ({ command: id, description: `Demo: ${d.title}` })),
   { command: "start", description: "About this bot" },
   { command: "source", description: "GitHub repository" },
   { command: "install", description: "Quick start" },
@@ -62,14 +65,17 @@ export const isHomeUpdate = (update: Update): boolean => {
 const startMessage = `
 Welcome! I'm the demo bot for <b>@effect-ak/tg-bot</b> — a type-safe Telegram bot SDK for TypeScript.
 
-I run on Cloudflare Workers via webhooks. Several demo bots live inside me; pick one with /demo and just talk to it.
+I run on Cloudflare Workers via webhooks. Several demo bots live inside me — pick one and just talk to it:
+${Object.entries(demos)
+  .map(([id, d]) => `/${id} — ${d.title}`)
+  .join("\n")}
 
-Commands:
-/demo — choose the active demo
-/source — GitHub repository
+More:
+/demo — the demos, with what each one shows
+/id — this chat's ID and yours
 /install — quick start
 /features — library features
-/id — this chat's ID and yours
+/source — GitHub repository
 `.trim()
 
 /**
@@ -280,7 +286,9 @@ const demoText = (active: string) => {
     d.description,
     "",
     "Now just talk to the bot — messages go to the active demo.",
-    "Pick another one below or send /demo to open this menu again.",
+    `Pick another one below, or by its command: ${Object.keys(demos)
+      .map((id) => `/${id}`)
+      .join(" ")}`,
     "",
     `<a href="${SOURCE_URL}">Source code of the demos</a>`
   ].join("\n")
@@ -299,7 +307,28 @@ const switchKeyboard = (active: string) => ({
   is_persistent: true
 })
 
-const activeMessage = (active: string) => `${demos[active]!.title} is active — just talk to it.`
+/** After a tap in the /demo menu, which already shows the description. */
+const promptMessage = (active: string) => {
+  const d = demos[active]!
+  return `<b>${escapeHtml(d.title)}</b> is active. ${escapeHtml(d.prompt)}`
+}
+
+/** After a demo's own command or a deep link: nothing has introduced it yet. */
+const introMessage = (active: string) => {
+  const d = demos[active]!
+  return [
+    `<b>${escapeHtml(d.title)}</b> is active.`,
+    escapeHtml(d.description),
+    "",
+    escapeHtml(d.prompt)
+  ].join("\n")
+}
+
+/** The demo a `/start <payload>` deep link names, if it names one. */
+const deepLinkedDemo = (text: string | undefined): string | undefined => {
+  const payload = text?.trim().split(/\s+/)[1]
+  return payload !== undefined && Object.hasOwn(demos, payload) ? payload : undefined
+}
 
 // --- bot ---------------------------------------------------------------------
 
@@ -313,10 +342,18 @@ export const makeHomeBot = (store: ModeStore) => {
     })
   }
 
+  const activate = async (chatId: number, id: string, ctx: BotContext) => {
+    await store.set(chatId, id)
+    return ctx.reply(introMessage(id), { parse_mode: "HTML", reply_markup: switchKeyboard(id) })
+  }
+
   return (
     createBot()
       .onMessage(({ command, text }) => [
         command("/start", async ({ payload, ctx }) => {
+          // t.me/<bot>?start=inspector opens the chat with "/start inspector"
+          const linked = deepLinkedDemo(payload.text)
+          if (linked !== undefined) return activate(payload.chat.id, linked, ctx)
           const active = (await store.get(payload.chat.id)) ?? DEFAULT_DEMO
           return ctx.reply(startMessage, {
             parse_mode: "HTML",
@@ -334,6 +371,9 @@ export const makeHomeBot = (store: ModeStore) => {
         ),
         command("/id", ({ payload, ctx }) => ctx.reply(idMessage(payload), { parse_mode: "HTML" })),
         command("/demo", ({ payload, ctx }) => showDemoMenu(payload.chat.id, ctx)),
+        ...Object.keys(demos).map((id) =>
+          command(`/${id}`, ({ payload, ctx }) => activate(payload.chat.id, id, ctx))
+        ),
         // Tap on the persistent "🔀 <demo> · switch demo" button
         text(({ payload, ctx }) => showDemoMenu(payload.chat.id, ctx))
       ])
@@ -356,7 +396,12 @@ export const makeHomeBot = (store: ModeStore) => {
                 })
               )
               // A fresh message is needed to swap the reply keyboard (edits can't carry one)
-              .and(ctx.reply(activeMessage(id), { reply_markup: switchKeyboard(id) }))
+              .and(
+                ctx.reply(promptMessage(id), {
+                  parse_mode: "HTML",
+                  reply_markup: switchKeyboard(id)
+                })
+              )
           )
         })
       ])
