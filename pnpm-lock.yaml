@@ -309,8 +309,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0
       node-html-parser:
-        specifier: ^7.1.0
-        version: 7.1.0
+        specifier: ^9.0.7
+        version: 9.0.7
 
   packages/bot:
     dependencies:
@@ -2644,6 +2644,10 @@ packages:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
 
+  entities@8.1.0:
+    resolution: {integrity: sha512-kxL7msIffSuh9aaFAMD7rxAIuTRMAHMeBtgHW2yUdWw732ZNh4MehkF2gdjvtdmikkaIP9bFDDJOPlsvm7avrA==}
+    engines: {node: '>=20.19.0'}
+
   entities@9.0.0:
     resolution: {integrity: sha512-oJFNDJg3kTPwAD1cNn2+WmUq4wFoo09npc3Ydf1D7ED4smRiWrsKnaLxykrTWgyGEcusc87P5dxlAleol9kpkg==}
     engines: {node: '>=20.19.0'}
@@ -3417,8 +3421,8 @@ packages:
       encoding:
         optional: true
 
-  node-html-parser@7.1.0:
-    resolution: {integrity: sha512-iJo8b2uYGT40Y8BTyy5ufL6IVbN8rbm/1QK2xffXU/1a/v3AAa0d1YAoqBNYqaS4R/HajkWIpIfdE6KcyFh1AQ==}
+  node-html-parser@9.0.7:
+    resolution: {integrity: sha512-0Io6nKYNN2e+QSoJFxU991Z8kX4H2Ogy3l14Ow0XxR2Wonk9l5qBonx1dYO97UyVfYJ1U9H0WHZOIZW6q5KPrA==}
 
   node-mock-http@1.0.5:
     resolution: {integrity: sha512-KQyt/wLjG3TAc7DOUhpqWzgd4ERxR80JOlTK5VE5R1S12IaPVN5qkj4klBce9HPG1Njuup4Sb5bljaT34lIyjw==}
@@ -6324,6 +6328,8 @@ snapshots:
 
   entities@4.5.0: {}
 
+  entities@8.1.0: {}
+
   entities@9.0.0: {}
 
   error-stack-parser-es@1.0.5: {}
@@ -7504,10 +7510,10 @@ snapshots:
     dependencies:
       whatwg-url: 5.0.0
 
-  node-html-parser@7.1.0:
+  node-html-parser@9.0.7:
     dependencies:
       css-select: 5.2.2
-      he: 1.2.0
+      entities: 8.1.0
 
   node-mock-http@1.0.5: {}
 
