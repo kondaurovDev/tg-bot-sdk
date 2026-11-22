@@ -51,3 +51,4 @@ Then `node_modules/.bin/oxlint` and `node_modules/.bin/oxfmt --check .`.
 - Changeset: `.changeset/bot-api-<major>-<minor>.md`, a `minor` bump for `@effect-ak/tg-bot-api`, the additions listed by area, renames and removals called out.
 - Commit: `feat(api): update to Telegram Bot API <version>`, with the version step and the type and method counts in the body.
 - Never run `changeset version` or `changeset publish`; CI releases.
+- Once the commit is pushed, the `E2E` workflow runs on the new snapshot and checks the regenerated types against the real API (`packages/e2e`). New methods and types worth a live check get a call in `packages/e2e/test/live.test.ts`.

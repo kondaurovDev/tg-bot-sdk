@@ -1,48 +1,12 @@
 import { describe, expect, vi } from "vitest"
 
-import type { BotFullInfo } from "@effect-ak/tg-bot-api"
-
 import { fixture } from "./fixture"
 
 const fetchSpy = vi.spyOn(global, "fetch")
 
 const integration = process.env["bot_token"] && process.env["chat_id"]
 
-const botFullInfoFlags = [
-  "can_join_groups",
-  "can_read_all_group_messages",
-  "supports_guest_queries",
-  "supports_inline_queries",
-  "needs_inline_query_location",
-  "can_connect_to_business",
-  "has_main_web_app",
-  "has_topics_enabled",
-  "allows_users_to_create_topics",
-  "has_topic_sidebar",
-  "can_manage_bots",
-  "supports_join_request_queries"
-] as const satisfies ReadonlyArray<keyof BotFullInfo>
-
 describe.skipIf(!integration)("telegram bot client, execute method (integration)", () => {
-  fixture("get_me returns the bot's full info (Bot API 10.5)", async ({ client }) => {
-    const me = await client.execute("get_me", {})
-
-    expect(me.is_bot).toBe(true)
-    // Required in `BotFullInfo`: Telegram must send each of them
-    for (const flag of botFullInfoFlags) expect(me[flag], flag).toBeTypeOf("boolean")
-  })
-
-  fixture("set_my_settings accepts a setting (Bot API 10.5)", async ({ client }) => {
-    const me = await client.execute("get_me", {})
-
-    // The value the bot already has, so the test leaves the bot as it was
-    const result = await client.executeSafe("set_my_settings", {
-      can_join_groups: me.can_join_groups
-    })
-
-    expect(result.ok).toBe(true)
-  })
-
   fixture("send dice", async ({ chat_id, client }) => {
     const result = await client.executeSafe("send_dice", {
       chat_id,

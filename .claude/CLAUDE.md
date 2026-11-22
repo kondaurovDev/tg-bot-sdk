@@ -12,6 +12,7 @@ Monorepo (`pnpm workspaces`); the npm packages are published under the `@effect-
 - **`packages/emulator`** — In-memory Bot API for tests and the playground's virtual mode.
 - **`packages/emulator-react`** — React chat UI over the emulator (`<Chat>`, `<PhoneFrame>`), talking to it through an `EmulatorPort`. Private for now.
 - **`packages/playground`** — The website's playground as a React component (Monaco, the bot worker, the console, the examples). Private, never published.
+- **`packages/e2e`** — Calls the real Bot API and validates every response against the generated spec; the `E2E` workflow runs it daily and on every new docs snapshot. Private, never published.
 - **`apps/website/`** — Astro + Starlight documentation site (https://tg-bot-sdk.website); mounts the playground on `/playground`.
 - **`apps/example/`** — Live demo: a Cloudflare Worker hosting several demo bots.
 - **`docs/`** — Local markdown notes and plans (not published).

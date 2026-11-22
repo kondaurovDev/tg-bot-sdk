@@ -305,6 +305,19 @@ importers:
         specifier: workspace:^
         version: link:../api
 
+  packages/e2e:
+    dependencies:
+      '@effect-ak/tg-bot-api':
+        specifier: workspace:^
+        version: link:../api
+      '@effect-ak/tg-bot-client':
+        specifier: workspace:^
+        version: link:../client
+    devDependencies:
+      '@effect-ak/tg-bot-emulator':
+        specifier: workspace:^
+        version: link:../emulator
+
   packages/emulator:
     dependencies:
       '@effect-ak/tg-bot-api':

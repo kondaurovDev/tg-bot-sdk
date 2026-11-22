@@ -1,0 +1,57 @@
+name: E2E
+
+# Calls the real Bot API and validates every response against the spec the
+# types are generated from (packages/e2e). Daily, because Telegram changes
+# without a commit here; on a new docs snapshot, because that is a Bot API
+# update; and by hand.
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  push:
+    branches: [main]
+    paths:
+      - packages/api/input/**
+      - packages/e2e/**
+      - .github/workflows/e2e.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One run at a time: two would talk to the same bot in the same chat. A queued
+# run waits instead of cancelling the one in flight, which is mid-cleanup.
+concurrency:
+  group: e2e
+  cancel-in-progress: false
+
+jobs:
+  e2e:
+    name: Real Telegram API
+    runs-on: ubuntu-latest
+    # The secrets live in this repository only; a fork's schedule would just fail.
+    if: github.repository == 'kondaurovDev/tg-bot-sdk'
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      # The spec (bot-api.json) comes from codegen; the run needs the client
+      # and what it depends on, not the website.
+      - name: Build
+        run: |
+          pnpm --filter @effect-ak/tg-bot-api gen
+          pnpm --filter "@effect-ak/tg-bot-e2e^..." build
+
+      # The demo bot: the run leaves its webhook alone and removes what it
+      # sets. The report goes to the job summary and quotes no response.
+      - name: Run against Telegram
+        run: pnpm --filter @effect-ak/tg-bot-e2e e2e
+        env:
+          bot_token: ${{ secrets.DEMO_BOT_TOKEN }}
+          chat_id: ${{ secrets.E2E_CHAT_ID }}

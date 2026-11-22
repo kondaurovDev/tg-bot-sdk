@@ -1,0 +1,19 @@
+{
+  "name": "@effect-ak/tg-bot-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Checks the generated Bot API types against the real Telegram API: calls methods and validates every response against the spec",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc",
+    "test": "vitest run",
+    "e2e": "E2E_REQUIRED=true vitest run test/live.test.ts"
+  },
+  "dependencies": {
+    "@effect-ak/tg-bot-api": "workspace:^",
+    "@effect-ak/tg-bot-client": "workspace:^"
+  },
+  "devDependencies": {
+    "@effect-ak/tg-bot-emulator": "workspace:^"
+  }
+}
