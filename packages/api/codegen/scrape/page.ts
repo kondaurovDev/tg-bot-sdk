@@ -25,12 +25,13 @@ type ToAnchor = (name: string) => string
 
 const findEntityByAnchor = (node: HtmlElement, name: string, toAnchor: ToAnchor) =>
   pipe(
-    Either.fromNullable(node.querySelector(`a.anchor[name="${toAnchor(name)}"]`), () =>
+    // The heading that holds the anchor; a detached anchor has no parent
+    Either.fromNullable(node.querySelector(`a.anchor[name="${toAnchor(name)}"]`)?.parentNode, () =>
       ExtractEntityError.make("TypeDefinition:NotFound", {
         entityName: name
       })
     ),
-    Either.andThen((_) => ExtractedEntity.makeFrom(_.parentNode))
+    Either.andThen((heading) => ExtractedEntity.makeFrom(heading))
   )
 
 const getLatestVersion = (node: HtmlElement) =>
