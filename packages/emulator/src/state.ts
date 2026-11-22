@@ -6,6 +6,7 @@
  */
 import type {
   BotCommand,
+  BotFullInfo,
   Chat,
   InlineQueryResult,
   Message,
@@ -22,6 +23,28 @@ export interface UploadedFile {
   file_name: string
 }
 
+/** The part of `get_me` that `set_my_settings` changes; the rest is the bot's `User`. */
+export type BotSettings = Omit<
+  BotFullInfo,
+  "id" | "is_bot" | "first_name" | "username" | "active_usernames"
+>
+
+/** The settings of a bot fresh from BotFather. */
+const defaultBotSettings = (): BotSettings => ({
+  can_join_groups: true,
+  can_read_all_group_messages: false,
+  supports_guest_queries: false,
+  supports_inline_queries: false,
+  needs_inline_query_location: false,
+  can_connect_to_business: false,
+  has_main_web_app: false,
+  has_topics_enabled: false,
+  allows_users_to_create_topics: false,
+  has_topic_sidebar: false,
+  can_manage_bots: false,
+  supports_join_request_queries: false
+})
+
 /** The bot's profile as `set_my_*` leave it (default language and scope only). */
 export interface BotProfile {
   name?: string
@@ -30,6 +53,7 @@ export interface BotProfile {
   commands: BotCommand[]
   /** Set by `set_my_profile_photo`. */
   photo?: { file_id: string; file_size?: number }
+  settings: BotSettings
 }
 
 /** What the server knows about a widget message beyond what `Message.widget` shows. */
@@ -69,7 +93,12 @@ export class EmulatorState {
   /** Messages whose widget has a request in flight (one at a time per widget). */
   readonly busyWidgets = new Set<number>()
   /** Survives `reset()`: it belongs to the bot, not to the chat. */
-  readonly profile: BotProfile = { description: "", short_description: "", commands: [] }
+  readonly profile: BotProfile = {
+    description: "",
+    short_description: "",
+    commands: [],
+    settings: defaultBotSettings()
+  }
 
   nextMessageId = 1
   nextUpdateId = 1

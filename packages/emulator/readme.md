@@ -53,6 +53,8 @@ Inside that private chat — the Bot API surface a typical bot needs:
   `client.getFile`
 - **Chat-level** — `send_chat_action`, `set_message_reaction`,
   `answer_callback_query`, `get_me`, `get_chat`
+- **Bot settings** (Bot API 10.5+) — `set_my_settings`: `get_me` reports what
+  it set
 
 Unknown methods return a regular `NotOkResponse` client error, so bots degrade
 the same way they would against the real API.
@@ -96,4 +98,4 @@ await emulator.nextEvent((e) => e.type === "callback_answered")
 - [docs/architecture.md](https://github.com/kondaurovDev/tg-bot-sdk/blob/main/packages/emulator/docs/architecture.md)
   — module map and how the emulator works inside
 - [docs/todo.md](https://github.com/kondaurovDev/tg-bot-sdk/blob/main/packages/emulator/docs/todo.md)
-  — known gaps against Bot API 10.3
+  — known gaps against Bot API 10.5

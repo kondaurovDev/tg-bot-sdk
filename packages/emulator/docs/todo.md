@@ -1,6 +1,6 @@
 # Emulator: what's still missing
 
-Gaps against Bot API 10.4, roughly by value. Guiding rule stays the same as
+Gaps against Bot API 10.5, roughly by value. Guiding rule stays the same as
 in [architecture.md](architecture.md): emulate faithfully what bots commonly
 exercise in tests and the playground; stay lenient elsewhere.
 
@@ -29,6 +29,11 @@ exercise in tests and the playground; stay lenient elsewhere.
       compressed-size limit, the 5-requests-per-5-seconds rate limit,
       background requests, inline-mode and forwarded widgets
       (`shared_widget_query`; deliver one with `pushUpdate`).
+- [x] **Bot settings (10.5)** (done) — `set_my_settings` stores the settings
+      and `get_me` reports them. Not emulated: `callback_query_mode` (a tapped
+      button always delivers `message`, never `inline_message_id`),
+      `inline_feedback_share_denominator`, `can_communicate_with_bots`; no
+      setting changes what the emulator lets the bot or the user do.
 
 ## Medium
 

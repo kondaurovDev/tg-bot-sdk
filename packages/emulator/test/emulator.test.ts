@@ -356,6 +356,31 @@ describe("bot profile", () => {
     expect(emulator.bot).not.toHaveProperty("can_join_groups")
   })
 
+  it("set_my_settings changes what get_me reports and leaves the rest", async () => {
+    const emulator = makeTgBotEmulator()
+    await emulator.client.execute("set_my_settings", {
+      supports_inline_queries: true,
+      inline_query_placeholder: "Search…",
+      can_join_groups: false,
+      callback_query_mode: "auto"
+    })
+    emulator.reset()
+
+    const me = await emulator.client.execute("get_me", {})
+    expect(me).toMatchObject({
+      supports_inline_queries: true,
+      inline_query_placeholder: "Search…",
+      can_join_groups: false,
+      can_read_all_group_messages: false
+    })
+    expect(me).not.toHaveProperty("callback_query_mode")
+
+    await emulator.client.execute("set_my_settings", { inline_query_placeholder: "" })
+    expect(await emulator.client.execute("get_me", {})).not.toHaveProperty(
+      "inline_query_placeholder"
+    )
+  })
+
   it("announces new commands, for the client's Menu button", async () => {
     const emulator = makeTgBotEmulator()
     const changed = emulator.nextEvent((e) => e.type === "commands_changed")

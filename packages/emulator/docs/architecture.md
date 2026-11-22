@@ -1,7 +1,7 @@
 # How the emulator works
 
 `@effect-ak/tg-bot-emulator` is an in-memory implementation of a useful subset
-of the Telegram Bot API (types of spec version 10.4). A bot built with
+of the Telegram Bot API (types of spec version 10.5). A bot built with
 `@effect-ak/tg-bot` runs against it unchanged — same handlers, same polling
 loop — because the emulator exposes a `TgBotClient`-compatible client and
 implements `get_updates` with real long-poll semantics. Everything lives in
@@ -28,6 +28,7 @@ src/
     media.ts     send_photo/document/…/dice + get_file
     drafts.ts    send_message_draft, send_rich_message(_draft)
     chat.ts      chat actions, reactions, callback answers, get_me/get_chat
+    profile.ts   get_my_*/set_my_* (name, descriptions, commands, photo, settings)
     widgets.ts   send_widget/send_shared_widget, answer_widget_query, widget data
 ```
 
@@ -99,6 +100,12 @@ want.
 structurally the resolved blocks for our purposes), `html` is converted with
 the same HTML parser — inline tags become RichText spans, `pre`/`blockquote`
 become their own blocks — and `markdown` returns a 400.
+
+**Bot settings (Bot API 10.5).** `set_my_settings` writes into
+`profile.settings`, which starts as the settings of a bot fresh from
+BotFather and, like the rest of the profile, survives `reset()`. `get_me`
+returns a `BotFullInfo`: the identity of `state.bot` plus those settings.
+`state.bot` itself stays a `User` — it is what messages carry in `from`.
 
 **Widgets (Bot API 10.4).** `send_widget` stores the widget on the message
 (`Message.widget`, marked `has_protected_content` as in production, so

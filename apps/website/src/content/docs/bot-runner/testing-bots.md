@@ -127,6 +127,7 @@ needs:
 | Rich messages    | `send_rich_message`, `send_rich_message_draft` (Bot API 10.1+): `blocks` pass through, `html` converts to blocks; `edit_message_text` accepts `rich_message` |
 | Media            | `send_photo/document/video/audio/voice/animation/sticker/dice/location/contact`; uploaded `file_content` round-trips through `get_file` / `client.getFile`   |
 | Chat-level       | `send_chat_action`, `set_message_reaction`, `answer_callback_query`, `get_me`, `get_chat`                                                                    |
+| Bot settings     | `set_my_settings` (Bot API 10.5+): `get_me` reports what it set                                                                                              |
 
 Text with `parse_mode: "HTML"` is parsed the way the real API does it: tags
 are stripped and become `entities` on the returned `Message`.

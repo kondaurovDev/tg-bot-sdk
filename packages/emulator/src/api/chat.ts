@@ -27,26 +27,18 @@ const reactionEmoji = (reaction: ReactionType): string => {
 }
 
 export const chatMethods = (state: EmulatorState) => ({
-  // The settings of a bot fresh from BotFather; `set_my_settings` is not emulated
+  // The full info, not the `User` carried by the bot's messages: on top of it
+  // come the settings, as `set_my_settings` left them
   get_me: (): BotFullInfo => ({
     id: state.bot.id,
     is_bot: true,
     first_name: state.bot.first_name,
     ...(state.bot.username !== undefined ? { username: state.bot.username } : {}),
-    can_join_groups: true,
-    can_read_all_group_messages: false,
-    supports_guest_queries: false,
-    supports_inline_queries: false,
-    needs_inline_query_location: false,
-    can_connect_to_business: false,
-    has_main_web_app: false,
-    has_topics_enabled: false,
-    allows_users_to_create_topics: false,
-    has_topic_sidebar: false,
-    can_manage_bots: false,
-    supports_join_request_queries: false
+    ...state.profile.settings
   }),
 
+  // `get_chat` returns the full info, not the short `Chat` carried by messages:
+  // the fields it requires on top get the values of a plain private chat.
   get_chat: (): ChatFullInfo => ({
     ...state.chat,
     accent_color_id: 0,

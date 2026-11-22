@@ -1,6 +1,6 @@
 ---
 "@effect-ak/tg-bot-api": minor
-"@effect-ak/tg-bot-emulator": patch
+"@effect-ak/tg-bot-emulator": minor
 ---
 
 Regenerate types for Telegram Bot API 10.5 (Mini Apps unchanged at 10.1).
@@ -15,4 +15,4 @@ Breaking, as upstream:
 - `get_me` returns `BotFullInfo` instead of `User`. The fields that only `get_me` filled are removed from `User`: `can_join_groups`, `can_read_all_group_messages`, `supports_guest_queries`, `supports_inline_queries`, `can_connect_to_business`, `has_main_web_app`, `has_topics_enabled`, `allows_users_to_create_topics`, `can_manage_bots`, `supports_join_request_queries`. In `BotFullInfo` they are required. `BotFullInfo` has no `last_name` or `language_code`.
 - `RichBlockExpandableBlockQuotation` and `InputRichBlockExpandableBlockQuotation` have `blocks` (an array of blocks) instead of `text`.
 
-**`@effect-ak/tg-bot-emulator`** — `get_me` returns a `BotFullInfo` with the settings of a bot fresh from BotFather. `emulator.bot` stays a `User`.
+**`@effect-ak/tg-bot-emulator`** — `set_my_settings` is emulated: `get_me` returns a `BotFullInfo` that starts with the settings of a bot fresh from BotFather and reports what `set_my_settings` changed. `callback_query_mode` is accepted and ignored: a tapped button still delivers `message`. `emulator.bot` stays a `User`.

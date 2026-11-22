@@ -1,8 +1,9 @@
 /**
  * @module api-profile
- * The bot's own profile: name, descriptions, the "/" menu and the profile
- * photo. `language_code` and command `scope` are accepted and ignored: the
- * emulator keeps the default-language, default-scope values.
+ * The bot's own profile: name, descriptions, the "/" menu, the profile
+ * photo and the settings `get_me` reports. `language_code` and command
+ * `scope` are accepted and ignored: the emulator keeps the default-language,
+ * default-scope values.
  */
 import type {
   BotCommand,
@@ -14,12 +15,28 @@ import type {
   SetMyDescriptionInput,
   SetMyNameInput,
   SetMyProfilePhotoInput,
+  SetMySettingsInput,
   SetMyShortDescriptionInput,
   UserProfilePhotos
 } from "@effect-ak/tg-bot-api"
 
-import type { EmulatorState } from "../state"
+import type { BotSettings, EmulatorState } from "../state"
 import { storeFile } from "./media"
+
+/** The `set_my_settings` parameters that `get_me` reports under the same name. */
+const settingFlags = [
+  "supports_inline_queries",
+  "needs_inline_query_location",
+  "can_join_groups",
+  "can_read_all_group_messages",
+  "can_connect_to_business",
+  "can_manage_bots",
+  "supports_guest_queries",
+  "supports_join_request_queries",
+  "has_topics_enabled",
+  "allows_users_to_create_topics",
+  "has_topic_sidebar"
+] as const satisfies ReadonlyArray<keyof SetMySettingsInput & keyof BotSettings>
 
 export const profileMethods = (state: EmulatorState) => ({
   get_my_name: (): BotName => ({ name: state.profile.name ?? state.bot.first_name }),
@@ -47,8 +64,22 @@ export const profileMethods = (state: EmulatorState) => ({
     return true
   },
 
-  // `get_chat` returns the full info, not the short `Chat` carried by messages:
-  // the fields it requires on top get the values of a plain private chat.
+  // Settings that are not passed stay as they are. `callback_query_mode`,
+  // `inline_feedback_share_denominator` and `can_communicate_with_bots` are
+  // accepted and ignored: nothing in the emulator depends on them.
+  set_my_settings: (input: SetMySettingsInput): boolean => {
+    const { settings } = state.profile
+    for (const flag of settingFlags) {
+      const value = input[flag]
+      if (value !== undefined) settings[flag] = value
+    }
+    if (input.inline_query_placeholder) {
+      settings.inline_query_placeholder = input.inline_query_placeholder
+    } else if (input.inline_query_placeholder === "") {
+      delete settings.inline_query_placeholder
+    }
+    return true
+  },
 
   set_my_profile_photo: async (input: SetMyProfilePhotoInput): Promise<boolean> => {
     const media = input.photo.type === "static" ? input.photo.photo : input.photo.animation
