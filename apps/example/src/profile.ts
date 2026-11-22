@@ -21,7 +21,7 @@ export const BOT_PROFILE = {
   description: [
     "I'm the live demo of @effect-ak/tg-bot, a type-safe Telegram bot SDK for TypeScript.",
     "",
-    "Send /demo and pick one: tic-tac-toe in a widget, a reply streamed like an AI assistant, inline-keyboard screens, a file built in memory. Type @ and my name in any chat to share a code snippet.",
+    "Send /demo and pick one: tic-tac-toe in a widget, a reply streamed like an AI assistant, inline-keyboard screens, a file built in memory, the raw JSON of any message. /id tells a chat its ID. Type @ and my name in any chat to share a code snippet.",
     "",
     "I run on Cloudflare Workers and remember only which demo each chat picked, for 30 days.",
     "",

@@ -29,14 +29,15 @@ Nothing needs to be installed or deployed locally. For the inline snippets, swit
 | ⭕ Tic-tac-toe   | An HTML widget (Bot API 10.4): taps become `widget_query` requests, the bot answers and saves state |
 | 💬 Streaming Bot | `ctx.stream`: "Thinking…", then the reply typed in word by word (fixed answers, no LLM)             |
 | 📄 File Bot      | Sending a file built in memory                                                                      |
+| 🔍 Inspector     | The raw JSON of any message you send or forward: ids, file ids, entities, forward origins           |
 
-The home bot answers `/features` with a rich message (table, details, buttons) and inline queries (`@bot widget`) with code snippets.
+The home bot answers `/features` with a rich message (table, details, buttons), `/id` with the chat's ID and the sender's (in a group: the group's), and inline queries (`@bot widget`) with code snippets.
 
 [`test/demos.test.ts`](test/demos.test.ts) runs every demo against the in-memory emulator (`pnpm --filter example test`) — no token needed.
 
 ## Layout
 
-- [`src/bots/`](src/bots) — the demo bots (`menu`, `tictactoe`, `stream`, `file`), their [`registry.ts`](src/bots/registry.ts), and the [`home.ts`](src/bots/home.ts) bot (/start, /source, /install, /features, /demo menu, inline snippets)
+- [`src/bots/`](src/bots) — the demo bots (`menu`, `tictactoe`, `stream`, `file`, `inspector`), their [`registry.ts`](src/bots/registry.ts), and the [`home.ts`](src/bots/home.ts) bot (/start, /source, /install, /features, /id, /demo menu, inline snippets)
 - [`src/worker.ts`](src/worker.ts) — Cloudflare Worker: routing (`POST /webhook`, `GET /setup`), dispatch to home or the active demo, KV state
 - [`wrangler.jsonc`](wrangler.jsonc) — Worker config; the KV namespace is provisioned automatically on first deploy
 - [`src/polling/`](src/polling) — long polling: `run.ts` starts any bot from `src/bots` (`pnpm polling menu`); `batch-bot.ts` / `reload-bot.ts` show the low-level `runBot` API (batch mode, hot reload)

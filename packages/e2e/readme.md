@@ -26,7 +26,7 @@ bot_token=... chat_id=... pnpm --filter @effect-ak/tg-bot-e2e e2e
 ```
 
 - `bot_token`: a bot's token. The run is safe on a bot that is in use: it never touches the webhook (and skips `get_updates` when one is set), what it sets it removes, and the messages it sends it deletes.
-- `chat_id`: a chat the bot can write to. A private chat with the bot works (send it `/start` once). A group where the bot is an administrator covers more: pinning, administrators, invite links.
+- `chat_id`: a chat the bot can write to; the demo bot tells a chat its ID on `/id`. A private chat with the bot works (send it `/start` once). A group where the bot is an administrator covers more: pinning, administrators, invite links.
 
 `pnpm test` runs the validator's own tests and skips the live run when the two variables are absent. `e2e` sets `E2E_REQUIRED=true`, which makes their absence a failure, so CI cannot pass by skipping.
 

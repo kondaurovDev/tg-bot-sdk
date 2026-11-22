@@ -1,13 +1,19 @@
 /**
  * Home bot: what you talk to when no demo is active. Describes the library
- * (/start, /source, /install, /features) and lets you switch the active demo
- * (/demo + inline buttons). The active demo is stored per chat via `ModeStore`
+ * (/start, /source, /install, /features), tells a chat its id (/id) and lets
+ * you switch the active demo (/demo + inline buttons). The active demo is stored per chat via `ModeStore`
  * — KV on Cloudflare, an in-memory Map for local polling.
  */
 import { BotResponse, createBot } from "@effect-ak/tg-bot"
 import type { BotContext } from "@effect-ak/tg-bot"
-import type { InlineQueryResultArticle, InputRichBlock, Update } from "@effect-ak/tg-bot-api"
+import type {
+  InlineQueryResultArticle,
+  InputRichBlock,
+  Message,
+  Update
+} from "@effect-ak/tg-bot-api"
 
+import { escapeHtml } from "./html"
 import { demos, DEFAULT_DEMO } from "./registry"
 
 export interface ModeStore {
@@ -26,7 +32,8 @@ export const HOME_COMMAND_LIST = [
   { command: "start", description: "About this bot" },
   { command: "source", description: "GitHub repository" },
   { command: "install", description: "Quick start" },
-  { command: "features", description: "Library features" }
+  { command: "features", description: "Library features" },
+  { command: "id", description: "This chat's ID and yours" }
 ]
 export const HOME_COMMANDS = HOME_COMMAND_LIST.map((c) => `/${c.command}`)
 export const HOME_CALLBACK_PREFIX = "demo:"
@@ -37,7 +44,11 @@ export const isHomeUpdate = (update: Update): boolean => {
   const msg = update.message
   const entity = msg?.entities?.find((e) => e.type === "bot_command")
   if (entity && msg?.text) {
-    const cmd = msg.text.slice(entity.offset, entity.offset + entity.length)
+    // In groups Telegram sends "/id@my_bot": the mention is not part of the command
+    const cmd = msg.text
+      .slice(entity.offset, entity.offset + entity.length)
+      .replace(/@\S+$/, "")
+      .toLowerCase()
     if (HOME_COMMANDS.includes(cmd)) return true
   }
   if (msg?.text?.startsWith(SWITCH_BUTTON_PREFIX)) return true
@@ -58,7 +69,23 @@ Commands:
 /source — GitHub repository
 /install — quick start
 /features — library features
+/id — this chat's ID and yours
 `.trim()
+
+/**
+ * `/id`: the identifiers a bot developer keeps needing. The chat ID is what
+ * `chat_id` takes in every method; in a group it is the group's, not yours.
+ */
+export const idMessage = (message: Message): string =>
+  [
+    `<b>Chat ID:</b> <code>${message.chat.id}</code> (${message.chat.type})`,
+    ...(message.from ? [`<b>Your user ID:</b> <code>${message.from.id}</code>`] : []),
+    ...(message.is_topic_message && message.message_thread_id !== undefined
+      ? [`<b>Topic ID:</b> <code>${message.message_thread_id}</code>`]
+      : []),
+    "",
+    "The chat ID is what <code>chat_id</code> takes in every Bot API method. Pick the Inspector in /demo to see the whole update."
+  ].join("\n")
 
 const installMessage = `
 Quick Start:
@@ -128,7 +155,12 @@ export const featuresBlocks: InputRichBlock[] = [
               { type: "paragraph", text: "Streaming — replies typed in like an AI assistant" }
             ]
           },
-          { blocks: [{ type: "paragraph", text: "File Bot — sending files built in memory" }] }
+          { blocks: [{ type: "paragraph", text: "File Bot — sending files built in memory" }] },
+          {
+            blocks: [
+              { type: "paragraph", text: "Inspector — the raw JSON of any message you send" }
+            ]
+          }
         ]
       },
       {
@@ -216,9 +248,6 @@ expect((await emulator.nextBotMessage()).text).toBe("Hello!")`
   }
 ]
 
-const escapeHtml = (text: string) =>
-  text.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
-
 export const snippetResults = (query: string): InlineQueryResultArticle[] => {
   const q = query.trim().toLowerCase()
   return SNIPPETS.filter(
@@ -303,6 +332,7 @@ export const makeHomeBot = (store: ModeStore) => {
         command("/features", () =>
           BotResponse.make({ type: "rich_message", rich_message: { blocks: featuresBlocks } })
         ),
+        command("/id", ({ payload, ctx }) => ctx.reply(idMessage(payload), { parse_mode: "HTML" })),
         command("/demo", ({ payload, ctx }) => showDemoMenu(payload.chat.id, ctx)),
         // Tap on the persistent "🔀 <demo> · switch demo" button
         text(({ payload, ctx }) => showDemoMenu(payload.chat.id, ctx))

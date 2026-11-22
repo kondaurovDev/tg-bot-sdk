@@ -5,6 +5,7 @@
 import type { Bot } from "@effect-ak/tg-bot"
 
 import * as file from "./file"
+import * as inspector from "./inspector"
 import * as menu from "./menu"
 import * as stream from "./stream"
 import * as tictactoe from "./tictactoe"
@@ -23,7 +24,12 @@ export const demos: Record<string, Demo> = {
     bot: tictactoe.default
   },
   stream: { title: "💬 Streaming Bot", description: stream.description, bot: stream.default },
-  file: { title: "📄 File Bot", description: file.description, bot: file.default }
+  file: { title: "📄 File Bot", description: file.description, bot: file.default },
+  inspector: {
+    title: "🔍 Inspector",
+    description: inspector.description,
+    bot: inspector.default
+  }
 }
 
 export const DEFAULT_DEMO = "menu"

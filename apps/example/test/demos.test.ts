@@ -12,11 +12,13 @@ import { describe, expect, it } from "vitest"
 import file from "../src/bots/file"
 import {
   featuresBlocks,
+  idMessage,
   isHomeUpdate,
   makeHomeBot,
   snippetResults,
   SNIPPETS
 } from "../src/bots/home"
+import inspector, { inspect, JSON_LIMIT } from "../src/bots/inspector"
 import menu from "../src/bots/menu"
 import { demos } from "../src/bots/registry"
 import { applyBotProfile, BOT_PROFILE } from "../src/profile"
@@ -172,6 +174,29 @@ describe("file", () => {
     }))
 })
 
+describe("inspector", () => {
+  it("replies with the message as Telegram sent it", () =>
+    withBot(inspector, async (emulator) => {
+      emulator.sendMessage("what am <i> made of?")
+      const reply = await emulator.nextBotMessage()
+      expect(reply.entities?.[0]).toMatchObject({ type: "pre", language: "json" })
+      expect(JSON.parse(reply.text!)).toMatchObject({
+        text: "what am <i> made of?",
+        chat: { id: emulator.chat.id },
+        from: { id: emulator.user.id }
+      })
+    }))
+
+  it("cuts a long payload to what one message holds, never through an emoji", () => {
+    // The JSON's opening is 13 characters, so an even limit falls inside an emoji
+    const html = inspect({ text: "🎲".repeat(JSON_LIMIT) })
+    expect(html).toMatch(/… \d+ more characters$/)
+    expect(html.isWellFormed()).toBe(true)
+    expect(html.replace(/<[^>]+>/g, "").length).toBeLessThanOrEqual(4096)
+    expect(inspect({ text: "short" })).not.toContain("more characters")
+  })
+})
+
 describe("home", () => {
   const memory = new Map<number, string>()
   const home = makeHomeBot({
@@ -185,6 +210,44 @@ describe("home", () => {
       const message = await emulator.nextBotMessage()
       expect(message.rich_message?.blocks).toHaveLength(featuresBlocks.length)
     }))
+
+  it("answers /id with the chat's id and the sender's", () =>
+    withBot(home, async (emulator) => {
+      emulator.sendMessage("/id")
+      const reply = await emulator.nextBotMessage()
+      expect(reply.text).toContain(`Chat ID: ${emulator.chat.id} (private)`)
+      expect(reply.text).toContain(`Your user ID: ${emulator.user.id}`)
+    }))
+
+  it("/id names the topic in a forum, and the group's id, not the sender's", () => {
+    const text = idMessage({
+      message_id: 1,
+      date: 0,
+      chat: { id: -1001234567890, type: "supergroup", title: "Team" },
+      from: { id: 42, is_bot: false, first_name: "A" },
+      message_thread_id: 7,
+      is_topic_message: true
+    })
+    expect(text).toContain("<code>-1001234567890</code> (supergroup)")
+    expect(text).toContain("<code>42</code>")
+    expect(text).toContain("<b>Topic ID:</b> <code>7</code>")
+  })
+
+  it("a home command addressed to the bot in a group is still a home update", () => {
+    const text = "/id@effect_ak_bot"
+    expect(
+      isHomeUpdate({
+        update_id: 1,
+        message: {
+          message_id: 1,
+          date: 0,
+          chat: { id: -1, type: "group", title: "Team" },
+          text,
+          entities: [{ type: "bot_command", offset: 0, length: text.length }]
+        }
+      })
+    ).toBe(true)
+  })
 
   it("answers inline queries with matching snippets", () =>
     withBot(home, async (emulator) => {
