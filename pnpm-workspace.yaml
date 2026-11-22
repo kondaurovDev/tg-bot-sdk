@@ -6,6 +6,8 @@ overrides:
   dompurify: ^3.4.12
   esbuild: ^0.28.1
   js-yaml@4: ^4.2.0
+  # oxfmt pins 2.1.0 exactly, which has two critical advisories
+  tinypool: ^2.1.2
 
 allowBuilds:
   esbuild: true

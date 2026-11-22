@@ -20,6 +20,6 @@
   "devDependencies": {
     "@effect-ak/tg-bot-emulator": "workspace:*",
     "typescript": "^5.9.3",
-    "wrangler": "^4.107.0"
+    "wrangler": "^4.166.0"
   }
 }

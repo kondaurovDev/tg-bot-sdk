@@ -18,14 +18,14 @@
     "@effect-ak/tg-bot-client": "workspace:^",
     "@effect-ak/tg-bot-emulator": "workspace:^",
     "@effect-ak/tg-bot-emulator-react": "workspace:^",
-    "@monaco-editor/loader": "^1.6.1",
+    "@monaco-editor/loader": "^1.7.0",
     "monaco-editor": "^0.54.0"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "peerDependencies": {
     "react": "^19.0.0",
