@@ -14,7 +14,7 @@
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
     "@types/node": "^25.9.9",
-    "dotenv": "17.4.2",
+    "dotenv": "18.0.10",
     "effect": "3.22.5",
     "oxfmt": "^0.56.0",
     "oxlint": "^1.94.0",
