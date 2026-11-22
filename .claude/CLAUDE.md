@@ -49,7 +49,6 @@ Dependencies are updated by hand, in one commit, not by pull requests from Depen
 
 - `effect` 3: version 4 means rewriting codegen.
 - `monaco-editor` 0.54: the npm package is only the types for the copy the playground loads from the CDN (`MONACO_CDN` in `packages/playground/src/monaco.ts`), so both move together; 0.55+ moves the TypeScript API to a top-level namespace and needs a check in the browser.
-- `@changesets/cli` 2 with `changesets/action` v1: the action's v2 needs Changesets 3 and renames its inputs. It is the release pipeline, so do it when no release is pending.
 
 ## Sandbox and guarded commands
 
