@@ -30,7 +30,7 @@ bot_token=... chat_id=... pnpm --filter @effect-ak/tg-bot-e2e e2e
 
 `pnpm test` runs the validator's own tests and skips the live run when the two variables are absent. `e2e` sets `E2E_REQUIRED=true`, which makes their absence a failure, so CI cannot pass by skipping.
 
-In CI the `E2E` workflow runs it daily, on every new docs snapshot, and by hand, with the secrets `DEMO_BOT_TOKEN` and `E2E_CHAT_ID`.
+In CI the `E2E` workflow runs it daily, on every new docs snapshot, and by hand, with the secret `DEMO_BOT_TOKEN` and `E2E_CHAT_ID`, a secret or a repository variable (a secret is masked in the public log; a variable is printed).
 
 ## What is covered
 

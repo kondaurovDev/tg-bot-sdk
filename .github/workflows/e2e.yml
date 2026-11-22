@@ -54,4 +54,5 @@ jobs:
         run: pnpm --filter @effect-ak/tg-bot-e2e e2e
         env:
           bot_token: ${{ secrets.DEMO_BOT_TOKEN }}
-          chat_id: ${{ secrets.E2E_CHAT_ID }}
+          # A secret is masked in this public log; a variable is not, and works too
+          chat_id: ${{ secrets.E2E_CHAT_ID || vars.E2E_CHAT_ID }}
