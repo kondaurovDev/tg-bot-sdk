@@ -110,7 +110,7 @@ export interface TgBotEmulator {
   readonly client: TgBotClient
   /** The virtual human user updates are sent from. */
   readonly user: User
-  /** The bot's own user (returned by `get_me`). */
+  /** The bot's own user; `get_me` returns it as `BotFullInfo`. */
   readonly bot: User
   /** The single virtual chat. */
   readonly chat: Chat

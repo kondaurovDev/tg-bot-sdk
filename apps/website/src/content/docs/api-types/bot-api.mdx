@@ -33,7 +33,7 @@ import type { Api } from "@effect-ak/tg-bot-api"
 // Api looks like this:
 interface Api {
   send_message(_: SendMessageInput): Message
-  get_me(_: GetMeInput): User
+  get_me(_: GetMeInput): BotFullInfo
   send_photo(_: SendPhotoInput): Message
   // ... all methods
 }

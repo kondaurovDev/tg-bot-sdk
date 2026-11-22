@@ -278,6 +278,31 @@ export interface BotDescription {
 }
 
 /**
+ * This object contains full information about the bot itself.
+ * @see https://tg-bot-sdk.website/api/types/bot-full-info/
+ */
+export interface BotFullInfo {
+  id: number
+  is_bot: boolean
+  first_name: string
+  can_join_groups: boolean
+  can_read_all_group_messages: boolean
+  supports_guest_queries: boolean
+  supports_inline_queries: boolean
+  needs_inline_query_location: boolean
+  can_connect_to_business: boolean
+  has_main_web_app: boolean
+  has_topics_enabled: boolean
+  allows_users_to_create_topics: boolean
+  has_topic_sidebar: boolean
+  can_manage_bots: boolean
+  supports_join_request_queries: boolean
+  username?: string
+  active_usernames?: string[]
+  inline_query_placeholder?: string
+}
+
+/**
  * This object represents the bot's name.
  * @see https://tg-bot-sdk.website/api/types/bot-name/
  */
@@ -392,9 +417,9 @@ export interface BusinessOpeningHoursInterval {
 export type CallbackGame = Record<string, never>
 
 /**
- * This object represents an incoming callback query from a callback button in an inline keyboard
- * If the button that originated the query was attached to a message sent by the bot, the field message will be present
- * If the button was attached to a message sent via the bot (in inline mode), the field inline_message_id will be present
+ * This object represents an incoming callback query from a callback button in an inline keyboard or in a rich message
+ * If the button that originated the query belongs to a message sent by the bot, the field message will be present, unless the field inline_message_id is used instead as specified by the parameter callback_query_mode of the method setMySettings
+ * If the button belongs to a message sent via the bot (in inline mode), the field inline_message_id will be present
  * Exactly one of the fields data or game_short_name will be present.
  * @see https://tg-bot-sdk.website/api/types/callback-query/
  */
@@ -2352,7 +2377,7 @@ export interface InputRichBlockDocument {
  */
 export interface InputRichBlockExpandableBlockQuotation {
   type: "expandable_blockquote"
-  text: RichText
+  blocks: InputRichBlock[]
   credit?: RichText
 }
 
@@ -3983,7 +4008,7 @@ export interface RichBlockDocument {
  */
 export interface RichBlockExpandableBlockQuotation {
   type: "expandable_blockquote"
-  text: RichText
+  blocks: RichBlock[]
   credit?: RichText
 }
 
@@ -5115,16 +5140,6 @@ export interface User {
   language_code?: string
   is_premium?: boolean
   added_to_attachment_menu?: boolean
-  can_join_groups?: boolean
-  can_read_all_group_messages?: boolean
-  supports_guest_queries?: boolean
-  supports_inline_queries?: boolean
-  can_connect_to_business?: boolean
-  has_main_web_app?: boolean
-  has_topics_enabled?: boolean
-  allows_users_to_create_topics?: boolean
-  can_manage_bots?: boolean
-  supports_join_request_queries?: boolean
 }
 
 /**
@@ -5392,11 +5407,12 @@ export interface WidgetQueryWallet {
 }
 
 /**
- * This object represents a service message about a user allowing a bot to write messages after adding it to the attachment menu, launching a Web App from a link, or accepting an explicit request from a Web App sent by the method requestWriteAccess.
+ * This object represents a service message about a user allowing a bot to write messages after adding it to the attachment menu, launching a Web App from a link, or accepting an explicit request from a Web App sent by the method requestWriteAccess, or about a user being invited to the private chat with the bot by the owner of the bot.
  * @see https://tg-bot-sdk.website/api/types/write-access-allowed/
  */
 export interface WriteAccessAllowed {
   from_request?: boolean
   web_app_name?: string
   from_attachment_menu?: boolean
+  inviter?: User
 }

@@ -192,13 +192,13 @@ const renderBlock = (block: RichBlock, h: RenderHandlers): ReactNode => {
     case "divider":
       return <hr className="tgc-rich-divider" />
     case "blockquote":
+    case "expandable_blockquote":
       return (
         <div className="tgc-quote">
           {renderRichBlocks(block.blocks, h)}
           {credit(block.credit, h)}
         </div>
       )
-    case "expandable_blockquote":
     case "pullquote":
       return (
         <div className="tgc-quote">

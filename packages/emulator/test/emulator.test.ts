@@ -342,6 +342,20 @@ describe("reply keyboard", () => {
 })
 
 describe("bot profile", () => {
+  it("get_me returns the bot's full info, not the User put on its messages", async () => {
+    const emulator = makeTgBotEmulator({ bot: { first_name: "Demo", username: "demo_bot" } })
+    const me = await emulator.client.execute("get_me", {})
+    expect(me).toMatchObject({
+      id: emulator.bot.id,
+      is_bot: true,
+      first_name: "Demo",
+      username: "demo_bot",
+      can_join_groups: true,
+      supports_inline_queries: false
+    })
+    expect(emulator.bot).not.toHaveProperty("can_join_groups")
+  })
+
   it("announces new commands, for the client's Menu button", async () => {
     const emulator = makeTgBotEmulator()
     const changed = emulator.nextEvent((e) => e.type === "commands_changed")

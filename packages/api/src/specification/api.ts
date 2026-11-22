@@ -11,7 +11,7 @@ export interface Api {
    */
   add_sticker_to_set(_: AddStickerToSetInput): boolean
   /**
-   * Use this method to send answers to callback queries sent from inline keyboards
+   * Use this method to send answers to callback queries sent from inline keyboards or rich messages
    * The answer will be displayed to the user as a notification at the top of the chat screen or as an alert
    * Alternatively, the user can be redirected to the specified Game URL
    * For this option to work, you must first create a game for your bot via @BotFather and accept the terms
@@ -503,7 +503,7 @@ export interface Api {
    * Requires no parameters
    * @see https://tg-bot-sdk.website/api/methods/get-me/
    */
-  get_me(_: GetMeInput): T.User
+  get_me(_: GetMeInput): T.BotFullInfo
   /**
    * Use this method to get the current list of the bot's commands for the given scope and user language
    * If commands aren't set, an empty list is returned.
@@ -1016,6 +1016,12 @@ export interface Api {
    */
   set_my_profile_photo(_: SetMyProfilePhotoInput): boolean
   /**
+   * Use this method to change settings of the bot
+   * Settings that aren't specified remain unchanged
+   * @see https://tg-bot-sdk.website/api/methods/set-my-settings/
+   */
+  set_my_settings(_: SetMySettingsInput): boolean
+  /**
    * Use this method to change the bot's short description, which is shown on the bot's profile page and is sent together with the link when users share the bot
    * @see https://tg-bot-sdk.website/api/methods/set-my-short-description/
    */
@@ -1191,7 +1197,7 @@ export interface AddStickerToSetInput {
 }
 
 /**
- * Use this method to send answers to callback queries sent from inline keyboards
+ * Use this method to send answers to callback queries sent from inline keyboards or rich messages
  * The answer will be displayed to the user as a notification at the top of the chat screen or as an alert
  * Alternatively, the user can be redirected to the specified Game URL
  * For this option to work, you must first create a game for your bot via @BotFather and accept the terms
@@ -5480,6 +5486,54 @@ export interface SetMyNameInput {
 export interface SetMyProfilePhotoInput {
   /** The new profile photo to set */
   photo: T.InputProfilePhoto
+}
+
+/**
+ * Use this method to change settings of the bot
+ * Settings that aren't specified remain unchanged
+ * @see https://tg-bot-sdk.website/api/methods/set-my-settings/
+ */
+export interface SetMySettingsInput {
+  /** Pass True to enable inline mode for the bot or False to disable it */
+  supports_inline_queries?: boolean
+  /**
+   * New placeholder for inline queries, which is shown in the input field after the bot's username
+   * Pass an empty string to use the default placeholder.
+   */
+  inline_query_placeholder?: string
+  /** Pass True to request the location of the user with every inline query to the bot or False to stop requesting it */
+  needs_inline_query_location?: boolean
+  /**
+   * Denominator of the share of chosen inline results received by the bot; the bot receives 1 out of inline_feedback_share_denominator chosen results
+   * Must be one of 1, 10, 100, or 1000
+   * Pass 0 to stop receiving chosen inline results.
+   */
+  inline_feedback_share_denominator?: number
+  /** Pass True to allow adding the bot to groups or False to disallow it */
+  can_join_groups?: boolean
+  /** Pass True to disable privacy mode for the bot or False to enable it */
+  can_read_all_group_messages?: boolean
+  /** Pass True to allow connecting the bot to user accounts to manage them or False to disallow it */
+  can_connect_to_business?: boolean
+  /** Pass True to allow creating other bots that will be controlled by the bot or False to disallow it */
+  can_manage_bots?: boolean
+  /** Pass True to allow guest queries to the bot from chats it isn't a member of or False to disallow them */
+  supports_guest_queries?: boolean
+  /** Pass True to allow assigning the bot to process join request queries or False to disallow it */
+  supports_join_request_queries?: boolean
+  /** Pass True to enable forum topic mode in private chats with the bot or False to disable it */
+  has_topics_enabled?: boolean
+  /** Pass True to allow users to create and delete topics in private chats with the bot or False to disallow it */
+  allows_users_to_create_topics?: boolean
+  /** Pass True to show topics in private chats with the bot in a sidebar or False to stop showing them in a sidebar */
+  has_topic_sidebar?: boolean
+  /** Pass True to allow the bot to communicate with other bots in groups, private chats, and through business accounts or False to disallow it */
+  can_communicate_with_bots?: boolean
+  /**
+   * Mode in which the bot receives callback queries from buttons in messages sent by the bot
+   * Must be one of “default” (the field message is always used and contains an InaccessibleMessage if the message is inaccessible to the bot), “auto” (the field inline_message_id is used instead of the field message if the message is inaccessible to the bot; the field message can still contain an inaccessible message if the message has just been deleted), or “inline” (the field inline_message_id is always used instead of the field message).
+   */
+  callback_query_mode?: "default" | "auto" | "inline"
 }
 
 /**
