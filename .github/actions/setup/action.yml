@@ -7,7 +7,7 @@ runs:
     # pnpm v11+ ships a standalone binary and installs the runtime itself, so
     # this one step replaces setup-node, a separate store cache and `pnpm install`.
     - name: Setup pnpm, Node and dependencies
-      uses: pnpm/setup@fa36a5ef7dcdefc3a7cb25655c122e00cf6e636e # v3.1.2
+      uses: pnpm/setup@731dfb6463bbd11c11fd0ee11fe00ed0e36d48a1 # v3.2.0
       with:
         runtime: node@24
         cache: true
